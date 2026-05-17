@@ -1,0 +1,24 @@
+services:
+  postgres:
+    build:
+      context: ./docker/postgresql
+      dockerfile: Dockerfile
+    image: diariox/postgresql:16
+    container_name: diariox-postgres
+    environment:
+      POSTGRES_DB: diariox
+      POSTGRES_USER: diariox
+      POSTGRES_PASSWORD: diariox123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

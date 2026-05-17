@@ -1,33 +1,29 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using DiarioX.Server.Data;
 using DiarioX.Server.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DiarioX.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(IConfiguration configuration) : ControllerBase
+public class AuthController(IConfiguration configuration, AppDbContext dbContext) : ControllerBase
 {
-    // Usuários em memória — substitua por banco de dados futuramente.
-    // As senhas devem ser armazenadas com hash (bcrypt/Argon2) em produção.
-    private static readonly IReadOnlyList<(string Username, string PasswordHash)> Users =
-    [
-        ("admin", BCrypt.Net.BCrypt.HashPassword("admin123")),
-    ];
-
     [HttpPost("login")]
-    public IActionResult Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
             return BadRequest(new { message = "Usuário e senha são obrigatórios." });
 
-        var user = Users.FirstOrDefault(u =>
-            string.Equals(u.Username, request.Username, StringComparison.OrdinalIgnoreCase));
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => EF.Functions.ILike(u.Username, request.Username));
 
-        if (user == default || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return Unauthorized(new { message = "Usuário ou senha inválidos." });
 
         var token = GenerateJwtToken(user.Username);
