@@ -1,0 +1,12 @@
+@DiarioX.Server_HostAddress = http://localhost:5154
+
+POST {{DiarioX.Server_HostAddress}}/api/auth/login
+Accept: application/json
+Content-Type: application/json
+
+{
+	"username": "admin",
+	"password": "admin123"
+}
+
+###

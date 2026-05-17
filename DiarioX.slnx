@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="diariox.client/diariox.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="DiarioX.Server/DiarioX.Server.csproj" />
+</Solution>
