@@ -1,6 +1,10 @@
 using System.Text;
-using DiarioX.Server.Data;
-using DiarioX.Server.Models;
+using DiarioX.Server.Application.Interfaces;
+using DiarioX.Server.Application.Services;
+using DiarioX.Server.Domain.Entities;
+using DiarioX.Server.Domain.Interfaces;
+using DiarioX.Server.Infrastructure.Data;
+using DiarioX.Server.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -8,12 +12,19 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Database
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Dependency Injection - Repositories
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// Dependency Injection - Services
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -36,18 +47,18 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// Database initialization
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
 
+    // Seed admin user
     if (!db.Users.Any(u => u.Username == "admin"))
     {
-        db.Users.Add(new User
-        {
-            Username = "admin",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123")
-        });
+        var adminUser = new User { Username = "admin" };
+        adminUser.SetPassword("admin123");
+        db.Users.Add(adminUser);
         db.SaveChanges();
     }
 }
