@@ -9,21 +9,50 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     public void Configure(EntityTypeBuilder<User> builder)
     {
         builder.ToTable("users");
-        
+
         builder.HasKey(x => x.Id);
-        
-        builder.HasIndex(x => x.Username)
+
+        builder.Property(x => x.Id)
+            .HasColumnName("id")
+            .UseIdentityByDefaultColumn();
+
+        builder.HasIndex(x => x.Email)
+            .HasDatabaseName("IX_users_email")
             .IsUnique();
 
-        builder.Property(x => x.Username)
-            .HasMaxLength(100)
-            .IsRequired();
+        builder.HasIndex(x => x.Cpf)
+            .HasDatabaseName("IX_users_cpf")
+            .IsUnique();
 
-        builder.Property(x => x.PasswordHash)
+        builder.Property(x => x.Email)
+            .HasColumnName("email")
             .HasMaxLength(255)
             .IsRequired();
 
+        builder.Property(x => x.Cpf)
+            .HasColumnName("cpf")
+            .HasMaxLength(11)
+            .IsRequired();
+
+        builder.Property(x => x.SenhaHash)
+            .HasColumnName("senha_hash")
+            .HasMaxLength(255)
+            .IsRequired();
+
+        builder.Property(x => x.Status)
+            .HasColumnName("status")
+            .HasMaxLength(20)
+            .HasDefaultValue(User.StatusAtivo)
+            .IsRequired();
+
+        builder.Property(x => x.UltimoAcesso)
+            .HasColumnName("ultimo_acesso");
+
         builder.Property(x => x.CreatedAt)
+            .HasColumnName("created_at")
             .HasDefaultValueSql("NOW()");
+
+        builder.ToTable(t =>
+            t.HasCheckConstraint("CK_users_status", "status IN ('ATIVO', 'INATIVO', 'BLOQUEADO')"));
     }
 }

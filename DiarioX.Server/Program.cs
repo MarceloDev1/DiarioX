@@ -54,9 +54,14 @@ using (var scope = app.Services.CreateScope())
     db.Database.EnsureCreated();
 
     // Seed admin user
-    if (!db.Users.Any(u => u.Username == "admin"))
+    if (!db.Users.Any(u => u.Email == "admin@diariox.local"))
     {
-        var adminUser = new User { Username = "admin" };
+        var adminUser = new User
+        {
+            Email = "admin@diariox.local",
+            Cpf = "00000000000",
+            Status = User.StatusAtivo,
+        };
         adminUser.SetPassword("admin123");
         db.Users.Add(adminUser);
         db.SaveChanges();

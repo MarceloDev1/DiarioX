@@ -11,29 +11,31 @@ public class UserRepository : BaseRepository<User>, IUserRepository
     {
     }
 
-    public async Task<User?> GetByIdAsync(Guid id)
+    public async Task<User?> GetByIdAsync(int id)
     {
         return await _dbSet
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == id);
     }
 
-    public async Task<User?> GetByUsernameAsync(string username)
+    public async Task<User?> GetByEmailOrCpfAsync(string login)
     {
         return await _dbSet
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => EF.Functions.ILike(u.Username, username));
+            .FirstOrDefaultAsync(u =>
+                EF.Functions.ILike(u.Email, login) ||
+                EF.Functions.ILike(u.Cpf, login));
     }
 
-    public async Task<IEnumerable<User>> GetAllAsync()
+    public override async Task<IEnumerable<User>> GetAllAsync()
     {
         return await _dbSet
             .AsNoTracking()
-            .OrderBy(u => u.Username)
+            .OrderBy(u => u.Email)
             .ToListAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(int id)
     {
         var user = await _dbSet.FindAsync(id);
         if (user != null)
@@ -42,9 +44,11 @@ public class UserRepository : BaseRepository<User>, IUserRepository
         }
     }
 
-    public async Task<bool> ExistsAsync(string username)
+    public async Task<bool> ExistsByEmailOrCpfAsync(string email, string cpf)
     {
         return await _dbSet
-            .AnyAsync(u => EF.Functions.ILike(u.Username, username));
+            .AnyAsync(u =>
+                EF.Functions.ILike(u.Email, email) ||
+                EF.Functions.ILike(u.Cpf, cpf));
     }
 }

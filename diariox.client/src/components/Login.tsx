@@ -25,11 +25,12 @@ function Login({ onLogin }: LoginProps) {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ login: username, password }),
             });
 
             if (response.ok) {
-                onLogin(username);
+                const data: { email?: string } = await response.json();
+                onLogin(data.email ?? username);
             } else {
                 setError('Usuário ou senha inválidos.');
             }
