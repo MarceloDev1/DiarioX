@@ -40,20 +40,32 @@ function Login({ onLogin }: LoginProps) {
         }
     }
 
+    const handleForgotPassword = () => {
+        alert('Funcionalidade de recuperação de senha será implementada.');
+        // Redirecionar para página de esqueci minha senha
+    };
+
+    const handleFirstAccess = () => {
+        alert('Funcionalidade de primeiro acesso será implementada.');
+        // Redirecionar para página de cadastro
+    };
+
     return (
         <div className="login-container">
             <div className="login-card">
-                <h1 className="login-title">DiarioX</h1>
-                <p className="login-subtitle">Entre na sua conta</p>
+                <h1 className="login-title">Diário de Classe</h1>
+                <p className="login-description">
+                    Use seu e-mail ou CPF cadastrado para acessar o sistema.
+                </p>
 
                 <form onSubmit={handleSubmit} className="login-form" noValidate>
                     <div className="form-group">
-                        <label htmlFor="username">Usuário</label>
+                        <label htmlFor="username">Usuário (E-mail ou CPF)</label>
                         <input
                             id="username"
                             type="text"
                             autoComplete="username"
-                            placeholder="Digite seu usuário"
+                            placeholder="seu@email.com ou 00000000000"
                             value={username}
                             onChange={e => setUsername(e.target.value)}
                             disabled={loading}
@@ -61,7 +73,16 @@ function Login({ onLogin }: LoginProps) {
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="password">Senha</label>
+                        <div className="password-header">
+                            <label htmlFor="password">Senha</label>
+                            <button
+                                type="button"
+                                className="forgot-password-link"
+                                onClick={handleForgotPassword}
+                            >
+                                Esqueci minha senha
+                            </button>
+                        </div>
                         <input
                             id="password"
                             type="password"
@@ -78,6 +99,17 @@ function Login({ onLogin }: LoginProps) {
                     <button type="submit" className="login-button" disabled={loading}>
                         {loading ? 'Entrando...' : 'Entrar'}
                     </button>
+
+                    <div className="first-access">
+                        <span>É seu primeiro acesso?</span>{' '}
+                        <button
+                            type="button"
+                            className="first-access-link"
+                            onClick={handleFirstAccess}
+                        >
+                            Primeiro Acesso
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
