@@ -7,10 +7,7 @@ interface SidebarProps {
 
 function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
     const menuItems = [
-        { id: 'alunos', label: '📘 Cadastro de Alunos' },
-        { id: 'professores', label: '👨‍🏫 Cadastro de Professores' },
-        { id: 'turmas', label: '🏫 Cadastro de Turmas' },
-        { id: 'disciplinas', label: '📚 Cadastro de Disciplinas' },
+
     ];
 
     return (
