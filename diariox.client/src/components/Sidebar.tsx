@@ -7,7 +7,8 @@ interface SidebarProps {
 
 function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
     const menuItems = [
-
+        { id: 'home', label: '🏠 Início' },
+        { id: 'escolas', label: '🏫 Cadastro de Escolas' },
     ];
 
     return (
