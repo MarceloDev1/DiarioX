@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<Escola> Escolas => Set<Escola>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -18,5 +19,6 @@ public class AppDbContext : DbContext
         
         // Aplicar todas as configurações do assembly
         modelBuilder.ApplyConfiguration(new UserConfiguration());
+        modelBuilder.ApplyConfiguration(new EscolaConfiguration());
     }
 }
