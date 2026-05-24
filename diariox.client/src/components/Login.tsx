@@ -5,7 +5,7 @@ interface LoginProps {
     onLogin: (username: string) => void;
 }
 
-type ViewMode = 'login' | 'first-access';
+type ViewMode = 'login' | 'first-access' | 'forgot-password';
 type FirstAccessStep = 'validate' | 'activate' | 'success';
 
 function normalizeCpf(value: string) {
@@ -60,6 +60,10 @@ function validatePassword(password: string) {
     return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(password);
 }
 
+function normalizeRecoveryValue(value: string) {
+    return value.trim();
+}
+
 function Login({ onLogin }: LoginProps) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -78,6 +82,11 @@ function Login({ onLogin }: LoginProps) {
     const [firstAccessSuccess, setFirstAccessSuccess] = useState('');
     const [firstAccessLoading, setFirstAccessLoading] = useState(false);
 
+    const [recoveryIdentifier, setRecoveryIdentifier] = useState('');
+    const [recoveryError, setRecoveryError] = useState('');
+    const [recoverySuccess, setRecoverySuccess] = useState('');
+    const [recoveryLoading, setRecoveryLoading] = useState(false);
+
     function resetFirstAccessState() {
         setFirstAccessStep('validate');
         setCpf('');
@@ -89,6 +98,13 @@ function Login({ onLogin }: LoginProps) {
         setFirstAccessError('');
         setFirstAccessSuccess('');
         setFirstAccessLoading(false);
+    }
+
+    function resetRecoveryState() {
+        setRecoveryIdentifier('');
+        setRecoveryError('');
+        setRecoverySuccess('');
+        setRecoveryLoading(false);
     }
 
     async function handleSubmit(e: FormEvent) {
@@ -122,8 +138,8 @@ function Login({ onLogin }: LoginProps) {
     }
 
     const handleForgotPassword = () => {
-        alert('Funcionalidade de recuperação de senha será implementada.');
-        // Redirecionar para página de esqueci minha senha
+        setViewMode('forgot-password');
+        resetRecoveryState();
     };
 
     const handleFirstAccess = () => {
@@ -135,7 +151,33 @@ function Login({ onLogin }: LoginProps) {
         setViewMode('login');
         setFirstAccessError('');
         setFirstAccessSuccess('');
+        setRecoveryError('');
+        setRecoverySuccess('');
     };
+
+    async function handlePasswordRecovery(e: FormEvent) {
+        e.preventDefault();
+        setRecoveryError('');
+        setRecoverySuccess('');
+
+        const identifier = normalizeRecoveryValue(recoveryIdentifier);
+        if (!identifier) {
+            setRecoveryError('Informe seu e-mail ou CPF para continuar.');
+            return;
+        }
+
+        setRecoveryLoading(true);
+        try {
+            setRecoverySuccess(
+                'Se o cadastro existir, enviaremos um link de redefinição de senha para o endereço informado.',
+            );
+            setRecoveryIdentifier('');
+        } catch {
+            setRecoveryError('Nao foi possivel iniciar a recuperacao de senha.');
+        } finally {
+            setRecoveryLoading(false);
+        }
+    }
 
     async function handleValidateInstitutionalData(e: FormEvent) {
         e.preventDefault();
@@ -436,6 +478,54 @@ function Login({ onLogin }: LoginProps) {
                                 {firstAccessSuccess}
                             </div>
                         )}
+                    </>
+                )}
+
+                {viewMode === 'forgot-password' && (
+                    <>
+                        <p className="login-description">
+                            Informe seu e-mail ou CPF para receber as instrucoes de redefinicao de senha.
+                        </p>
+
+                        <form onSubmit={handlePasswordRecovery} className="login-form" noValidate>
+                            <div className="form-group">
+                                <label htmlFor="recovery-identifier">E-mail ou CPF</label>
+                                <input
+                                    id="recovery-identifier"
+                                    type="text"
+                                    autoComplete="username"
+                                    placeholder="seu@email.com ou 00000000000"
+                                    value={recoveryIdentifier}
+                                    onChange={e => setRecoveryIdentifier(e.target.value)}
+                                    disabled={recoveryLoading}
+                                />
+                            </div>
+
+                            <p className="recovery-hint">
+                                Por seguranca, a mensagem exibida nao confirma se o cadastro existe.
+                            </p>
+
+                            {recoveryError && <p className="login-error">{recoveryError}</p>}
+
+                            {recoverySuccess && (
+                                <div className="recovery-success" role="status" aria-live="polite">
+                                    {recoverySuccess}
+                                </div>
+                            )}
+
+                            <button type="submit" className="login-button" disabled={recoveryLoading}>
+                                {recoveryLoading ? 'Enviando...' : 'Enviar link de redefinição'}
+                            </button>
+
+                            <button
+                                type="button"
+                                className="secondary-button"
+                                onClick={handleBackToLogin}
+                                disabled={recoveryLoading}
+                            >
+                                Voltar para login
+                            </button>
+                        </form>
                     </>
                 )}
             </div>
