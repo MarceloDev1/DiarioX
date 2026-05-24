@@ -34,6 +34,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(11)
             .IsRequired();
 
+        builder.Property(x => x.DataNascimento)
+            .HasColumnName("data_nascimento")
+            .HasColumnType("date");
+
         builder.Property(x => x.SenhaHash)
             .HasColumnName("senha_hash")
             .HasMaxLength(255)

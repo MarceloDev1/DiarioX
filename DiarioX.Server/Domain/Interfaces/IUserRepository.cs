@@ -5,6 +5,7 @@ namespace DiarioX.Server.Domain.Interfaces;
 public interface IUserRepository
 {
     Task<User?> GetByIdAsync(int id);
+    Task<User?> GetByCpfAsync(string cpf);
     Task<User?> GetByEmailOrCpfAsync(string login);
     Task<IEnumerable<User>> GetAllAsync();
     Task<User> AddAsync(User user);

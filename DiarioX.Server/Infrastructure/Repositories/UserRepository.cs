@@ -18,6 +18,13 @@ public class UserRepository : BaseRepository<User>, IUserRepository
             .FirstOrDefaultAsync(u => u.Id == id);
     }
 
+    public async Task<User?> GetByCpfAsync(string cpf)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => EF.Functions.ILike(u.Cpf, cpf));
+    }
+
     public async Task<User?> GetByEmailOrCpfAsync(string login)
     {
         return await _dbSet

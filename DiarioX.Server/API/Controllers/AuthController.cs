@@ -25,4 +25,26 @@ public class AuthController : ControllerBase
 
         return Ok(response);
     }
+
+    [HttpPost("first-access/validate")]
+    public async Task<IActionResult> ValidateFirstAccess([FromBody] FirstAccessValidationRequest request)
+    {
+        var response = await _authService.ValidateFirstAccessAsync(request);
+
+        if (!response.Success)
+            return Unauthorized(new { message = response.Message });
+
+        return Ok(response);
+    }
+
+    [HttpPost("first-access/activate")]
+    public async Task<IActionResult> ActivateFirstAccess([FromBody] FirstAccessActivationRequest request)
+    {
+        var response = await _authService.ActivateFirstAccessAsync(request);
+
+        if (!response.Success)
+            return BadRequest(new { message = response.Message });
+
+        return Ok(response);
+    }
 }

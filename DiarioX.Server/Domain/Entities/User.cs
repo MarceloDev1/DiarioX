@@ -9,6 +9,7 @@ public class User
     public int Id { get; set; }
     public string Email { get; set; } = string.Empty;
     public string Cpf { get; set; } = string.Empty;
+    public DateTime? DataNascimento { get; set; }
     public string SenhaHash { get; set; } = string.Empty;
     public string Status { get; set; } = StatusAtivo;
     public DateTime? UltimoAcesso { get; set; }

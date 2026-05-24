@@ -14,6 +14,7 @@ namespace DiarioX.Server.Application.Services;
 public class AuthService : IAuthService
 {
     private static readonly Regex NonDigits = new("\\D", RegexOptions.Compiled);
+    private static readonly Regex PasswordPolicy = new("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,}$", RegexOptions.Compiled);
 
     private readonly IUserRepository _userRepository;
     private readonly IConfiguration _configuration;
@@ -50,6 +51,60 @@ public class AuthService : IAuthService
 
         var token = GenerateJwtToken(user.Email);
         return token;
+    }
+
+    public async Task<FirstAccessOperationResponse> ValidateFirstAccessAsync(FirstAccessValidationRequest request)
+    {
+        var normalizedCpf = NonDigits.Replace(request.Cpf ?? string.Empty, string.Empty);
+        if (!IsValidCpf(normalizedCpf))
+            return new FirstAccessOperationResponse(false, "CPF invalido.");
+
+        if (!request.BirthDate.HasValue)
+            return new FirstAccessOperationResponse(false, "Data de nascimento obrigatoria.");
+
+        var user = await _userRepository.GetByCpfAsync(normalizedCpf);
+        if (user is null)
+            return new FirstAccessOperationResponse(false, "Dados institucionais nao encontrados.");
+
+        if (!user.DataNascimento.HasValue || user.DataNascimento.Value.Date != request.BirthDate.Value.Date)
+            return new FirstAccessOperationResponse(false, "Dados institucionais nao encontrados.");
+
+        if (user.Status == User.StatusBloqueado)
+            return new FirstAccessOperationResponse(false, "Conta bloqueada. Entre em contato com o suporte.");
+
+        return new FirstAccessOperationResponse(true, "Dados institucionais validados com sucesso.");
+    }
+
+    public async Task<FirstAccessOperationResponse> ActivateFirstAccessAsync(FirstAccessActivationRequest request)
+    {
+        var validationResult = await ValidateFirstAccessAsync(request);
+        if (!validationResult.Success)
+            return validationResult;
+
+        var normalizedCpf = NonDigits.Replace(request.Cpf ?? string.Empty, string.Empty);
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+
+        if (!IsValidEmail(normalizedEmail))
+            return new FirstAccessOperationResponse(false, "E-mail invalido.");
+
+        if (string.IsNullOrWhiteSpace(request.Password) || !PasswordPolicy.IsMatch(request.Password))
+            return new FirstAccessOperationResponse(false, "Senha fora da politica de seguranca.");
+
+        var currentUser = await _userRepository.GetByCpfAsync(normalizedCpf);
+        if (currentUser is null)
+            return new FirstAccessOperationResponse(false, "Usuario nao encontrado para ativacao.");
+
+        var userByEmail = await _userRepository.GetByEmailOrCpfAsync(normalizedEmail);
+        if (userByEmail is not null && userByEmail.Cpf != normalizedCpf)
+            return new FirstAccessOperationResponse(false, "Este e-mail ja esta em uso.");
+
+        currentUser.Email = normalizedEmail;
+        currentUser.SetPassword(request.Password);
+        currentUser.Status = User.StatusAtivo;
+
+        await _userRepository.UpdateAsync(currentUser);
+
+        return new FirstAccessOperationResponse(true, "Conta ativada com sucesso.");
     }
 
     private LoginResponse GenerateJwtToken(string email)

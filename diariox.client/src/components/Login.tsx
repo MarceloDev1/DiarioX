@@ -165,7 +165,7 @@ function Login({ onLogin }: LoginProps) {
                 body: JSON.stringify(payload),
             });
 
-            if (response.ok || response.status === 404) {
+            if (response.ok) {
                 setFirstAccessStep('activate');
                 return;
             }
@@ -223,7 +223,7 @@ function Login({ onLogin }: LoginProps) {
                 body: JSON.stringify(payload),
             });
 
-            if (response.ok || response.status === 404) {
+            if (response.ok) {
                 setFirstAccessStep('success');
                 setFirstAccessSuccess('Conta ativada com sucesso! Agora faca seu primeiro login.');
                 setTimeout(() => {
