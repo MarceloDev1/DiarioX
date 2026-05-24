@@ -12,7 +12,7 @@
     border-radius: 12px;
     padding: 2.5rem 2rem;
     width: 100%;
-    max-width: 380px;
+    max-width: 440px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
@@ -37,6 +37,30 @@
     flex-direction: column;
     gap: 1.25rem;
 }
+
+.first-access-progress {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+    .first-access-progress span {
+        border: 1px solid #c7d2fe;
+        background: #eef2ff;
+        color: #475569;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-align: center;
+        padding: 0.35rem 0.5rem;
+    }
+
+        .first-access-progress span.active {
+            background: #0f3460;
+            color: #ffffff;
+            border-color: #0f3460;
+        }
 
 .form-group {
     display: flex;
@@ -129,6 +153,28 @@
         cursor: not-allowed;
     }
 
+.secondary-button {
+    padding: 0.62rem;
+    background: #ffffff;
+    color: #0f3460;
+    border: 1px solid #93a4bc;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+    .secondary-button:hover:not(:disabled) {
+        background: #f8fafc;
+    }
+
+    .secondary-button:disabled {
+        color: #9ca3af;
+        border-color: #d1d5db;
+        cursor: not-allowed;
+    }
+
 .first-access {
     text-align: center;
     font-size: 0.85rem;
@@ -150,3 +196,25 @@
         color: #1e4a76;
         text-decoration: underline;
     }
+
+.first-access-success {
+    color: #166534;
+    font-size: 0.92rem;
+    font-weight: 600;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 0.8rem 0.9rem;
+    text-align: center;
+}
+
+@media (max-width: 520px) {
+    .login-card {
+        padding: 1.6rem 1.2rem;
+        max-width: 100%;
+    }
+
+    .first-access-progress {
+        grid-template-columns: 1fr;
+    }
+}
