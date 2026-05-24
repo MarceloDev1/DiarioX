@@ -57,7 +57,7 @@ public class EscolaConfiguration : IEntityTypeConfiguration<Escola>
 
         builder.Property(x => x.DiretorId)
             .HasColumnName("diretor_id")
-            .IsRequired();
+            .IsRequired(false);
 
         builder.Property(x => x.Status)
             .HasColumnName("status")

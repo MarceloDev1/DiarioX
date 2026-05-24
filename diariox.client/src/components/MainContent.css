@@ -25,6 +25,19 @@
     margin-top: 0.35rem;
 }
 
+.feedback-message {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.feedback-error {
+    background: #fff1f3;
+    color: #b4233a;
+    border: 1px solid #f0c2cb;
+}
+
 .secondary-button {
     background: transparent;
     color: #0f3460;
@@ -89,6 +102,11 @@
         cursor: pointer;
         transition: background 0.2s;
         margin-top: 0.5rem;
+    }
+
+    .cadastro-form button:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
     }
 
         .cadastro-form button:hover {

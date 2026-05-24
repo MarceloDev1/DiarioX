@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import './MainContent.css';
 
 type EscolaStatus = 'ATIVO' | 'INATIVO';
@@ -37,6 +37,37 @@ function MainContent({ page }: MainContentProps) {
     const [escolas, setEscolas] = useState<Escola[]>([]);
     const [form, setForm] = useState<EscolaFormState>(emptyEscolaForm);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (page !== 'escolas') {
+            return;
+        }
+
+        void loadEscolas();
+    }, [page]);
+
+    const loadEscolas = async () => {
+        setIsLoading(true);
+        setErrorMessage(null);
+
+        try {
+            const response = await fetch('/api/escolas');
+            if (!response.ok) {
+                throw new Error(await readApiError(response));
+            }
+
+            const data = (await response.json()) as Escola[];
+            setEscolas(data);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Falha ao carregar escolas.';
+            setErrorMessage(message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = event.target;
@@ -52,25 +83,46 @@ function MainContent({ page }: MainContentProps) {
         setEditingId(null);
     };
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        const escolaToSave: Escola = {
-            ...form,
-            id: editingId ?? Date.now(),
-        };
+        setIsSaving(true);
+        setErrorMessage(null);
 
-        if (editingId !== null) {
-            setEscolas((currentEscolas) =>
-                currentEscolas.map((escola) =>
-                    escola.id === editingId ? escolaToSave : escola
-                )
-            );
-        } else {
-            setEscolas((currentEscolas) => [...currentEscolas, escolaToSave]);
+        try {
+            const isEditing = editingId !== null;
+            const endpoint = isEditing ? `/api/escolas/${editingId}` : '/api/escolas';
+            const method = isEditing ? 'PUT' : 'POST';
+
+            const response = await fetch(endpoint, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(form),
+            });
+
+            if (!response.ok) {
+                throw new Error(await readApiError(response));
+            }
+
+            const escola = (await response.json()) as Escola;
+
+            if (isEditing) {
+                setEscolas((currentEscolas) =>
+                    currentEscolas.map((item) => (item.id === escola.id ? escola : item))
+                );
+            } else {
+                setEscolas((currentEscolas) => [...currentEscolas, escola]);
+            }
+
+            clearForm();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Falha ao salvar escola.';
+            setErrorMessage(message);
+        } finally {
+            setIsSaving(false);
         }
-
-        clearForm();
     };
 
     const handleEdit = (escola: Escola) => {
@@ -87,11 +139,35 @@ function MainContent({ page }: MainContentProps) {
         });
     };
 
-    const handleDelete = (id: number) => {
-        setEscolas((currentEscolas) => currentEscolas.filter((escola) => escola.id !== id));
+    const handleDelete = async (id: number) => {
+        setErrorMessage(null);
 
-        if (editingId === id) {
-            clearForm();
+        try {
+            const response = await fetch(`/api/escolas/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error(await readApiError(response));
+            }
+
+            setEscolas((currentEscolas) => currentEscolas.filter((escola) => escola.id !== id));
+
+            if (editingId === id) {
+                clearForm();
+            }
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Falha ao excluir escola.';
+            setErrorMessage(message);
+        }
+    };
+
+    const readApiError = async (response: Response): Promise<string> => {
+        try {
+            const payload = (await response.json()) as { message?: string };
+            return payload.message ?? `Erro ${response.status}`;
+        } catch {
+            return `Erro ${response.status}`;
         }
     };
 
@@ -111,6 +187,8 @@ function MainContent({ page }: MainContentProps) {
                                 </button>
                             ) : null}
                         </div>
+
+                        {errorMessage ? <div className="feedback-message feedback-error">{errorMessage}</div> : null}
 
                         <form className="cadastro-form escola-form" onSubmit={handleSubmit}>
                             <div className="form-grid">
@@ -176,7 +254,7 @@ function MainContent({ page }: MainContentProps) {
                                 </select>
                             </div>
 
-                            <button type="submit">
+                            <button type="submit" disabled={isSaving}>
                                 {editingId !== null ? 'Atualizar Escola' : 'Salvar Escola'}
                             </button>
                         </form>
@@ -186,11 +264,15 @@ function MainContent({ page }: MainContentProps) {
                         <div className="section-header">
                             <div>
                                 <h2>Escolas cadastradas</h2>
-                                <p>Lista local do CRUD para visualização, edição e remoção.</p>
+                                <p>Lista sincronizada com o backend para visualização, edição e remoção.</p>
                             </div>
                         </div>
 
-                        {escolas.length > 0 ? (
+                        {isLoading ? (
+                            <div className="empty-state">
+                                <strong>Carregando escolas...</strong>
+                            </div>
+                        ) : escolas.length > 0 ? (
                             <div className="table-responsive">
                                 <table className="data-table">
                                     <thead>
