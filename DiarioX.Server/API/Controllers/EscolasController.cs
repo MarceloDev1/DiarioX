@@ -68,6 +68,7 @@ public class EscolasController : ControllerBase
         {
             EscolaResultError.NotFound => NotFound(new { message = result.Message }),
             EscolaResultError.Conflict => Conflict(new { message = result.Message }),
+            EscolaResultError.UserNotFound => UnprocessableEntity(new { message = result.Message }),
             _ => BadRequest(new { message = result.Message })
         };
     }

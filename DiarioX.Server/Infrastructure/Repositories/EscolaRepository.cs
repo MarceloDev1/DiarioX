@@ -15,6 +15,7 @@ public class EscolaRepository : BaseRepository<Escola>, IEscolaRepository
     {
         return await _dbSet
             .AsNoTracking()
+            .Include(e => e.Diretor)
             .FirstOrDefaultAsync(e => e.Id == id);
     }
 
@@ -22,6 +23,7 @@ public class EscolaRepository : BaseRepository<Escola>, IEscolaRepository
     {
         return await _dbSet
             .AsNoTracking()
+            .Include(e => e.Diretor)
             .OrderBy(e => e.Nome)
             .ToListAsync();
     }

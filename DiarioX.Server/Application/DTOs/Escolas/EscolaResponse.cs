@@ -10,5 +10,5 @@ public record EscolaResponse(
     string Municipio,
     string EnderecoCompleto,
     string Status,
-    int? DiretorId
+    string? CpfDiretor
 );

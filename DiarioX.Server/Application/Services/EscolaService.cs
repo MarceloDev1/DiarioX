@@ -12,10 +12,17 @@ public class EscolaService : IEscolaService
     private static readonly Regex NonDigits = new("\\D", RegexOptions.Compiled);
 
     private readonly IEscolaRepository _escolaRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly IUsuarioPerfilRepository _usuarioPerfilRepository;
 
-    public EscolaService(IEscolaRepository escolaRepository)
+    public EscolaService(
+        IEscolaRepository escolaRepository,
+        IUserRepository userRepository,
+        IUsuarioPerfilRepository usuarioPerfilRepository)
     {
         _escolaRepository = escolaRepository;
+        _userRepository = userRepository;
+        _usuarioPerfilRepository = usuarioPerfilRepository;
     }
 
     public async Task<IEnumerable<EscolaResponse>> GetAllAsync()
@@ -37,6 +44,15 @@ public class EscolaService : IEscolaService
         if (!validation.Success)
             return validation;
 
+        int? diretorId = null;
+        if (normalized.CpfDiretor is not null)
+        {
+            var user = await _userRepository.GetByCpfAsync(normalized.CpfDiretor);
+            if (user is null)
+                return new EscolaCommandResult(false, "Nenhum usuario encontrado com o CPF informado.", Error: EscolaResultError.UserNotFound);
+            diretorId = user.Id;
+        }
+
         var escola = new Escola
         {
             CodigoInep = normalized.CodigoInep,
@@ -47,11 +63,16 @@ public class EscolaService : IEscolaService
             Municipio = normalized.Municipio,
             EnderecoCompleto = normalized.EnderecoCompleto,
             Status = normalized.Status,
-            DiretorId = normalized.DiretorId,
+            DiretorId = diretorId,
         };
 
         var created = await _escolaRepository.AddAsync(escola);
-        return new EscolaCommandResult(true, "Escola cadastrada com sucesso.", MapToResponse(created));
+
+        if (diretorId.HasValue)
+            await AtualizarEscolaNoPerfilAsync(diretorId.Value, created.Id);
+
+        var reloaded = await _escolaRepository.GetByIdAsync(created.Id);
+        return new EscolaCommandResult(true, "Escola cadastrada com sucesso.", MapToResponse(reloaded!));
     }
 
     public async Task<EscolaCommandResult> UpdateAsync(int id, EscolaRequest request)
@@ -65,6 +86,15 @@ public class EscolaService : IEscolaService
         if (!validation.Success)
             return validation;
 
+        int? diretorId = null;
+        if (normalized.CpfDiretor is not null)
+        {
+            var user = await _userRepository.GetByCpfAsync(normalized.CpfDiretor);
+            if (user is null)
+                return new EscolaCommandResult(false, "Nenhum usuario encontrado com o CPF informado.", Error: EscolaResultError.UserNotFound);
+            diretorId = user.Id;
+        }
+
         escola.CodigoInep = normalized.CodigoInep;
         escola.Nome = normalized.Nome;
         escola.Cnpj = normalized.Cnpj;
@@ -73,11 +103,14 @@ public class EscolaService : IEscolaService
         escola.Municipio = normalized.Municipio;
         escola.EnderecoCompleto = normalized.EnderecoCompleto;
         escola.Status = normalized.Status;
-        escola.DiretorId = normalized.DiretorId;
+        escola.DiretorId = diretorId;
 
         await _escolaRepository.UpdateAsync(escola);
-        var updated = await _escolaRepository.GetByIdAsync(id);
 
+        if (diretorId.HasValue)
+            await AtualizarEscolaNoPerfilAsync(diretorId.Value, id);
+
+        var updated = await _escolaRepository.GetByIdAsync(id);
         return new EscolaCommandResult(true, "Escola atualizada com sucesso.", MapToResponse(updated!));
     }
 
@@ -89,6 +122,16 @@ public class EscolaService : IEscolaService
 
         await _escolaRepository.DeleteAsync(id);
         return new EscolaCommandResult(true, "Escola removida com sucesso.");
+    }
+
+    private async Task AtualizarEscolaNoPerfilAsync(int usuarioId, int escolaId)
+    {
+        var perfil = await _usuarioPerfilRepository.GetGlobalByUsuarioIdAsync(usuarioId);
+        if (perfil is not null)
+        {
+            perfil.EscolaId = escolaId;
+            await _usuarioPerfilRepository.UpdateAsync(perfil);
+        }
     }
 
     private async Task<EscolaCommandResult> ValidateRequestAsync(EscolaRequest request, int? excludeId)
@@ -117,6 +160,9 @@ public class EscolaService : IEscolaService
         if (request.Status != Escola.StatusAtivo && request.Status != Escola.StatusInativo)
             return Invalid("Status invalido. Valores permitidos: ATIVO ou INATIVO.");
 
+        if (request.CpfDiretor is not null && request.CpfDiretor.Length != 11)
+            return Invalid("CPF do diretor deve conter 11 digitos.");
+
         var codigoExists = await _escolaRepository.ExistsByCodigoInepAsync(request.CodigoInep, excludeId);
         if (codigoExists)
         {
@@ -131,9 +177,7 @@ public class EscolaService : IEscolaService
 
     private static EscolaRequest NormalizeRequest(EscolaRequest request)
     {
-        var diretorId = request.DiretorId.HasValue && request.DiretorId.Value > 0
-            ? request.DiretorId
-            : null;
+        var rawCpf = NonDigits.Replace(request.CpfDiretor ?? string.Empty, string.Empty);
 
         return new EscolaRequest
         {
@@ -145,7 +189,7 @@ public class EscolaService : IEscolaService
             Municipio = request.Municipio.Trim(),
             EnderecoCompleto = request.EnderecoCompleto.Trim(),
             Status = (request.Status ?? string.Empty).Trim().ToUpperInvariant(),
-            DiretorId = diretorId,
+            CpfDiretor = rawCpf.Length > 0 ? rawCpf : null,
         };
     }
 
@@ -176,6 +220,6 @@ public class EscolaService : IEscolaService
             escola.Municipio,
             escola.EnderecoCompleto,
             escola.Status,
-            escola.DiretorId
+            escola.Diretor?.Cpf
         );
 }

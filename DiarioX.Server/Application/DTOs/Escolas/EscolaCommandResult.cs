@@ -5,7 +5,8 @@ public enum EscolaResultError
     None,
     Validation,
     Conflict,
-    NotFound
+    NotFound,
+    UserNotFound
 }
 
 public record EscolaCommandResult(

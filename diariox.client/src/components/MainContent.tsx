@@ -13,6 +13,7 @@ interface EscolaFormState {
     municipio: string;
     enderecoCompleto: string;
     status: EscolaStatus;
+    cpfDiretor: string;
 }
 
 interface Escola extends EscolaFormState {
@@ -28,6 +29,7 @@ const emptyEscolaForm: EscolaFormState = {
     municipio: '',
     enderecoCompleto: '',
     status: 'ATIVO',
+    cpfDiretor: '',
 };
 
 interface Perfil {
@@ -201,6 +203,7 @@ function MainContent({ page }: MainContentProps) {
             municipio: escola.municipio,
             enderecoCompleto: escola.enderecoCompleto,
             status: escola.status,
+            cpfDiretor: escola.cpfDiretor ?? '',
         });
     };
 
@@ -436,6 +439,14 @@ function MainContent({ page }: MainContentProps) {
                                     <option value="ATIVO">Ativa</option>
                                     <option value="INATIVO">Inativa</option>
                                 </select>
+                                <input
+                                    name="cpfDiretor"
+                                    value={form.cpfDiretor}
+                                    onChange={handleFieldChange}
+                                    type="text"
+                                    placeholder="CPF do Diretor (somente números)"
+                                    maxLength={14}
+                                />
                             </div>
 
                             <button type="submit" disabled={isSaving}>
@@ -464,6 +475,7 @@ function MainContent({ page }: MainContentProps) {
                                             <th>Nome</th>
                                             <th>INEP</th>
                                             <th>Município</th>
+                                            <th>Diretor (CPF)</th>
                                             <th>Status</th>
                                             <th>Ações</th>
                                         </tr>
@@ -474,6 +486,7 @@ function MainContent({ page }: MainContentProps) {
                                                 <td>{escola.nome}</td>
                                                 <td>{escola.codigoInep}</td>
                                                 <td>{escola.municipio}</td>
+                                                <td>{escola.cpfDiretor ? formatCpf(escola.cpfDiretor) : '—'}</td>
                                                 <td>
                                                     <span
                                                         className={`status-pill ${escola.status === 'ATIVO' ? 'status-active' : 'status-inactive'}`}

@@ -10,5 +10,5 @@ public class EscolaRequest
     public string Municipio { get; set; } = string.Empty;
     public string EnderecoCompleto { get; set; } = string.Empty;
     public string Status { get; set; } = "ATIVO";
-    public int? DiretorId { get; set; }
+    public string? CpfDiretor { get; set; }
 }
