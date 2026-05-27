@@ -12,13 +12,17 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Escola> Escolas => Set<Escola>();
+    public DbSet<Perfil> Perfis => Set<Perfil>();
+    public DbSet<UsuarioPerfil> UsuariosPerfis => Set<UsuarioPerfil>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
+
         // Aplicar todas as configurações do assembly
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new EscolaConfiguration());
+        modelBuilder.ApplyConfiguration(new PerfilConfiguration());
+        modelBuilder.ApplyConfiguration(new UsuarioPerfilConfiguration());
     }
 }

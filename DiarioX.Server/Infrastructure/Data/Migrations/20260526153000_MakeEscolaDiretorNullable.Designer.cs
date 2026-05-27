@@ -3,6 +3,7 @@ using System;
 using DiarioX.Server.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DiarioX.Server.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260526153000_MakeEscolaDiretorNullable")]
+    partial class MakeEscolaDiretorNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -108,17 +111,17 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("nome");
-
                     b.Property<string>("Descricao")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("descricao");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("nome");
 
                     b.HasKey("Id");
 
@@ -199,17 +202,17 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("UsuarioId")
+                    b.Property<int?>("EscolaId")
                         .HasColumnType("integer")
-                        .HasColumnName("usuario_id");
+                        .HasColumnName("escola_id");
 
                     b.Property<int>("PerfilId")
                         .HasColumnType("integer")
                         .HasColumnName("perfil_id");
 
-                    b.Property<int?>("EscolaId")
+                    b.Property<int>("UsuarioId")
                         .HasColumnType("integer")
-                        .HasColumnName("escola_id");
+                        .HasColumnName("usuario_id");
 
                     b.HasKey("Id");
 
@@ -218,16 +221,16 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasDatabaseName("IX_usuarios_perfis_global")
                         .HasFilter("escola_id IS NULL");
 
-                    b.HasIndex(new[] { "UsuarioId", "PerfilId", "EscolaId" })
-                        .IsUnique()
-                        .HasDatabaseName("IX_usuarios_perfis_escola")
-                        .HasFilter("escola_id IS NOT NULL");
+                    b.HasIndex("EscolaId")
+                        .HasDatabaseName("IX_usuarios_perfis_escola_id");
 
                     b.HasIndex("PerfilId")
                         .HasDatabaseName("IX_usuarios_perfis_perfil_id");
 
-                    b.HasIndex("EscolaId")
-                        .HasDatabaseName("IX_usuarios_perfis_escola_id");
+                    b.HasIndex(new[] { "UsuarioId", "PerfilId", "EscolaId" })
+                        .IsUnique()
+                        .HasDatabaseName("IX_usuarios_perfis_escola")
+                        .HasFilter("escola_id IS NOT NULL");
 
                     b.ToTable("usuarios_perfis", (string)null);
                 });
@@ -244,11 +247,10 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.UsuarioPerfil", b =>
                 {
-                    b.HasOne("DiarioX.Server.Domain.Entities.User", "Usuario")
+                    b.HasOne("DiarioX.Server.Domain.Entities.Escola", "Escola")
                         .WithMany()
-                        .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("EscolaId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("DiarioX.Server.Domain.Entities.Perfil", "Perfil")
                         .WithMany()
@@ -256,14 +258,15 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DiarioX.Server.Domain.Entities.Escola", "Escola")
+                    b.HasOne("DiarioX.Server.Domain.Entities.User", "Usuario")
                         .WithMany()
-                        .HasForeignKey("EscolaId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.Navigation("Usuario");
-                    b.Navigation("Perfil");
                     b.Navigation("Escola");
+                    b.Navigation("Perfil");
+                    b.Navigation("Usuario");
                 });
 #pragma warning restore 612, 618
         }
