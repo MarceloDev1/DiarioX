@@ -14,6 +14,8 @@ public class AppDbContext : DbContext
     public DbSet<Escola> Escolas => Set<Escola>();
     public DbSet<Perfil> Perfis => Set<Perfil>();
     public DbSet<UsuarioPerfil> UsuariosPerfis => Set<UsuarioPerfil>();
+    public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
+    public DbSet<EmailLog> EmailLogs => Set<EmailLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,5 +26,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new EscolaConfiguration());
         modelBuilder.ApplyConfiguration(new PerfilConfiguration());
         modelBuilder.ApplyConfiguration(new UsuarioPerfilConfiguration());
+        modelBuilder.ApplyConfiguration(new EmailTemplateConfiguration());
+        modelBuilder.ApplyConfiguration(new EmailLogConfiguration());
     }
 }
