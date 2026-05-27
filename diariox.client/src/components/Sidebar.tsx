@@ -9,6 +9,7 @@ function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
     const menuItems = [
         { id: 'home', label: '🏠 Início' },
         { id: 'escolas', label: '🏫 Cadastro de Escolas' },
+        { id: 'usuarios', label: '👤 Cadastro de Usuários' },
     ];
 
     return (

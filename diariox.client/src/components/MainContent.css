@@ -176,6 +176,11 @@
     color: #5b6475;
 }
 
+.status-blocked {
+    background: #fff0f0;
+    color: #991b1b;
+}
+
 .empty-state {
     display: flex;
     flex-direction: column;

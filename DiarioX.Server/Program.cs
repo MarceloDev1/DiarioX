@@ -27,6 +27,7 @@ builder.Services.AddScoped<IEscolaRepository, EscolaRepository>();
 // Dependency Injection - Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEscolaService, EscolaService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
