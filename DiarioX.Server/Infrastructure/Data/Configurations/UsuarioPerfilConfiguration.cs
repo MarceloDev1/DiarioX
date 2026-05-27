@@ -28,7 +28,7 @@ public class UsuarioPerfilConfiguration : IEntityTypeConfiguration<UsuarioPerfil
             .HasColumnName("escola_id");
 
         builder.HasOne(x => x.Usuario)
-            .WithMany()
+            .WithMany(u => u.UsuariosPerfis)
             .HasForeignKey(x => x.UsuarioId)
             .OnDelete(DeleteBehavior.Restrict);
 

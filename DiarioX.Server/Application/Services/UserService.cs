@@ -15,10 +15,17 @@ public class UserService : IUserService
         RegexOptions.Compiled);
 
     private readonly IUserRepository _userRepository;
+    private readonly IPerfilRepository _perfilRepository;
+    private readonly IUsuarioPerfilRepository _usuarioPerfilRepository;
 
-    public UserService(IUserRepository userRepository)
+    public UserService(
+        IUserRepository userRepository,
+        IPerfilRepository perfilRepository,
+        IUsuarioPerfilRepository usuarioPerfilRepository)
     {
         _userRepository = userRepository;
+        _perfilRepository = perfilRepository;
+        _usuarioPerfilRepository = usuarioPerfilRepository;
     }
 
     public async Task<IEnumerable<UserResponse>> GetAllAsync()
@@ -36,6 +43,14 @@ public class UserService : IUserService
     public async Task<UserCommandResult> CreateAsync(UserRequest request)
     {
         var normalized = NormalizeRequest(request);
+
+        if (normalized.PerfilId.HasValue)
+        {
+            var perfil = await _perfilRepository.GetByIdAsync(normalized.PerfilId.Value);
+            if (perfil is null)
+                return Invalid("Perfil nao encontrado.");
+        }
+
         var validation = await ValidateForCreateAsync(normalized);
         if (!validation.Success)
             return validation;
@@ -52,7 +67,19 @@ public class UserService : IUserService
             user.SetPassword(normalized.Senha);
 
         var created = await _userRepository.AddAsync(user);
-        return new UserCommandResult(true, "Usuario cadastrado com sucesso.", MapToResponse(created));
+
+        if (normalized.PerfilId.HasValue)
+        {
+            await _usuarioPerfilRepository.AddAsync(new UsuarioPerfil
+            {
+                UsuarioId = created.Id,
+                PerfilId = normalized.PerfilId.Value,
+                EscolaId = null,
+            });
+        }
+
+        var result = await _userRepository.GetByIdAsync(created.Id);
+        return new UserCommandResult(true, "Usuario cadastrado com sucesso.", MapToResponse(result!));
     }
 
     public async Task<UserCommandResult> UpdateAsync(int id, UserRequest request)
@@ -62,6 +89,14 @@ public class UserService : IUserService
             return new UserCommandResult(false, "Usuario nao encontrado.", Error: UserResultError.NotFound);
 
         var normalized = NormalizeRequest(request);
+
+        if (normalized.PerfilId.HasValue)
+        {
+            var perfil = await _perfilRepository.GetByIdAsync(normalized.PerfilId.Value);
+            if (perfil is null)
+                return Invalid("Perfil nao encontrado.");
+        }
+
         var validation = await ValidateForUpdateAsync(normalized, id);
         if (!validation.Success)
             return validation;
@@ -75,6 +110,26 @@ public class UserService : IUserService
             user.SetPassword(normalized.Senha);
 
         await _userRepository.UpdateAsync(user);
+
+        if (normalized.PerfilId.HasValue)
+        {
+            var existing = await _usuarioPerfilRepository.GetGlobalByUsuarioIdAsync(id);
+            if (existing is null)
+            {
+                await _usuarioPerfilRepository.AddAsync(new UsuarioPerfil
+                {
+                    UsuarioId = id,
+                    PerfilId = normalized.PerfilId.Value,
+                    EscolaId = null,
+                });
+            }
+            else if (existing.PerfilId != normalized.PerfilId.Value)
+            {
+                existing.PerfilId = normalized.PerfilId.Value;
+                await _usuarioPerfilRepository.UpdateAsync(existing);
+            }
+        }
+
         var updated = await _userRepository.GetByIdAsync(id);
         return new UserCommandResult(true, "Usuario atualizado com sucesso.", MapToResponse(updated!));
     }
@@ -161,6 +216,7 @@ public class UserService : IUserService
             DataNascimento = request.DataNascimento,
             Senha = string.IsNullOrWhiteSpace(request.Senha) ? null : request.Senha.Trim(),
             Status = (request.Status ?? string.Empty).Trim().ToUpperInvariant(),
+            PerfilId = request.PerfilId,
         };
     }
 
@@ -207,13 +263,18 @@ public class UserService : IUserService
         => new(false, message, Error: UserResultError.Validation);
 
     private static UserResponse MapToResponse(User user)
-        => new(
+    {
+        var globalPerfil = user.UsuariosPerfis.FirstOrDefault(up => up.EscolaId == null);
+        return new UserResponse(
             user.Id,
             user.Email,
             user.Cpf,
             user.DataNascimento,
             user.Status,
             user.UltimoAcesso,
-            user.CreatedAt
+            user.CreatedAt,
+            globalPerfil?.PerfilId,
+            globalPerfil?.Perfil?.Nome
         );
+    }
 }

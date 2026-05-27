@@ -7,4 +7,5 @@ public class UserRequest
     public DateTime? DataNascimento { get; set; }
     public string? Senha { get; set; }
     public string Status { get; set; } = "ATIVO";
+    public int? PerfilId { get; set; }
 }

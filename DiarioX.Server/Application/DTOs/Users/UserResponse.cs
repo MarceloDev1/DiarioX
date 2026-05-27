@@ -7,5 +7,7 @@ public record UserResponse(
     DateTime? DataNascimento,
     string Status,
     DateTime? UltimoAcesso,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    int? PerfilId,
+    string? PerfilNome
 );

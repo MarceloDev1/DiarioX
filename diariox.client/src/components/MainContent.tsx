@@ -30,12 +30,18 @@ const emptyEscolaForm: EscolaFormState = {
     status: 'ATIVO',
 };
 
+interface Perfil {
+    id: number;
+    nome: string;
+}
+
 interface UsuarioFormState {
     email: string;
     cpf: string;
     dataNascimento: string;
     senha: string;
     status: UsuarioStatus;
+    perfilId: number | null;
 }
 
 interface Usuario {
@@ -46,6 +52,8 @@ interface Usuario {
     status: UsuarioStatus;
     ultimoAcesso: string | null;
     createdAt: string;
+    perfilId: number | null;
+    perfilNome: string | null;
 }
 
 const emptyUsuarioForm: UsuarioFormState = {
@@ -54,6 +62,7 @@ const emptyUsuarioForm: UsuarioFormState = {
     dataNascimento: '',
     senha: '',
     status: 'ATIVO',
+    perfilId: null,
 };
 
 interface MainContentProps {
@@ -75,6 +84,8 @@ function MainContent({ page }: MainContentProps) {
     const [usuariosSaving, setUsuariosSaving] = useState(false);
     const [usuariosError, setUsuariosError] = useState<string | null>(null);
 
+    const [perfis, setPerfis] = useState<Perfil[]>([]);
+
     useEffect(() => {
         if (page !== 'escolas') {
             return;
@@ -89,6 +100,7 @@ function MainContent({ page }: MainContentProps) {
         }
 
         void loadUsuarios();
+        void loadPerfis();
     }, [page]);
 
     const loadEscolas = async () => {
@@ -108,6 +120,17 @@ function MainContent({ page }: MainContentProps) {
             setErrorMessage(message);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const loadPerfis = async () => {
+        try {
+            const response = await fetch('/api/perfis');
+            if (!response.ok) return;
+            const data = (await response.json()) as Perfil[];
+            setPerfis(data);
+        } catch {
+            // silently ignore — perfis are optional context
         }
     };
 
@@ -235,7 +258,11 @@ function MainContent({ page }: MainContentProps) {
 
     const handleUsuarioFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = event.target;
-        setUsuarioForm((current) => ({ ...current, [name]: value }));
+        if (name === 'perfilId') {
+            setUsuarioForm((current) => ({ ...current, perfilId: value ? Number(value) : null }));
+        } else {
+            setUsuarioForm((current) => ({ ...current, [name]: value }));
+        }
     };
 
     const clearUsuarioForm = () => {
@@ -259,6 +286,7 @@ function MainContent({ page }: MainContentProps) {
                 dataNascimento: usuarioForm.dataNascimento || null,
                 senha: usuarioForm.senha || null,
                 status: usuarioForm.status,
+                perfilId: usuarioForm.perfilId,
             };
 
             const response = await fetch(endpoint, {
@@ -296,6 +324,7 @@ function MainContent({ page }: MainContentProps) {
             dataNascimento: usuario.dataNascimento ? usuario.dataNascimento.split('T')[0] : '',
             senha: '',
             status: usuario.status,
+            perfilId: usuario.perfilId,
         });
     };
 
@@ -544,6 +573,18 @@ function MainContent({ page }: MainContentProps) {
                                     <option value="INATIVO">Inativo</option>
                                     <option value="BLOQUEADO">Bloqueado</option>
                                 </select>
+                                <select
+                                    name="perfilId"
+                                    value={usuarioForm.perfilId ?? ''}
+                                    onChange={handleUsuarioFieldChange}
+                                >
+                                    <option value="">Selecione um perfil</option>
+                                    {perfis.map((perfil) => (
+                                        <option key={perfil.id} value={perfil.id}>
+                                            {perfil.nome}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <button type="submit" disabled={usuariosSaving}>
@@ -572,6 +613,7 @@ function MainContent({ page }: MainContentProps) {
                                             <th>E-mail</th>
                                             <th>CPF</th>
                                             <th>Data de Nascimento</th>
+                                            <th>Perfil</th>
                                             <th>Status</th>
                                             <th>Ações</th>
                                         </tr>
@@ -586,6 +628,7 @@ function MainContent({ page }: MainContentProps) {
                                                         ? new Date(usuario.dataNascimento).toLocaleDateString('pt-BR')
                                                         : '—'}
                                                 </td>
+                                                <td>{usuario.perfilNome ?? '—'}</td>
                                                 <td>
                                                     <span
                                                         className={`status-pill ${

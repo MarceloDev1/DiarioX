@@ -15,6 +15,8 @@ public class UserRepository : BaseRepository<User>, IUserRepository
     {
         return await _dbSet
             .AsNoTracking()
+            .Include(u => u.UsuariosPerfis)
+            .ThenInclude(up => up.Perfil)
             .FirstOrDefaultAsync(u => u.Id == id);
     }
 
@@ -38,6 +40,8 @@ public class UserRepository : BaseRepository<User>, IUserRepository
     {
         return await _dbSet
             .AsNoTracking()
+            .Include(u => u.UsuariosPerfis)
+            .ThenInclude(up => up.Perfil)
             .OrderBy(u => u.Email)
             .ToListAsync();
     }

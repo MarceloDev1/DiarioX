@@ -14,6 +14,7 @@ public class User
     public string Status { get; set; } = StatusAtivo;
     public DateTime? UltimoAcesso { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public ICollection<UsuarioPerfil> UsuariosPerfis { get; set; } = new List<UsuarioPerfil>();
 
     public bool VerifyPassword(string password)
     {
