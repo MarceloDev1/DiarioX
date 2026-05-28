@@ -132,7 +132,7 @@ public class AuthService : IAuthService
             return new ForgotPasswordResponse(true, genericMessage);
 
         var user = await _userRepository.GetByEmailOrCpfAsync(login);
-        if (user is null || user.Status != User.StatusAtivo || string.IsNullOrEmpty(user.Email))
+        if (user is null || user.Status != User.StatusAtivo || string.IsNullOrWhiteSpace(user.Email))
             return new ForgotPasswordResponse(true, genericMessage);
 
         await _passwordResetTokenRepository.InvalidatePreviousTokensAsync(user.Id);
@@ -146,7 +146,7 @@ public class AuthService : IAuthService
 
         try
         {
-            await _emailService.SendAsync(user.Email, null, "Redefinição de senha - Diário de Classe", BuildResetEmailHtml(resetUrl));
+            await _emailService.SendAsync(user.Email.Trim(), null, "Redefinição de senha - Diário de Classe", BuildResetEmailHtml(resetUrl));
         }
         catch (Exception ex)
         {
