@@ -168,12 +168,22 @@ function Login({ onLogin }: LoginProps) {
 
         setRecoveryLoading(true);
         try {
-            setRecoverySuccess(
-                'Se o cadastro existir, enviaremos um link de redefinição de senha para o endereço informado.',
-            );
-            setRecoveryIdentifier('');
+            const response = await fetch('/api/auth/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: identifier }),
+            });
+
+            if (response.ok) {
+                setRecoverySuccess(
+                    'Se o cadastro existir, enviaremos um link de redefinição de senha para o endereço informado.',
+                );
+                setRecoveryIdentifier('');
+            } else {
+                setRecoveryError('Não foi possível iniciar a recuperação de senha.');
+            }
         } catch {
-            setRecoveryError('Nao foi possivel iniciar a recuperacao de senha.');
+            setRecoveryError('Erro ao conectar ao servidor.');
         } finally {
             setRecoveryLoading(false);
         }

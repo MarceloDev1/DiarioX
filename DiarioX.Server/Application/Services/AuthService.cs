@@ -1,8 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Mail;
-using System.Text.RegularExpressions;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using DiarioX.Server.Application.DTOs.Auth;
 using DiarioX.Server.Application.Interfaces;
 using DiarioX.Server.Domain.Entities;
@@ -17,12 +18,23 @@ public class AuthService : IAuthService
     private static readonly Regex PasswordPolicy = new("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,}$", RegexOptions.Compiled);
 
     private readonly IUserRepository _userRepository;
+    private readonly IPasswordResetTokenRepository _passwordResetTokenRepository;
+    private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(IUserRepository userRepository, IConfiguration configuration)
+    public AuthService(
+        IUserRepository userRepository,
+        IPasswordResetTokenRepository passwordResetTokenRepository,
+        IEmailService emailService,
+        IConfiguration configuration,
+        ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
+        _passwordResetTokenRepository = passwordResetTokenRepository;
+        _emailService = emailService;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
@@ -106,6 +118,103 @@ public class AuthService : IAuthService
 
         return new FirstAccessOperationResponse(true, "Conta ativada com sucesso.");
     }
+
+    public async Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request)
+    {
+        const string genericMessage = "Se o cadastro existir, enviaremos um link de redefinição de senha.";
+
+        var rawLogin = request.Login.Trim();
+        if (string.IsNullOrWhiteSpace(rawLogin))
+            return new ForgotPasswordResponse(true, genericMessage);
+
+        var login = NormalizeLogin(rawLogin);
+        if (!IsValidLogin(login))
+            return new ForgotPasswordResponse(true, genericMessage);
+
+        var user = await _userRepository.GetByEmailOrCpfAsync(login);
+        if (user is null || user.Status != User.StatusAtivo || string.IsNullOrEmpty(user.Email))
+            return new ForgotPasswordResponse(true, genericMessage);
+
+        await _passwordResetTokenRepository.InvalidatePreviousTokensAsync(user.Id);
+
+        var (plainToken, tokenHash) = GenerateSecureToken();
+        var resetToken = PasswordResetToken.Create(user.Id, tokenHash);
+        await _passwordResetTokenRepository.AddAsync(resetToken);
+
+        var appUrl = _configuration["AppUrl"] ?? "https://localhost:5173";
+        var resetUrl = $"{appUrl}?resetToken={Uri.EscapeDataString(plainToken)}";
+
+        try
+        {
+            await _emailService.SendAsync(user.Email, null, "Redefinição de senha - Diário de Classe", BuildResetEmailHtml(resetUrl));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha ao enviar e-mail de recuperação para {Email}", user.Email);
+        }
+
+        return new ForgotPasswordResponse(true, genericMessage);
+    }
+
+    public async Task<ForgotPasswordResponse> ResetPasswordAsync(ResetPasswordRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.Password))
+            return new ForgotPasswordResponse(false, "Dados inválidos.");
+
+        if (!PasswordPolicy.IsMatch(request.Password))
+            return new ForgotPasswordResponse(false, "Senha fora da política de segurança.");
+
+        var tokenHash = ToHex(SHA256.HashData(Encoding.UTF8.GetBytes(request.Token)));
+        var resetToken = await _passwordResetTokenRepository.GetByTokenHashAsync(tokenHash);
+
+        if (resetToken is null || !resetToken.IsValid())
+            return new ForgotPasswordResponse(false, "Link de redefinição inválido ou expirado.");
+
+        var user = await _userRepository.GetByIdAsync(resetToken.UserId);
+        if (user is null || user.Status != User.StatusAtivo)
+            return new ForgotPasswordResponse(false, "Usuário não encontrado ou inativo.");
+
+        user.SetPassword(request.Password);
+        await _userRepository.UpdateAsync(user);
+
+        resetToken.UsedAt = DateTime.UtcNow;
+        await _passwordResetTokenRepository.UpdateAsync(resetToken);
+
+        return new ForgotPasswordResponse(true, "Senha redefinida com sucesso.");
+    }
+
+    private static (string plainToken, string tokenHash) GenerateSecureToken()
+    {
+        var bytes = new byte[32];
+        RandomNumberGenerator.Fill(bytes);
+        var plainToken = Convert.ToBase64String(bytes)
+            .Replace('+', '-').Replace('/', '_').TrimEnd('=');
+        var tokenHash = ToHex(SHA256.HashData(Encoding.UTF8.GetBytes(plainToken)));
+        return (plainToken, tokenHash);
+    }
+
+    private static string ToHex(byte[] bytes) => Convert.ToHexString(bytes).ToLowerInvariant();
+
+    private static string BuildResetEmailHtml(string resetUrl) => $"""
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head><meta charset="UTF-8"><title>Redefinição de Senha</title></head>
+        <body style="font-family:Arial,sans-serif;background:#f4f4f4;padding:40px">
+          <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;padding:40px">
+            <h2 style="color:#333">Redefinição de Senha</h2>
+            <p>Você solicitou a redefinição de senha no <strong>Diário de Classe</strong>.</p>
+            <p>Clique no botão abaixo para criar uma nova senha. O link é válido por 60 minutos.</p>
+            <a href="{resetUrl}"
+               style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold">
+              Redefinir Senha
+            </a>
+            <p style="color:#888;font-size:13px;margin-top:24px">
+              Se você não solicitou esta redefinição, ignore este e-mail.
+            </p>
+          </div>
+        </body>
+        </html>
+        """;
 
     private LoginResponse GenerateJwtToken(string email)
     {
