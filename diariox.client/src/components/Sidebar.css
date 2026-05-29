@@ -95,6 +95,38 @@
         border-left: 4px solid #ffd966;
     }
 
+.sidebar-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-chevron {
+    font-size: 1.1rem;
+    transition: transform 0.2s;
+    display: inline-block;
+    line-height: 1;
+}
+
+    .sidebar-chevron.open {
+        transform: rotate(90deg);
+    }
+
+.sidebar-submenu {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-subitem {
+    padding-left: 2.5rem;
+    font-size: 0.95rem;
+    color: #b8c8e8;
+}
+
+    .sidebar-subitem.active {
+        border-left-color: #a0b8d8;
+    }
+
 .sidebar-footer {
     padding: 1rem;
     border-top: 1px solid #2c4c7c;
