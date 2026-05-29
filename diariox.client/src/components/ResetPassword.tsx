@@ -1,13 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import './Login.css';
+import { validatePassword } from '../utils/validators';
 
 interface ResetPasswordProps {
     token: string;
     onSuccess: () => void;
-}
-
-function validatePassword(password: string) {
-    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(password);
 }
 
 function ResetPassword({ token, onSuccess }: ResetPasswordProps) {
@@ -102,12 +99,7 @@ function ResetPassword({ token, onSuccess }: ResetPasswordProps) {
                             {loading ? 'Salvando...' : 'Salvar nova senha'}
                         </button>
 
-                        <button
-                            type="button"
-                            className="secondary-button"
-                            onClick={onSuccess}
-                            disabled={loading}
-                        >
+                        <button type="button" className="secondary-button" onClick={onSuccess} disabled={loading}>
                             Voltar para login
                         </button>
                     </form>
