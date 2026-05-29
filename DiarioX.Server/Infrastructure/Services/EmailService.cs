@@ -6,15 +6,61 @@ using MimeKit.Utils;
 
 namespace DiarioX.Server.Infrastructure.Services;
 
+public interface IEmailSmtpClient : IAsyncDisposable
+{
+    Task ConnectAsync(string host, int port, SecureSocketOptions options);
+    Task AuthenticateAsync(string username, string password);
+    Task SendAsync(MimeMessage message);
+    Task DisconnectAsync(bool quit);
+}
+
+public sealed class MailKitEmailSmtpClient : IEmailSmtpClient
+{
+    private readonly SmtpClient _inner;
+
+    public MailKitEmailSmtpClient(SmtpClient inner)
+    {
+        _inner = inner;
+    }
+
+    public Task ConnectAsync(string host, int port, SecureSocketOptions options)
+        => _inner.ConnectAsync(host, port, options);
+
+    public Task AuthenticateAsync(string username, string password)
+        => _inner.AuthenticateAsync(username, password);
+
+    public Task SendAsync(MimeMessage message)
+        => _inner.SendAsync(message);
+
+    public Task DisconnectAsync(bool quit)
+        => _inner.DisconnectAsync(quit);
+
+    public ValueTask DisposeAsync()
+    {
+        _inner.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}
+
 public class EmailService : IEmailService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<EmailService> _logger;
+    private readonly Func<IEmailSmtpClient> _smtpClientFactory;
 
     public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
+        : this(configuration, logger, () => new MailKitEmailSmtpClient(new SmtpClient()))
+    {
+    }
+
+    public EmailService(
+        IConfiguration configuration,
+        ILogger<EmailService> logger,
+        Func<IEmailSmtpClient> smtpClientFactory)
     {
         _configuration = configuration;
         _logger = logger;
+        _smtpClientFactory = smtpClientFactory;
     }
 
     public async Task SendAsync(string toEmail, string? toName, string subject, string htmlBody)
@@ -40,7 +86,7 @@ public class EmailService : IEmailService
 
         try
         {
-            using var client = new SmtpClient();
+            await using var client = _smtpClientFactory();
             await client.ConnectAsync(host, port, SecureSocketOptions.None);
             await client.AuthenticateAsync(username, password);
             await client.SendAsync(message);
