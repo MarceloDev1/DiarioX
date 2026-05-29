@@ -6,42 +6,6 @@ using MimeKit.Utils;
 
 namespace DiarioX.Server.Infrastructure.Services;
 
-public interface IEmailSmtpClient : IAsyncDisposable
-{
-    Task ConnectAsync(string host, int port, SecureSocketOptions options);
-    Task AuthenticateAsync(string username, string password);
-    Task SendAsync(MimeMessage message);
-    Task DisconnectAsync(bool quit);
-}
-
-public sealed class MailKitEmailSmtpClient : IEmailSmtpClient
-{
-    private readonly SmtpClient _inner;
-
-    public MailKitEmailSmtpClient(SmtpClient inner)
-    {
-        _inner = inner;
-    }
-
-    public Task ConnectAsync(string host, int port, SecureSocketOptions options)
-        => _inner.ConnectAsync(host, port, options);
-
-    public Task AuthenticateAsync(string username, string password)
-        => _inner.AuthenticateAsync(username, password);
-
-    public Task SendAsync(MimeMessage message)
-        => _inner.SendAsync(message);
-
-    public Task DisconnectAsync(bool quit)
-        => _inner.DisconnectAsync(quit);
-
-    public ValueTask DisposeAsync()
-    {
-        _inner.Dispose();
-        return ValueTask.CompletedTask;
-    }
-}
-
 public class EmailService : IEmailService
 {
     private readonly IConfiguration _configuration;
@@ -49,14 +13,11 @@ public class EmailService : IEmailService
     private readonly Func<IEmailSmtpClient> _smtpClientFactory;
 
     public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
-        : this(configuration, logger, () => new MailKitEmailSmtpClient(new SmtpClient()))
+        : this(configuration, logger, () => new MailKitSmtpClientAdapter())
     {
     }
 
-    public EmailService(
-        IConfiguration configuration,
-        ILogger<EmailService> logger,
-        Func<IEmailSmtpClient> smtpClientFactory)
+    public EmailService(IConfiguration configuration, ILogger<EmailService> logger, Func<IEmailSmtpClient> smtpClientFactory)
     {
         _configuration = configuration;
         _logger = logger;
@@ -114,5 +75,28 @@ public class EmailService : IEmailService
     {
         var value = section[key]?.Trim();
         return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
+
+    private sealed class MailKitSmtpClientAdapter : IEmailSmtpClient
+    {
+        private readonly SmtpClient _client = new();
+
+        public Task ConnectAsync(string host, int port, SecureSocketOptions options)
+            => _client.ConnectAsync(host, port, options);
+
+        public Task AuthenticateAsync(string username, string password)
+            => _client.AuthenticateAsync(username, password);
+
+        public Task SendAsync(MimeMessage message)
+            => _client.SendAsync(message);
+
+        public Task DisconnectAsync(bool quit)
+            => _client.DisconnectAsync(quit);
+
+        public ValueTask DisposeAsync()
+        {
+            _client.Dispose();
+            return ValueTask.CompletedTask;
+        }
     }
 }
