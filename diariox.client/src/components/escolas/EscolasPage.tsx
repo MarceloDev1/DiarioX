@@ -39,7 +39,9 @@ const emptyEscolaForm: EscolaFormState = {
 
 function EscolasPage() {
     const { items: escolas, isLoading, isSaving, error, load, save, remove } = useCrudData<Escola>('/api/escolas');
-    const { form, editingId, handleFieldChange, startEdit, clear } = useCrudForm(emptyEscolaForm);
+    const { form, editingId, handleFieldChange, startEdit, clear } = useCrudForm<EscolaFormState & Record<string, unknown>>(
+        emptyEscolaForm as EscolaFormState & Record<string, unknown>
+    );
 
     const [view, setView] = useState<View>('list');
 
@@ -133,18 +135,45 @@ function EscolasPage() {
 
                     <form className="cadastro-form escola-form" onSubmit={handleSubmit}>
                         <div className="form-grid">
-                            <input name="codigoInep" value={form.codigoInep} onChange={handleFieldChange} type="text" placeholder="Código INEP" required />
-                            <input name="nome" value={form.nome} onChange={handleFieldChange} type="text" placeholder="Nome da escola" required />
-                            <input name="cnpj" value={form.cnpj} onChange={handleFieldChange} type="text" placeholder="CNPJ" required />
-                            <input name="telefone" value={form.telefone} onChange={handleFieldChange} type="text" placeholder="Telefone" required />
-                            <input name="emailInstitucional" value={form.emailInstitucional} onChange={handleFieldChange} type="email" placeholder="E-mail institucional" required />
-                            <input name="municipio" value={form.municipio} onChange={handleFieldChange} type="text" placeholder="Município" required />
-                            <input name="enderecoCompleto" value={form.enderecoCompleto} onChange={handleFieldChange} type="text" placeholder="Endereço completo" required />
-                            <select name="status" value={form.status} onChange={handleFieldChange}>
-                                <option value="ATIVO">Ativa</option>
-                                <option value="INATIVO">Inativa</option>
-                            </select>
-                            <input name="cpfDiretor" value={form.cpfDiretor} onChange={handleFieldChange} type="text" placeholder="CPF do Diretor (somente números)" maxLength={14} />
+                            <div className="form-field">
+                                <label htmlFor="escola-codigoInep">Código INEP</label>
+                                <input id="escola-codigoInep" name="codigoInep" value={form.codigoInep} onChange={handleFieldChange} type="text" required />
+                            </div>
+                            <div className="form-field">
+                                <label htmlFor="escola-nome">Nome da escola</label>
+                                <input id="escola-nome" name="nome" value={form.nome} onChange={handleFieldChange} type="text" required />
+                            </div>
+                            <div className="form-field">
+                                <label htmlFor="escola-cnpj">CNPJ</label>
+                                <input id="escola-cnpj" name="cnpj" value={form.cnpj} onChange={handleFieldChange} type="text" required />
+                            </div>
+                            <div className="form-field">
+                                <label htmlFor="escola-telefone">Telefone</label>
+                                <input id="escola-telefone" name="telefone" value={form.telefone} onChange={handleFieldChange} type="text" required />
+                            </div>
+                            <div className="form-field">
+                                <label htmlFor="escola-emailInstitucional">E-mail institucional</label>
+                                <input id="escola-emailInstitucional" name="emailInstitucional" value={form.emailInstitucional} onChange={handleFieldChange} type="email" required />
+                            </div>
+                            <div className="form-field">
+                                <label htmlFor="escola-municipio">Município</label>
+                                <input id="escola-municipio" name="municipio" value={form.municipio} onChange={handleFieldChange} type="text" required />
+                            </div>
+                            <div className="form-field">
+                                <label htmlFor="escola-enderecoCompleto">Endereço completo</label>
+                                <input id="escola-enderecoCompleto" name="enderecoCompleto" value={form.enderecoCompleto} onChange={handleFieldChange} type="text" required />
+                            </div>
+                            <div className="form-field">
+                                <label htmlFor="escola-status">Status</label>
+                                <select id="escola-status" name="status" value={form.status} onChange={handleFieldChange}>
+                                    <option value="ATIVO">Ativa</option>
+                                    <option value="INATIVO">Inativa</option>
+                                </select>
+                            </div>
+                            <div className="form-field">
+                                <label htmlFor="escola-cpfDiretor">CPF do diretor</label>
+                                <input id="escola-cpfDiretor" name="cpfDiretor" value={form.cpfDiretor} onChange={handleFieldChange} type="text" maxLength={14} />
+                            </div>
                         </div>
                         <div className="form-actions">
                             <button type="submit" disabled={isSaving}>
@@ -174,27 +203,36 @@ function EscolasPage() {
                 </div>
 
                 <form className="filter-bar" onSubmit={handleConsultar}>
-                    <input
-                        type="text"
-                        placeholder="Nome"
-                        value={filterNome}
-                        onChange={e => setFilterNome(e.target.value)}
-                        className="filter-input"
-                    />
-                    <input
-                        type="text"
-                        placeholder="CNPJ"
-                        value={filterCnpj}
-                        onChange={e => setFilterCnpj(e.target.value)}
-                        className="filter-input"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Código INEP"
-                        value={filterInep}
-                        onChange={e => setFilterInep(e.target.value)}
-                        className="filter-input"
-                    />
+                    <div className="filter-field">
+                        <label htmlFor="filtro-nome">Nome</label>
+                        <input
+                            id="filtro-nome"
+                            type="text"
+                            value={filterNome}
+                            onChange={e => setFilterNome(e.target.value)}
+                            className="filter-input"
+                        />
+                    </div>
+                    <div className="filter-field">
+                        <label htmlFor="filtro-cnpj">CNPJ</label>
+                        <input
+                            id="filtro-cnpj"
+                            type="text"
+                            value={filterCnpj}
+                            onChange={e => setFilterCnpj(e.target.value)}
+                            className="filter-input"
+                        />
+                    </div>
+                    <div className="filter-field">
+                        <label htmlFor="filtro-inep">Código INEP</label>
+                        <input
+                            id="filtro-inep"
+                            type="text"
+                            value={filterInep}
+                            onChange={e => setFilterInep(e.target.value)}
+                            className="filter-input"
+                        />
+                    </div>
                     <button type="submit" className="filter-button">Consultar</button>
                     <button type="button" className="secondary-button" onClick={handleLimparFiltros}>Limpar</button>
                 </form>

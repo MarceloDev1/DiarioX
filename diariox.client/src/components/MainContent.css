@@ -77,6 +77,18 @@
     gap: 1rem;
 }
 
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.form-field label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2f3c53;
+}
+
     .cadastro-form input {
         padding: 0.7rem;
         border: 1px solid #ccc;
@@ -219,7 +231,7 @@
     display: flex;
     gap: 0.75rem;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-end;
     margin-bottom: 1.25rem;
     padding: 1rem;
     background: #f7fafc;
@@ -227,9 +239,21 @@
     border-radius: 8px;
 }
 
-.filter-input {
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
     flex: 1;
     min-width: 140px;
+}
+
+.filter-field label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2f3c53;
+}
+
+.filter-input {
     padding: 0.6rem 0.75rem;
     border: 1px solid #ccc;
     border-radius: 6px;
@@ -264,6 +288,10 @@
     .filter-bar {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .filter-field {
+        width: 100%;
     }
 
     .filter-input {
