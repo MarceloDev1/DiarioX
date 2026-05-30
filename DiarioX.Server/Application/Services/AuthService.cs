@@ -142,7 +142,7 @@ public class AuthService : IAuthService
         await _passwordResetTokenRepository.AddAsync(resetToken);
 
         var appUrl = _configuration["AppUrl"] ?? "https://localhost:5173";
-        var resetUrl = $"{appUrl}?resetToken={Uri.EscapeDataString(plainToken)}";
+        var resetUrl = $"{appUrl}/redefinir-senha?token={Uri.EscapeDataString(plainToken)}";
 
         try
         {
@@ -170,7 +170,7 @@ public class AuthService : IAuthService
         if (resetToken is null || !resetToken.IsValid())
             return new ForgotPasswordResponse(false, "Link de redefinição inválido ou expirado.");
 
-        var user = await _userRepository.GetByIdAsync(resetToken.UserId);
+        var user = resetToken.User ?? await _userRepository.GetByIdAsync(resetToken.UserId);
         if (user is null || user.Status != User.StatusAtivo)
             return new ForgotPasswordResponse(false, "Usuário não encontrado ou inativo.");
 

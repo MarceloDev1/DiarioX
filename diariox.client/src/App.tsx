@@ -12,7 +12,8 @@ function App() {
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        const token = params.get('resetToken');
+        const isResetRoute = window.location.pathname === '/redefinir-senha';
+        const token = isResetRoute ? params.get('token') : null;
         if (token) setResetToken(token);
     }, []);
 
