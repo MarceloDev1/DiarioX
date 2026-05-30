@@ -200,7 +200,7 @@ public class AuthServiceTests
             "usuario@x.com",
             null,
             It.Is<string>(s => s.Contains("Redefinição de senha")),
-            It.Is<string>(b => b.Contains("resetToken="))), Times.Once);
+            It.Is<string>(b => b.Contains("token="))), Times.Once);
     }
 
     [Fact]

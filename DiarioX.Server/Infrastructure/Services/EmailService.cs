@@ -13,7 +13,7 @@ public class EmailService : IEmailService
     private readonly Func<IEmailSmtpClient> _smtpClientFactory;
 
     public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
-        : this(configuration, logger, () => new MailKitSmtpClientAdapter())
+        : this(configuration, logger, () => new MailKitEmailSmtpClient(new SmtpClient()))
     {
     }
 
@@ -75,28 +75,5 @@ public class EmailService : IEmailService
     {
         var value = section[key]?.Trim();
         return string.IsNullOrWhiteSpace(value) ? null : value;
-    }
-
-    private sealed class MailKitSmtpClientAdapter : IEmailSmtpClient
-    {
-        private readonly SmtpClient _client = new();
-
-        public Task ConnectAsync(string host, int port, SecureSocketOptions options)
-            => _client.ConnectAsync(host, port, options);
-
-        public Task AuthenticateAsync(string username, string password)
-            => _client.AuthenticateAsync(username, password);
-
-        public Task SendAsync(MimeMessage message)
-            => _client.SendAsync(message);
-
-        public Task DisconnectAsync(bool quit)
-            => _client.DisconnectAsync(quit);
-
-        public ValueTask DisposeAsync()
-        {
-            _client.Dispose();
-            return ValueTask.CompletedTask;
-        }
     }
 }
