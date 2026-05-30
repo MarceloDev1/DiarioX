@@ -184,16 +184,6 @@
     transition: background 0.2s, color 0.2s;
 }
 
-    .secondary-button:hover:not(:disabled) {
-        background: #f8fafc;
-    }
-
-    .secondary-button:disabled {
-        color: #9ca3af;
-        border-color: #d1d5db;
-        cursor: not-allowed;
-    }
-
 .first-access {
     text-align: center;
     font-size: 0.85rem;

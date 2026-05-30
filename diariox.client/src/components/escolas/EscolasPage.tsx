@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
-import { formatCpf } from '../../utils/formatters';
+import { formatCnpj, formatCpf } from '../../utils/formatters';
+import { validateCnpj, validateCpf } from '../../utils/validators';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import StatusPill from '../ui/StatusPill';
 import EmptyState from '../ui/EmptyState';
@@ -39,9 +40,10 @@ const emptyEscolaForm: EscolaFormState = {
 
 function EscolasPage() {
     const { items: escolas, isLoading, isSaving, error, load, save, remove } = useCrudData<Escola>('/api/escolas');
-    const { form, editingId, handleFieldChange, startEdit, clear } = useCrudForm<EscolaFormState & Record<string, unknown>>(
+    const { form, setForm, editingId, handleFieldChange, startEdit, clear } = useCrudForm<EscolaFormState & Record<string, unknown>>(
         emptyEscolaForm as EscolaFormState & Record<string, unknown>
     );
+    const [formError, setFormError] = useState<string | null>(null);
 
     const [view, setView] = useState<View>('list');
 
@@ -72,6 +74,22 @@ function EscolasPage() {
         setAppliedInep(filterInep.trim());
     };
 
+    const handleEscolaFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = event.target;
+
+        if (name === 'cnpj') {
+            setForm((current) => ({ ...current, cnpj: formatCnpj(value) }));
+            return;
+        }
+
+        if (name === 'cpfDiretor') {
+            setForm((current) => ({ ...current, cpfDiretor: formatCpf(value) }));
+            return;
+        }
+
+        handleFieldChange(event);
+    };
+
     const filteredEscolas = escolas.filter(escola => {
         const matchNome = !appliedNome || escola.nome.toLowerCase().includes(appliedNome.toLowerCase());
         const matchCnpj = !appliedCnpj || escola.cnpj.replace(/\D/g, '').includes(appliedCnpj.replace(/\D/g, ''));
@@ -80,11 +98,13 @@ function EscolasPage() {
     });
 
     const handleNovaEscola = () => {
+        setFormError(null);
         clear();
         setView('form');
     };
 
     const handleEdit = (escola: Escola) => {
+        setFormError(null);
         startEdit(escola.id, {
             codigoInep: escola.codigoInep,
             nome: escola.nome,
@@ -101,6 +121,18 @@ function EscolasPage() {
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setFormError(null);
+
+        if (!validateCnpj(form.cnpj)) {
+            setFormError('Informe um CNPJ valido.');
+            return;
+        }
+
+        if (form.cpfDiretor.trim() && !validateCpf(form.cpfDiretor)) {
+            setFormError('Informe um CPF de diretor valido.');
+            return;
+        }
+
         const saved = await save(editingId, form);
         if (saved) {
             clear();
@@ -109,6 +141,7 @@ function EscolasPage() {
     };
 
     const handleCancel = () => {
+        setFormError(null);
         clear();
         setView('list');
     };
@@ -126,12 +159,12 @@ function EscolasPage() {
                             <h2>{editingId ? 'Editar Escola' : 'Nova Escola'}</h2>
                             <p>{editingId ? 'Altere os dados e salve para atualizar.' : 'Preencha os dados para cadastrar uma nova escola.'}</p>
                         </div>
-                        <button type="button" className="secondary-button" onClick={handleCancel}>
+                        <button type="button" className="secondary-button cancel-button" onClick={handleCancel}>
                             Cancelar
                         </button>
                     </div>
 
-                    <FeedbackMessage message={error} />
+                    <FeedbackMessage message={formError ?? error} />
 
                     <form className="cadastro-form escola-form" onSubmit={handleSubmit}>
                         <div className="form-grid">
@@ -145,7 +178,7 @@ function EscolasPage() {
                             </div>
                             <div className="form-field">
                                 <label htmlFor="escola-cnpj">CNPJ</label>
-                                <input id="escola-cnpj" name="cnpj" value={form.cnpj} onChange={handleFieldChange} type="text" required />
+                                <input id="escola-cnpj" name="cnpj" value={form.cnpj} onChange={handleEscolaFieldChange} type="text" required />
                             </div>
                             <div className="form-field">
                                 <label htmlFor="escola-telefone">Telefone</label>
@@ -172,14 +205,20 @@ function EscolasPage() {
                             </div>
                             <div className="form-field">
                                 <label htmlFor="escola-cpfDiretor">CPF do diretor</label>
-                                <input id="escola-cpfDiretor" name="cpfDiretor" value={form.cpfDiretor} onChange={handleFieldChange} type="text" maxLength={14} />
+                                <input id="escola-cpfDiretor" name="cpfDiretor" value={form.cpfDiretor} onChange={handleEscolaFieldChange} type="text" maxLength={14} />
                             </div>
                         </div>
                         <div className="form-actions">
                             <button type="submit" disabled={isSaving}>
                                 {editingId !== null ? 'Atualizar Escola' : 'Salvar Escola'}
                             </button>
-                            <button type="button" className="secondary-button" onClick={clear}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setFormError(null);
+                                    clear();
+                                }}
+                            >
                                 Limpar
                             </button>
                         </div>
@@ -219,7 +258,7 @@ function EscolasPage() {
                             id="filtro-cnpj"
                             type="text"
                             value={filterCnpj}
-                            onChange={e => setFilterCnpj(e.target.value)}
+                            onChange={e => setFilterCnpj(formatCnpj(e.target.value))}
                             className="filter-input"
                         />
                     </div>
@@ -234,7 +273,7 @@ function EscolasPage() {
                         />
                     </div>
                     <button type="submit" className="filter-button">Consultar</button>
-                    <button type="button" className="secondary-button" onClick={handleLimparFiltros}>Limpar</button>
+                    <button type="button" className="filter-button filter-button-static" onClick={handleLimparFiltros}>Limpar</button>
                 </form>
 
                 <FeedbackMessage message={error} />

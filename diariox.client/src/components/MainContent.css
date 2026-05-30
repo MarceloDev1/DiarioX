@@ -49,8 +49,15 @@
     transition: background 0.2s, color 0.2s;
 }
 
-.secondary-button:hover {
-    background: #edf4fb;
+.cancel-button {
+    background: #fff1f3;
+    color: #b4233a;
+    border-color: #f0c2cb;
+}
+
+.cancel-button:hover {
+    background: #fde7eb;
+    color: #9f1f34;
 }
 
     .content-card h2 {
@@ -274,6 +281,10 @@
 
 .filter-button:hover {
     background: #1e4a76;
+}
+
+.filter-button-static:hover {
+    background: #0f3460;
 }
 
 @media (max-width: 820px) {

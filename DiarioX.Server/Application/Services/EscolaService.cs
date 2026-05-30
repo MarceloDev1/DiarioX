@@ -142,8 +142,8 @@ public class EscolaService : IEscolaService
         if (string.IsNullOrWhiteSpace(request.Nome))
             return Invalid("Nome da escola obrigatorio.");
 
-        if (string.IsNullOrWhiteSpace(request.Cnpj) || request.Cnpj.Length != 14)
-            return Invalid("CNPJ deve conter 14 digitos.");
+        if (!IsValidCnpj(request.Cnpj))
+            return Invalid("CNPJ invalido (informe 14 digitos validos).");
 
         if (string.IsNullOrWhiteSpace(request.Telefone))
             return Invalid("Telefone obrigatorio.");
@@ -160,8 +160,8 @@ public class EscolaService : IEscolaService
         if (request.Status != Escola.StatusAtivo && request.Status != Escola.StatusInativo)
             return Invalid("Status invalido. Valores permitidos: ATIVO ou INATIVO.");
 
-        if (request.CpfDiretor is not null && request.CpfDiretor.Length != 11)
-            return Invalid("CPF do diretor deve conter 11 digitos.");
+        if (request.CpfDiretor is not null && !IsValidCpf(request.CpfDiretor))
+            return Invalid("CPF do diretor invalido (informe 11 digitos validos).");
 
         var codigoExists = await _escolaRepository.ExistsByCodigoInepAsync(request.CodigoInep, excludeId);
         if (codigoExists)
@@ -204,6 +204,58 @@ public class EscolaService : IEscolaService
         {
             return false;
         }
+    }
+
+    private static bool IsValidCpf(string cpf)
+    {
+        if (cpf.Length != 11 || cpf.Distinct().Count() == 1)
+            return false;
+
+        var numbers = cpf.Select(c => c - '0').ToArray();
+        var firstDigit = CalculateCpfDigit(numbers, 9, 10);
+        if (numbers[9] != firstDigit) return false;
+
+        var secondDigit = CalculateCpfDigit(numbers, 10, 11);
+        return numbers[10] == secondDigit;
+    }
+
+    private static bool IsValidCnpj(string cnpj)
+    {
+        if (cnpj.Length != 14 || cnpj.Distinct().Count() == 1)
+            return false;
+
+        var numbers = cnpj.Select(c => c - '0').ToArray();
+        var firstDigit = CalculateCnpjDigit(numbers, 12);
+        if (numbers[12] != firstDigit) return false;
+
+        var secondDigit = CalculateCnpjDigit(numbers, 13);
+        return numbers[13] == secondDigit;
+    }
+
+    private static int CalculateCpfDigit(int[] numbers, int length, int weightStart)
+    {
+        var sum = 0;
+        for (var i = 0; i < length; i++)
+            sum += numbers[i] * (weightStart - i);
+
+        var remainder = sum % 11;
+        return remainder < 2 ? 0 : 11 - remainder;
+    }
+
+    private static int CalculateCnpjDigit(int[] numbers, int length)
+    {
+        var sum = 0;
+        var weight = length - 7;
+
+        for (var i = 0; i < length; i++)
+        {
+            sum += numbers[i] * weight;
+            weight--;
+            if (weight < 2) weight = 9;
+        }
+
+        var remainder = sum % 11;
+        return remainder < 2 ? 0 : 11 - remainder;
     }
 
     private static EscolaCommandResult Invalid(string message)

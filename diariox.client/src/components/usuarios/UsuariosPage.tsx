@@ -2,6 +2,7 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
 import { formatCpf } from '../../utils/formatters';
+import { validateCpf, validatePassword } from '../../utils/validators';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import StatusPill from '../ui/StatusPill';
 import EmptyState from '../ui/EmptyState';
@@ -51,6 +52,7 @@ function UsuariosPage() {
     );
     const { items: perfis, load: loadPerfis } = useCrudData<Perfil>('/api/perfis');
     const [view, setView] = useState<View>('list');
+    const [formError, setFormError] = useState<string | null>(null);
 
     const [filterEmail, setFilterEmail] = useState('');
     const [filterCpf, setFilterCpf] = useState('');
@@ -71,12 +73,15 @@ function UsuariosPage() {
         const { name, value } = event.target;
         if (name === 'perfilId') {
             setForm((current) => ({ ...current, perfilId: value ? Number(value) : null }));
+        } else if (name === 'cpf') {
+            setForm((current) => ({ ...current, cpf: formatCpf(value) }));
         } else {
             setForm((current) => ({ ...current, [name]: value }));
         }
     };
 
     const handleEdit = (usuario: Usuario) => {
+        setFormError(null);
         startEdit(usuario.id, {
             email: usuario.email,
             cpf: usuario.cpf,
@@ -89,11 +94,13 @@ function UsuariosPage() {
     };
 
     const handleNovoUsuario = () => {
+        setFormError(null);
         clear();
         setView('form');
     };
 
     const handleCancelar = () => {
+        setFormError(null);
         clear();
         setView('list');
     };
@@ -106,8 +113,31 @@ function UsuariosPage() {
         setAppliedPerfilId(filterPerfilId);
     };
 
+    const handleLimparFiltros = () => {
+        setFilterEmail('');
+        setFilterCpf('');
+        setFilterStatus('');
+        setFilterPerfilId('');
+        setAppliedEmail('');
+        setAppliedCpf('');
+        setAppliedStatus('');
+        setAppliedPerfilId('');
+    };
+
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setFormError(null);
+
+        if (!validateCpf(form.cpf)) {
+            setFormError('Informe um CPF valido.');
+            return;
+        }
+
+        if (form.senha.trim() && !validatePassword(form.senha)) {
+            setFormError('A senha deve ter no minimo 8 caracteres, com letra maiuscula, minuscula, numero e simbolo.');
+            return;
+        }
+
         const body = {
             email: form.email,
             cpf: form.cpf,
@@ -145,12 +175,12 @@ function UsuariosPage() {
                             <h2>{editingId ? 'Editar Usuário' : 'Novo Usuário'}</h2>
                             <p>{editingId ? 'Altere os dados e salve para atualizar.' : 'Preencha os dados para cadastrar um novo usuário.'}</p>
                         </div>
-                        <button type="button" className="secondary-button" onClick={handleCancelar}>
+                        <button type="button" className="secondary-button cancel-button" onClick={handleCancelar}>
                             Cancelar
                         </button>
                     </div>
 
-                    <FeedbackMessage message={error} />
+                    <FeedbackMessage message={formError ?? error} />
 
                     <form className="cadastro-form escola-form" onSubmit={handleSubmit}>
                         <div className="form-grid">
@@ -201,7 +231,14 @@ function UsuariosPage() {
                             <button type="submit" disabled={isSaving}>
                                 {editingId !== null ? 'Atualizar Usuário' : 'Salvar Usuário'}
                             </button>
-                            <button type="button" className="secondary-button" onClick={clear}>
+                            <button
+                                type="button"
+                                
+                                onClick={() => {
+                                    setFormError(null);
+                                    clear();
+                                }}
+                            >
                                 Limpar
                             </button>
                         </div>
@@ -241,7 +278,7 @@ function UsuariosPage() {
                             id="filtro-usuario-cpf"
                             type="text"
                             value={filterCpf}
-                            onChange={e => setFilterCpf(e.target.value)}
+                            onChange={e => setFilterCpf(formatCpf(e.target.value))}
                             className="filter-input"
                         />
                     </div>
@@ -276,6 +313,7 @@ function UsuariosPage() {
                         </select>
                     </div>
                     <button type="submit" className="filter-button">Consultar</button>
+                    <button type="button" className="filter-button filter-button-static" onClick={handleLimparFiltros}>Limpar</button>
                 </form>
 
                 <FeedbackMessage message={error} />
