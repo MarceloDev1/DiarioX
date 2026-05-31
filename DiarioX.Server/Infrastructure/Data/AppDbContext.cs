@@ -19,6 +19,8 @@ public class AppDbContext : DbContext
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
     public DbSet<EmailLog> EmailLogs => Set<EmailLog>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<AnoLetivo> AnosLetivos => Set<AnoLetivo>();
+    public DbSet<PeriodoAvaliativo> PeriodosAvaliativos => Set<PeriodoAvaliativo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -33,5 +35,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new EmailTemplateConfiguration());
         modelBuilder.ApplyConfiguration(new EmailLogConfiguration());
         modelBuilder.ApplyConfiguration(new PasswordResetTokenConfiguration());
+        modelBuilder.ApplyConfiguration(new AnoLetivoConfiguration());
+        modelBuilder.ApplyConfiguration(new PeriodoAvaliativoConfiguration());
     }
 }

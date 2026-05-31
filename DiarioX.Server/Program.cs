@@ -29,6 +29,7 @@ builder.Services.AddScoped<IEtapaEnsinoRepository, EtapaEnsinoRepository>();
 builder.Services.AddScoped<IPerfilRepository, PerfilRepository>();
 builder.Services.AddScoped<IUsuarioPerfilRepository, UsuarioPerfilRepository>();
 builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
+builder.Services.AddScoped<IAnoLetivoRepository, AnoLetivoRepository>();
 
 // Dependency Injection - Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -37,6 +38,7 @@ builder.Services.AddScoped<IModalidadeEnsinoService, ModalidadeEnsinoService>();
 builder.Services.AddScoped<IEtapaEnsinoService, EtapaEnsinoService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IAnoLetivoService, AnoLetivoService>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -3,6 +3,7 @@ import EscolasPage from './escolas/EscolasPage';
 import EtapasEnsinoPage from './etapas-ensino/EtapasEnsinoPage';
 import ModalidadesEnsinoPage from './modalidades-ensino/ModalidadesEnsinoPage';
 import UsuariosPage from './usuarios/UsuariosPage';
+import AnosLetivosPage from './anos-letivos/AnosLetivosPage';
 
 interface MainContentProps {
     page: string;
@@ -16,6 +17,8 @@ function MainContent({ page }: MainContentProps) {
             return <ModalidadesEnsinoPage />;
         case 'etapas-ensino':
             return <EtapasEnsinoPage />;
+        case 'anos-letivos':
+            return <AnosLetivosPage />;
         case 'usuarios':
             return <UsuariosPage />;
         default:
