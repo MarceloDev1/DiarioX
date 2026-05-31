@@ -5,6 +5,6 @@ public record ModalidadeEnsinoResponse(
     string Nome,
     string Sigla,
     string? CodigoMec,
-    string Descricao,
+    string? Descricao,
     string Status
 );

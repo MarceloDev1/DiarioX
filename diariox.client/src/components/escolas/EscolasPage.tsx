@@ -1,7 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
-import { formatCnpj, formatCpf } from '../../utils/formatters';
+import { formatCnpj, formatCpf, formatTelefone } from '../../utils/formatters';
 import { validateCnpj, validateCpf } from '../../utils/validators';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import StatusPill from '../ui/StatusPill';
@@ -79,6 +79,11 @@ function EscolasPage() {
 
         if (name === 'cnpj') {
             setForm((current) => ({ ...current, cnpj: formatCnpj(value) }));
+            return;
+        }
+
+        if (name === 'telefone') {
+            setForm((current) => ({ ...current, telefone: formatTelefone(value) }));
             return;
         }
 
@@ -182,7 +187,7 @@ function EscolasPage() {
                             </div>
                             <div className="form-field">
                                 <label htmlFor="escola-telefone">Telefone</label>
-                                <input id="escola-telefone" name="telefone" value={form.telefone} onChange={handleFieldChange} type="text" required />
+                                <input id="escola-telefone" name="telefone" value={form.telefone} onChange={handleEscolaFieldChange} type="text" maxLength={15} required />
                             </div>
                             <div className="form-field">
                                 <label htmlFor="escola-emailInstitucional">E-mail institucional</label>

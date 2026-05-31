@@ -78,7 +78,7 @@ function ModalidadesEnsinoPage() {
             nome: modalidade.nome,
             sigla: modalidade.sigla,
             codigoMec: modalidade.codigoMec ?? '',
-            descricao: modalidade.descricao,
+            descricao: modalidade.descricao ?? '',
             status: modalidade.status,
         });
         setView('form');
@@ -175,14 +175,13 @@ function ModalidadesEnsinoPage() {
                                 </select>
                             </div>
                             <div className="form-field form-field-full">
-                                <label htmlFor="modalidade-descricao">Descrição</label>
+                                <label htmlFor="modalidade-descricao">Descrição <span className="label-optional">(opcional)</span></label>
                                 <input
                                     id="modalidade-descricao"
                                     name="descricao"
                                     value={form.descricao as string}
                                     onChange={handleFieldChange}
                                     type="text"
-                                    required
                                 />
                             </div>
                         </div>

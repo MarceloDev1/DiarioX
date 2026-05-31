@@ -42,7 +42,7 @@ public class ModalidadeEnsinoConfiguration : IEntityTypeConfiguration<Modalidade
         builder.Property(x => x.Descricao)
             .HasColumnName("descricao")
             .HasMaxLength(500)
-            .IsRequired();
+            .IsRequired(false);
 
         builder.Property(x => x.Status)
             .HasColumnName("status")

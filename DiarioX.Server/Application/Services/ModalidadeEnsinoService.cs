@@ -87,9 +87,6 @@ public class ModalidadeEnsinoService : IModalidadeEnsinoService
         if (string.IsNullOrWhiteSpace(request.Sigla))
             return Invalid("Sigla obrigatoria.");
 
-        if (string.IsNullOrWhiteSpace(request.Descricao))
-            return Invalid("Descricao obrigatoria.");
-
         if (request.Status != ModalidadeEnsino.StatusAtivo && request.Status != ModalidadeEnsino.StatusInativo)
             return Invalid("Status invalido. Valores permitidos: ATIVO ou INATIVO.");
 
@@ -109,7 +106,7 @@ public class ModalidadeEnsinoService : IModalidadeEnsinoService
             Nome = request.Nome.Trim(),
             Sigla = request.Sigla.Trim().ToUpperInvariant(),
             CodigoMec = string.IsNullOrWhiteSpace(request.CodigoMec) ? null : request.CodigoMec.Trim(),
-            Descricao = request.Descricao.Trim(),
+            Descricao = string.IsNullOrWhiteSpace(request.Descricao) ? null : request.Descricao.Trim(),
             Status = (request.Status ?? string.Empty).Trim().ToUpperInvariant(),
         };
     }

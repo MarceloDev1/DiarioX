@@ -85,20 +85,6 @@ public class ModalidadeEnsinoServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_WhenDescricaoMissing_ReturnsValidationError()
-    {
-        var (service, _) = BuildService();
-        var request = BuildValidRequest();
-        request.Descricao = "";
-
-        var result = await service.CreateAsync(request);
-
-        Assert.False(result.Success);
-        Assert.Equal(ModalidadeEnsinoResultError.Validation, result.Error);
-        Assert.Equal("Descricao obrigatoria.", result.Message);
-    }
-
-    [Fact]
     public async Task CreateAsync_WhenStatusInvalid_ReturnsValidationError()
     {
         var (service, _) = BuildService();
