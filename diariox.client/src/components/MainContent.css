@@ -5,6 +5,16 @@
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
 }
 
+.label-optional {
+    font-weight: 400;
+    color: #8a97aa;
+    font-size: 0.8rem;
+}
+
+.form-field-full {
+    grid-column: 1 / -1;
+}
+
 .school-page {
     display: flex;
     flex-direction: column;

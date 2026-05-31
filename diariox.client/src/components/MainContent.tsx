@@ -1,5 +1,6 @@
 import './MainContent.css';
 import EscolasPage from './escolas/EscolasPage';
+import ModalidadesEnsinoPage from './modalidades-ensino/ModalidadesEnsinoPage';
 import UsuariosPage from './usuarios/UsuariosPage';
 
 interface MainContentProps {
@@ -10,6 +11,8 @@ function MainContent({ page }: MainContentProps) {
     switch (page) {
         case 'escolas':
             return <EscolasPage />;
+        case 'modalidades-ensino':
+            return <ModalidadesEnsinoPage />;
         case 'usuarios':
             return <UsuariosPage />;
         default:

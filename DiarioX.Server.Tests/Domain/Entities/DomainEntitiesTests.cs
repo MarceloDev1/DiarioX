@@ -96,6 +96,29 @@ public class DomainEntitiesTests
     }
 
     [Fact]
+    public void ModalidadeEnsino_DefaultStatus_IsAtivo()
+    {
+        var modalidade = new ModalidadeEnsino();
+
+        Assert.Equal(ModalidadeEnsino.StatusAtivo, modalidade.Status);
+    }
+
+    [Fact]
+    public void ModalidadeEnsino_StatusConstants_HaveExpectedValues()
+    {
+        Assert.Equal("ATIVO", ModalidadeEnsino.StatusAtivo);
+        Assert.Equal("INATIVO", ModalidadeEnsino.StatusInativo);
+    }
+
+    [Fact]
+    public void ModalidadeEnsino_CodigoMec_IsNullableByDefault()
+    {
+        var modalidade = new ModalidadeEnsino();
+
+        Assert.Null(modalidade.CodigoMec);
+    }
+
+    [Fact]
     public void UsuarioPerfil_Properties_CanBeAssigned()
     {
         var user = new User { Id = 1, Email = "usuario@x.com", Cpf = "52998224725" };

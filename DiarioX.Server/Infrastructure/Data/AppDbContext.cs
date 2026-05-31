@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Escola> Escolas => Set<Escola>();
+    public DbSet<ModalidadeEnsino> ModalidadesEnsino => Set<ModalidadeEnsino>();
     public DbSet<Perfil> Perfis => Set<Perfil>();
     public DbSet<UsuarioPerfil> UsuariosPerfis => Set<UsuarioPerfil>();
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
@@ -24,6 +25,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new EscolaConfiguration());
+        modelBuilder.ApplyConfiguration(new ModalidadeEnsinoConfiguration());
         modelBuilder.ApplyConfiguration(new PerfilConfiguration());
         modelBuilder.ApplyConfiguration(new UsuarioPerfilConfiguration());
         modelBuilder.ApplyConfiguration(new EmailTemplateConfiguration());
