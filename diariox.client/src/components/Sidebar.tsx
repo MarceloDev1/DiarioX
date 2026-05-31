@@ -9,6 +9,7 @@ interface SidebarProps {
 const cadastroSubItems = [
     { id: 'escolas', label: '🏫 Escolas' },
     { id: 'modalidades-ensino', label: '📚 Modalidades de Ensino' },
+    { id: 'etapas-ensino', label: '📖 Etapas de Ensino' },
     { id: 'usuarios', label: '👤 Usuários' },
 ];
 

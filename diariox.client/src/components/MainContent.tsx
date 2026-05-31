@@ -1,5 +1,6 @@
 import './MainContent.css';
 import EscolasPage from './escolas/EscolasPage';
+import EtapasEnsinoPage from './etapas-ensino/EtapasEnsinoPage';
 import ModalidadesEnsinoPage from './modalidades-ensino/ModalidadesEnsinoPage';
 import UsuariosPage from './usuarios/UsuariosPage';
 
@@ -13,6 +14,8 @@ function MainContent({ page }: MainContentProps) {
             return <EscolasPage />;
         case 'modalidades-ensino':
             return <ModalidadesEnsinoPage />;
+        case 'etapas-ensino':
+            return <EtapasEnsinoPage />;
         case 'usuarios':
             return <UsuariosPage />;
         default:

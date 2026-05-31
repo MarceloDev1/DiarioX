@@ -25,6 +25,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IEscolaRepository, EscolaRepository>();
 builder.Services.AddScoped<IModalidadeEnsinoRepository, ModalidadeEnsinoRepository>();
+builder.Services.AddScoped<IEtapaEnsinoRepository, EtapaEnsinoRepository>();
 builder.Services.AddScoped<IPerfilRepository, PerfilRepository>();
 builder.Services.AddScoped<IUsuarioPerfilRepository, UsuarioPerfilRepository>();
 builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
@@ -33,6 +34,7 @@ builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepo
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEscolaService, EscolaService>();
 builder.Services.AddScoped<IModalidadeEnsinoService, ModalidadeEnsinoService>();
+builder.Services.AddScoped<IEtapaEnsinoService, EtapaEnsinoService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
