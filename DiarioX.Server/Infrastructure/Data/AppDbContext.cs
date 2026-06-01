@@ -21,7 +21,7 @@ public class AppDbContext : DbContext
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<AnoLetivo> AnosLetivos => Set<AnoLetivo>();
     public DbSet<PeriodoAvaliativo> PeriodosAvaliativos => Set<PeriodoAvaliativo>();
-
+    public DbSet<Turma> Turmas => Set<Turma>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -37,5 +37,6 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new PasswordResetTokenConfiguration());
         modelBuilder.ApplyConfiguration(new AnoLetivoConfiguration());
         modelBuilder.ApplyConfiguration(new PeriodoAvaliativoConfiguration());
+        modelBuilder.ApplyConfiguration(new TurmaConfiguration());
     }
 }
