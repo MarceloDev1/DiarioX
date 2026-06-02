@@ -67,7 +67,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
 
     // Seed admin user
     if (!db.Users.Any(u => u.Email == "admin@diariox.local"))

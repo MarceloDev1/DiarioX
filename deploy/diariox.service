@@ -1,0 +1,24 @@
+[Unit]
+Description=DiarioX ASP.NET Core API
+After=network.target postgresql.service
+
+[Service]
+WorkingDirectory=/var/www/diariox
+ExecStart=/usr/bin/dotnet /var/www/diariox/DiarioX.Server.dll
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=diariox
+User=www-data
+
+# Environment
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://127.0.0.1:8080
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+Environment=DOTNET_NOLOGO=true
+
+# Load secrets from /etc/diariox/diariox.env (mode 600, owner www-data)
+EnvironmentFile=/etc/diariox/diariox.env
+
+[Install]
+WantedBy=multi-user.target
