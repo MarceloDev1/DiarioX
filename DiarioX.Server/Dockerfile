@@ -14,17 +14,25 @@ RUN npm run build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend
 WORKDIR /src
 COPY DiarioX.Server/DiarioX.Server.csproj DiarioX.Server/
-COPY diariox.client/diariox.client.esproj diariox.client/
-COPY diariox.client/package.json diariox.client/package-lock.json diariox.client/
+# Strip the ProjectReference to the SPA esproj before restore/publish.
+# The SPA is built separately in the frontend stage and copied into wwwroot,
+# so we don't need the JavaScript SDK to evaluate it inside the .NET SDK image.
+RUN sed -i -e '/<ProjectReference Include=".*diariox\.client\.esproj">/,/<\/ProjectReference>/d' \
+           -e '/<ItemGroup>[[:space:]]*<\/ItemGroup>/d' \
+           DiarioX.Server/DiarioX.Server.csproj
 RUN dotnet restore DiarioX.Server/DiarioX.Server.csproj
 COPY DiarioX.Server/ DiarioX.Server/
+# Re-apply the strip after copying full source (the COPY above overwrites csproj).
+RUN sed -i -e '/<ProjectReference Include=".*diariox\.client\.esproj">/,/<\/ProjectReference>/d' \
+           -e '/<ItemGroup>[[:space:]]*<\/ItemGroup>/d' \
+           DiarioX.Server/DiarioX.Server.csproj
 # Copy frontend build output into wwwroot so ASP.NET serves the SPA
 COPY --from=frontend /src/diariox.client/dist/ DiarioX.Server/wwwroot/
 RUN dotnet publish DiarioX.Server/DiarioX.Server.csproj \
     -c Release \
     -o /app/publish \
-    /p:UseAppHost=false \
-    /p:BuildProjectReferences=false
+    --no-restore \
+    /p:UseAppHost=false
 
 # ---------- Stage 3: runtime ----------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
