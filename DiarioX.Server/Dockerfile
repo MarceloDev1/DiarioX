@@ -29,9 +29,10 @@ RUN dotnet publish DiarioX.Server/DiarioX.Server.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 ENV ASPNETCORE_ENVIRONMENT=Production \
-    ASPNETCORE_URLS=http://0.0.0.0:8080 \
-    DOTNET_RUNNING_IN_CONTAINER=true
+    DOTNET_RUNNING_IN_CONTAINER=true \
+    PORT=8080
 EXPOSE 8080
 COPY --from=backend /app/publish ./
 USER $APP_UID
-ENTRYPOINT ["dotnet", "DiarioX.Server.dll"]
+# Honor the PORT env injected by hosts like Railway/Heroku, fallback to 8080.
+ENTRYPOINT ["/bin/sh", "-c", "exec dotnet DiarioX.Server.dll --urls http://0.0.0.0:${PORT:-8080}"]
