@@ -15,6 +15,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend
 WORKDIR /src
 COPY DiarioX.Server/DiarioX.Server.csproj DiarioX.Server/
 COPY diariox.client/diariox.client.esproj diariox.client/
+COPY diariox.client/package.json diariox.client/package-lock.json diariox.client/
 RUN dotnet restore DiarioX.Server/DiarioX.Server.csproj
 COPY DiarioX.Server/ DiarioX.Server/
 # Copy frontend build output into wwwroot so ASP.NET serves the SPA
