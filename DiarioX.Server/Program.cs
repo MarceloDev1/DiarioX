@@ -9,7 +9,6 @@ using DiarioX.Server.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Resend;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,19 +38,9 @@ builder.Services.AddScoped<IEscolaService, EscolaService>();
 builder.Services.AddScoped<IModalidadeEnsinoService, ModalidadeEnsinoService>();
 builder.Services.AddScoped<IEtapaEnsinoService, EtapaEnsinoService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IEmailService, ResendEmailService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAnoLetivoService, AnoLetivoService>();
 builder.Services.AddScoped<ITurmaService, TurmaService>();
-
-// Resend (transactional e-mail)
-builder.Services.AddOptions();
-builder.Services.AddHttpClient<ResendClient>();
-builder.Services.Configure<ResendClientOptions>(o =>
-{
-    o.ApiToken = builder.Configuration["Resend:ApiToken"]
-        ?? throw new InvalidOperationException("Configuração 'Resend:ApiToken' não definida.");
-});
-builder.Services.AddTransient<IResend, ResendClient>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
