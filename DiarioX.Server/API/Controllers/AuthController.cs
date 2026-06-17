@@ -78,7 +78,7 @@ public class AuthController : ControllerBase
 
         try
         {
-            await _emailService.SendAsync(toEmail, null, "Teste SMTP - Diário de Classe", "<p>Configuração SMTP funcionando corretamente.</p>");
+            await _emailService.SendAsync(toEmail, null, "Teste de e-mail - Diário de Classe", "<p>Configuração do Resend funcionando corretamente.</p>");
             return Ok(new { message = $"E-mail enviado para {toEmail}" });
         }
         catch (Exception ex)
