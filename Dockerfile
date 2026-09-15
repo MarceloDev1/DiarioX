@@ -8,11 +8,10 @@ RUN npm run build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend
 WORKDIR /app
 COPY DiarioX.Server/*.csproj ./DiarioX.Server/
-COPY diariox.client/ ./diariox.client/
-RUN dotnet restore DiarioX.Server/DiarioX.Server.csproj
+RUN dotnet restore DiarioX.Server/DiarioX.Server.csproj -p:BuildFrontend=false
 COPY DiarioX.Server/ ./DiarioX.Server/
 COPY --from=frontend /app/client/dist ./DiarioX.Server/wwwroot
-RUN dotnet publish DiarioX.Server/DiarioX.Server.csproj -c Release -o /out --no-restore -p:SpaRoot=
+RUN dotnet publish DiarioX.Server/DiarioX.Server.csproj -c Release -o /out -p:BuildFrontend=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
