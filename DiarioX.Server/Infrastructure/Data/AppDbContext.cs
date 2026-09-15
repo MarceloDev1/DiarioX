@@ -22,6 +22,9 @@ public class AppDbContext : DbContext
     public DbSet<AnoLetivo> AnosLetivos => Set<AnoLetivo>();
     public DbSet<PeriodoAvaliativo> PeriodosAvaliativos => Set<PeriodoAvaliativo>();
     public DbSet<Turma> Turmas => Set<Turma>();
+    public DbSet<Disciplina> Disciplinas => Set<Disciplina>();
+    public DbSet<DisciplinaEtapaEnsino> DisciplinasEtapasEnsino => Set<DisciplinaEtapaEnsino>();
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -38,5 +41,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AnoLetivoConfiguration());
         modelBuilder.ApplyConfiguration(new PeriodoAvaliativoConfiguration());
         modelBuilder.ApplyConfiguration(new TurmaConfiguration());
+        modelBuilder.ApplyConfiguration(new DisciplinaConfiguration());
+        modelBuilder.ApplyConfiguration(new DisciplinaEtapaEnsinoConfiguration());
     }
 }
