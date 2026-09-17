@@ -4,31 +4,37 @@ import EmptyState from '../ui/EmptyState';
 
 type View = 'list' | 'form';
 
+interface EtapaEnsinoRef {
+    id: number;
+    etapaEnsinoNome: string;
+}
+
 interface Disciplina {
     id: number;
     nome: string;
+    codigo: string;
     descricao: string;
-    cargaHoraria: number;
-    anosEnsinoIds: number[];
+    ativa: boolean;
+    etapasEnsino: EtapaEnsinoRef[];
+}
+
+interface EtapaEnsino {
+    id: number;
+    nome: string;
 }
 
 interface DisciplinaForm {
     nome: string;
+    codigo: string;
     descricao: string;
-    cargaHoraria: string;
-    anosEnsinoIds: number[];
-}
-
-interface AnoEnsino {
-    id: number;
-    nome: string;
+    etapasEnsinoIds: number[];
 }
 
 const emptyForm: DisciplinaForm = {
     nome: '',
+    codigo: '',
     descricao: '',
-    cargaHoraria: '',
-    anosEnsinoIds: [],
+    etapasEnsinoIds: [],
 };
 
 async function readApiError(res: Response): Promise<string> {
@@ -42,7 +48,7 @@ async function readApiError(res: Response): Promise<string> {
 
 function DisciplinasPage() {
     const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
-    const [anosEnsino, setAnosEnsino] = useState<AnoEnsino[]>([]);
+    const [etapasEnsino, setEtapasEnsino] = useState<EtapaEnsino[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -55,33 +61,35 @@ function DisciplinasPage() {
     const [appliedNome, setAppliedNome] = useState('');
 
     useEffect(() => {
-        void load();
-        void loadAnosEnsino();
+        let cancelled = false;
+
+        async function init() {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const [discRes, etapasRes] = await Promise.all([
+                    fetch('/api/disciplinas'),
+                    fetch('/api/etapasensino'),
+                ]);
+                if (cancelled) return;
+
+                if (!discRes.ok) throw new Error(await readApiError(discRes));
+                if (!etapasRes.ok) throw new Error(await readApiError(etapasRes));
+
+                setDisciplinas((await discRes.json()) as Disciplina[]);
+                setEtapasEnsino((await etapasRes.json()) as EtapaEnsino[]);
+            } catch (e) {
+                if (!cancelled) {
+                    setError(e instanceof Error ? e.message : 'Falha ao carregar dados.');
+                }
+            } finally {
+                if (!cancelled) setIsLoading(false);
+            }
+        }
+
+        init();
+        return () => { cancelled = true; };
     }, []);
-
-    const load = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const res = await fetch('/api/disciplinas');
-            if (!res.ok) throw new Error(await readApiError(res));
-            setDisciplinas((await res.json()) as Disciplina[]);
-        } catch (e) {
-            setError(e instanceof Error ? e.message : 'Falha ao carregar disciplinas.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const loadAnosEnsino = async () => {
-        try {
-            const res = await fetch('/api/anosensino');
-            if (!res.ok) throw new Error(await readApiError(res));
-            setAnosEnsino((await res.json()) as AnoEnsino[]);
-        } catch (e) {
-            setError(e instanceof Error ? e.message : 'Falha ao carregar anos de ensino.');
-        }
-    };
 
     const handleConsultar = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -108,9 +116,9 @@ function DisciplinasPage() {
         setEditingId(disciplina.id);
         setForm({
             nome: disciplina.nome,
+            codigo: disciplina.codigo,
             descricao: disciplina.descricao,
-            cargaHoraria: String(disciplina.cargaHoraria),
-            anosEnsinoIds: [...disciplina.anosEnsinoIds],
+            etapasEnsinoIds: disciplina.etapasEnsino.map(e => e.id),
         });
         setError(null);
         setView('form');
@@ -121,13 +129,13 @@ function DisciplinasPage() {
         setForm(f => ({ ...f, [name]: value }));
     };
 
-    const handleAnoEnsinoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const handleEtapaChange = (e: ChangeEvent<HTMLInputElement>) => {
         const id = parseInt(e.target.value);
         setForm(f => ({
             ...f,
-            anosEnsinoIds: e.target.checked
-                ? [...f.anosEnsinoIds, id]
-                : f.anosEnsinoIds.filter(x => x !== id),
+            etapasEnsinoIds: e.target.checked
+                ? [...f.etapasEnsinoIds, id]
+                : f.etapasEnsinoIds.filter(x => x !== id),
         }));
     };
 
@@ -143,30 +151,29 @@ function DisciplinasPage() {
         setIsSaving(true);
         setError(null);
 
-        // Validações
         if (!form.nome.trim()) {
             setError('Nome da disciplina é obrigatório.');
             setIsSaving(false);
             return;
         }
 
-        if (!form.cargaHoraria || parseInt(form.cargaHoraria) <= 0) {
-            setError('Carga horária deve ser um número maior que zero.');
+        if (!form.codigo.trim()) {
+            setError('Código da disciplina é obrigatório.');
             setIsSaving(false);
             return;
         }
 
-        if (form.anosEnsinoIds.length === 0) {
-            setError('Selecione pelo menos um ano de ensino.');
+        if (form.etapasEnsinoIds.length === 0) {
+            setError('Selecione pelo menos uma etapa de ensino.');
             setIsSaving(false);
             return;
         }
 
         const body = {
             nome: form.nome.trim(),
+            codigo: form.codigo.trim(),
             descricao: form.descricao.trim(),
-            cargaHoraria: parseInt(form.cargaHoraria),
-            anosEnsinoIds: form.anosEnsinoIds,
+            etapasEnsinoIds: form.etapasEnsinoIds,
         };
 
         try {
@@ -200,7 +207,7 @@ function DisciplinasPage() {
 
     const handleDelete = async (id: number) => {
         if (!window.confirm('Tem certeza que deseja excluir esta disciplina?')) return;
-        
+
         setError(null);
         try {
             const res = await fetch(`/api/disciplinas/${id}`, { method: 'DELETE' });
@@ -209,10 +216,6 @@ function DisciplinasPage() {
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Falha ao excluir disciplina.');
         }
-    };
-
-    const getAnoEnsinoNome = (id: number): string => {
-        return anosEnsino.find(a => a.id === id)?.nome ?? `Ano ${id}`;
     };
 
     if (view === 'form') {
@@ -249,14 +252,13 @@ function DisciplinasPage() {
                             </div>
 
                             <div className="form-field">
-                                <label htmlFor="disc-carga">Carga Horária (horas) *</label>
+                                <label htmlFor="disc-codigo">Código *</label>
                                 <input
-                                    id="disc-carga"
-                                    name="cargaHoraria"
-                                    type="number"
-                                    min={1}
-                                    placeholder="Ex: 120"
-                                    value={form.cargaHoraria}
+                                    id="disc-codigo"
+                                    name="codigo"
+                                    type="text"
+                                    placeholder="Ex: MAT"
+                                    value={form.codigo}
                                     onChange={handleFieldChange}
                                     required
                                 />
@@ -275,21 +277,21 @@ function DisciplinasPage() {
                             />
                         </div>
 
-                        <div className="ano-letivo-section-title">Anos de Ensino *</div>
+                        <div className="ano-letivo-section-title">Etapas de Ensino *</div>
                         <div className="checkbox-group">
-                            {anosEnsino.length === 0 ? (
-                                <p className="no-data-message">Nenhum ano de ensino disponível. Cadastre anos de ensino primeiro.</p>
+                            {etapasEnsino.length === 0 ? (
+                                <p className="no-data-message">Nenhuma etapa de ensino disponível. Cadastre etapas de ensino primeiro.</p>
                             ) : (
-                                anosEnsino.map(ano => (
-                                    <div key={ano.id} className="checkbox-field">
+                                etapasEnsino.map(etapa => (
+                                    <div key={etapa.id} className="checkbox-field">
                                         <input
-                                            id={`ano-${ano.id}`}
+                                            id={`etapa-${etapa.id}`}
                                             type="checkbox"
-                                            value={ano.id}
-                                            checked={form.anosEnsinoIds.includes(ano.id)}
-                                            onChange={handleAnoEnsinoChange}
+                                            value={etapa.id}
+                                            checked={form.etapasEnsinoIds.includes(etapa.id)}
+                                            onChange={handleEtapaChange}
                                         />
-                                        <label htmlFor={`ano-${ano.id}`}>{ano.nome}</label>
+                                        <label htmlFor={`etapa-${etapa.id}`}>{etapa.nome}</label>
                                     </div>
                                 ))
                             )}
@@ -353,8 +355,8 @@ function DisciplinasPage() {
                             <thead>
                                 <tr>
                                     <th>Nome</th>
-                                    <th>Carga Horária</th>
-                                    <th>Anos de Ensino</th>
+                                    <th>Código</th>
+                                    <th>Etapas de Ensino</th>
                                     <th>Descrição</th>
                                     <th>Ações</th>
                                 </tr>
@@ -363,12 +365,12 @@ function DisciplinasPage() {
                                 {filteredDisciplinas.map(d => (
                                     <tr key={d.id}>
                                         <td><strong>{d.nome}</strong></td>
-                                        <td>{d.cargaHoraria}h</td>
+                                        <td>{d.codigo}</td>
                                         <td>
                                             <div className="anos-list">
-                                                {d.anosEnsinoIds.map(id => (
-                                                    <span key={id} className="ano-tag">
-                                                        {getAnoEnsinoNome(id)}
+                                                {d.etapasEnsino.map(e => (
+                                                    <span key={e.id} className="ano-tag">
+                                                        {e.etapaEnsinoNome}
                                                     </span>
                                                 ))}
                                             </div>
