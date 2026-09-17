@@ -48,7 +48,7 @@ public class EmailService : IEmailService
         try
         {
             await using var client = _smtpClientFactory();
-            await client.ConnectAsync(host, port, SecureSocketOptions.None);
+            await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
             await client.AuthenticateAsync(username, password);
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
