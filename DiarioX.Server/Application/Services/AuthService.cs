@@ -141,7 +141,9 @@ public class AuthService : IAuthService
         var resetToken = PasswordResetToken.Create(user.Id, tokenHash);
         await _passwordResetTokenRepository.AddAsync(resetToken);
 
-        var appUrl = _configuration["AppUrl"] ?? "https://localhost:5173";
+        var appUrl = string.IsNullOrWhiteSpace(_configuration["AppUrl"])
+            ? "https://localhost:5173"
+            : _configuration["AppUrl"]!.TrimEnd('/');
         var resetUrl = $"{appUrl}/redefinir-senha?token={Uri.EscapeDataString(plainToken)}";
 
         try
