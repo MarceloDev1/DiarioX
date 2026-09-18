@@ -13,7 +13,7 @@ public class EmailService : IEmailService
     private readonly Func<IEmailSmtpClient> _smtpClientFactory;
 
     public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
-        : this(configuration, logger, () => new MailKitEmailSmtpClient(new SmtpClient()))
+        : this(configuration, logger, () => new MailKitEmailSmtpClient(new SmtpClient { Timeout = 15000 }))
     {
     }
 
@@ -48,7 +48,7 @@ public class EmailService : IEmailService
         try
         {
             await using var client = _smtpClientFactory();
-            await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+            await client.ConnectAsync(host, port, SecureSocketOptions.Auto);
             await client.AuthenticateAsync(username, password);
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
