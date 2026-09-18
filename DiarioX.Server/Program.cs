@@ -39,7 +39,7 @@ builder.Services.AddScoped<IEscolaService, EscolaService>();
 builder.Services.AddScoped<IModalidadeEnsinoService, ModalidadeEnsinoService>();
 builder.Services.AddScoped<IEtapaEnsinoService, EtapaEnsinoService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHttpClient<IEmailService, EmailService>();
 builder.Services.AddScoped<IAnoLetivoService, AnoLetivoService>();
 builder.Services.AddScoped<ITurmaService, TurmaService>();
 builder.Services.AddScoped<IDisciplinaService, DisciplinaService>();

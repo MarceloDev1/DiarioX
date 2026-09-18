@@ -1,8 +1,7 @@
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using DiarioX.Server.Application.Interfaces;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
-using MimeKit.Utils;
 
 namespace DiarioX.Server.Infrastructure.Services;
 
@@ -10,70 +9,60 @@ public class EmailService : IEmailService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<EmailService> _logger;
-    private readonly Func<IEmailSmtpClient> _smtpClientFactory;
+    private readonly HttpClient _httpClient;
 
-    public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
-        : this(configuration, logger, () => new MailKitEmailSmtpClient(new SmtpClient { Timeout = 15000 }))
-    {
-    }
-
-    public EmailService(IConfiguration configuration, ILogger<EmailService> logger, Func<IEmailSmtpClient> smtpClientFactory)
+    public EmailService(IConfiguration configuration, ILogger<EmailService> logger, HttpClient httpClient)
     {
         _configuration = configuration;
         _logger = logger;
-        _smtpClientFactory = smtpClientFactory;
+        _httpClient = httpClient;
     }
 
     public async Task SendAsync(string toEmail, string? toName, string subject, string htmlBody)
     {
         var smtp = _configuration.GetSection("Smtp");
-        var host = GetRequiredSetting(smtp, "Host");
-        var port = int.TryParse(smtp["Port"], out var parsedPort) ? parsedPort : 587;
-        var username = GetRequiredSetting(smtp, "Username");
-        var password = GetRequiredSetting(smtp, "Password");
-        var fromEmail = GetOptionalSetting(smtp, "FromEmail") ?? username;
+        var apiKey = smtp["ApiKey"];
+
+        if (string.IsNullOrWhiteSpace(apiKey))
+            throw new InvalidOperationException("Configuração SMTP inválida: 'Smtp:ApiKey' está ausente ou vazia.");
+
+        var fromEmail = smtp["FromEmail"] ?? "noreply@diariox.online";
         var fromName = smtp["FromName"] ?? "Diário de Classe";
         var recipientEmail = toEmail?.Trim();
 
         if (string.IsNullOrWhiteSpace(recipientEmail))
             throw new ArgumentException("O e-mail de destino não pode ser vazio.", nameof(toEmail));
 
-        var message = new MimeMessage();
-        message.MessageId = MimeUtils.GenerateMessageId();
-        message.From.Add(new MailboxAddress(fromName, fromEmail));
-        message.To.Add(new MailboxAddress(toName ?? recipientEmail, recipientEmail));
-        message.Subject = subject;
-        message.Body = new TextPart("html") { Text = htmlBody };
+        var payload = new
+        {
+            sender = new { name = fromName, email = fromEmail },
+            to = new[] { new { email = recipientEmail, name = toName ?? recipientEmail } },
+            subject,
+            htmlContent = htmlBody
+        };
+
+        var json = JsonSerializer.Serialize(payload);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
+        request.Headers.Add("api-key", apiKey);
+        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
         try
         {
-            await using var client = _smtpClientFactory();
-            await client.ConnectAsync(host, port, SecureSocketOptions.Auto);
-            await client.AuthenticateAsync(username, password);
-            await client.SendAsync(message);
-            await client.DisconnectAsync(true);
+            var response = await _httpClient.SendAsync(request);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("Brevo API erro {Status}: {Body}", (int)response.StatusCode, responseBody);
+                throw new InvalidOperationException($"Falha ao enviar e-mail via Brevo: {response.StatusCode}");
+            }
 
             _logger.LogInformation("E-mail enviado para {Email}", toEmail);
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
             _logger.LogError(ex, "Falha ao enviar e-mail para {Email}", toEmail);
             throw;
         }
-    }
-
-    private static string GetRequiredSetting(IConfigurationSection section, string key)
-    {
-        var value = section[key]?.Trim();
-        if (string.IsNullOrWhiteSpace(value))
-            throw new InvalidOperationException($"Configuração SMTP inválida: 'Smtp:{key}' está ausente ou vazia.");
-
-        return value;
-    }
-
-    private static string? GetOptionalSetting(IConfigurationSection section, string key)
-    {
-        var value = section[key]?.Trim();
-        return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 }
