@@ -1,0 +1,147 @@
+### Variáveis
+@baseUrl=http://localhost:5000/api
+@token=seu_token_jwt_aqui
+
+### ============================================
+### GET - Listar todos os professores
+### ============================================
+GET {{baseUrl}}/professores
+Authorization: Bearer {{token}}
+
+### ============================================
+### GET - Obter professor por ID
+### ============================================
+GET {{baseUrl}}/professores/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### GET - Listar professores de uma escola
+### ============================================
+GET {{baseUrl}}/professores/escola/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### POST - Criar novo professor
+### ============================================
+POST {{baseUrl}}/professores
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "João Silva",
+  "cpf": "12345678901",
+  "dataNascimento": "1985-05-15",
+  "email": "joao@escola.com",
+  "telefone": "(11) 98765-4321",
+  "matricula": "MAT-001",
+  "dataAdmissao": "2020-01-15",
+  "situacao": "ATIVO",
+  "escolaId": 1,
+  "disciplinaIds": [1, 2]
+}
+
+### ============================================
+### PUT - Atualizar professor
+### ============================================
+PUT {{baseUrl}}/professores/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "João Silva Santos",
+  "cpf": "12345678901",
+  "dataNascimento": "1985-05-15",
+  "email": "joao.silva@escola.com",
+  "telefone": "(11) 99876-5432",
+  "matricula": "MAT-001",
+  "dataAdmissao": "2020-01-15",
+  "situacao": "ATIVO",
+  "escolaId": 1,
+  "disciplinaIds": [1, 2, 3]
+}
+
+### ============================================
+### DELETE - Remover professor
+### ============================================
+DELETE {{baseUrl}}/professores/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### POST - Criar professor (Erro: CPF inválido)
+### ============================================
+POST {{baseUrl}}/professores
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Maria Santos",
+  "cpf": "00000000000",
+  "dataNascimento": "1990-03-20",
+  "email": "maria@escola.com",
+  "telefone": "(11) 98765-4321",
+  "matricula": "MAT-002",
+  "dataAdmissao": "2021-01-15",
+  "situacao": "ATIVO",
+  "escolaId": 1,
+  "disciplinaIds": [1]
+}
+
+### ============================================
+### POST - Criar professor (Erro: Email inválido)
+### ============================================
+POST {{baseUrl}}/professores
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Carlos Oliveira",
+  "cpf": "98765432109",
+  "dataNascimento": "1988-07-10",
+  "email": "email_inválido",
+  "telefone": "(11) 98765-4321",
+  "matricula": "MAT-003",
+  "dataAdmissao": "2019-01-15",
+  "situacao": "ATIVO",
+  "escolaId": 1,
+  "disciplinaIds": [1]
+}
+
+### ============================================
+### POST - Criar professor (Erro: Sem disciplinas)
+### ============================================
+POST {{baseUrl}}/professores
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Ana Costa",
+  "cpf": "55555555555",
+  "dataNascimento": "1992-12-01",
+  "email": "ana@escola.com",
+  "telefone": "(11) 98765-4321",
+  "matricula": "MAT-004",
+  "dataAdmissao": "2022-01-15",
+  "situacao": "ATIVO",
+  "escolaId": 1,
+  "disciplinaIds": []
+}
+
+### ============================================
+### POST - Criar professor (Erro: CPF duplicado)
+### ============================================
+POST {{baseUrl}}/professores
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Outro João",
+  "cpf": "12345678901",
+  "dataNascimento": "1991-06-25",
+  "email": "outro.joao@escola.com",
+  "telefone": "(11) 98765-4321",
+  "matricula": "MAT-005",
+  "dataAdmissao": "2023-01-15",
+  "situacao": "ATIVO",
+  "escolaId": 1,
+  "disciplinaIds": [1]
+}

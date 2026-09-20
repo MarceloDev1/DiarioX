@@ -4,6 +4,7 @@ using DiarioX.Server.Application.DTOs.Users;
 using DiarioX.Server.Application.Interfaces;
 using DiarioX.Server.Domain.Entities;
 using DiarioX.Server.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace DiarioX.Server.Application.Services;
 
@@ -17,15 +18,21 @@ public class UserService : IUserService
     private readonly IUserRepository _userRepository;
     private readonly IPerfilRepository _perfilRepository;
     private readonly IUsuarioPerfilRepository _usuarioPerfilRepository;
+    private readonly IEmailNotificationService _emailNotificationService;
+    private readonly ILogger<UserService> _logger;
 
     public UserService(
         IUserRepository userRepository,
         IPerfilRepository perfilRepository,
-        IUsuarioPerfilRepository usuarioPerfilRepository)
+        IUsuarioPerfilRepository usuarioPerfilRepository,
+        IEmailNotificationService emailNotificationService,
+        ILogger<UserService> logger)
     {
         _userRepository = userRepository;
         _perfilRepository = perfilRepository;
         _usuarioPerfilRepository = usuarioPerfilRepository;
+        _emailNotificationService = emailNotificationService;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<UserResponse>> GetAllAsync()
@@ -79,7 +86,30 @@ public class UserService : IUserService
         }
 
         var result = await _userRepository.GetByIdAsync(created.Id);
-        return new UserCommandResult(true, "Usuario cadastrado com sucesso.", MapToResponse(result!));
+        var userResponse = MapToResponse(result!);
+
+        // Enviar email de boas-vindas de forma assíncrona
+        _ = SendWelcomeEmailAsync(result!.Email, userResponse.Email);
+
+        return new UserCommandResult(true, "Usuario cadastrado com sucesso.", userResponse);
+    }
+
+    /// <summary>
+    /// Envia email de boas-vindas para o novo usuário.
+    /// Executado de forma não-bloqueante para não impactar a criação do usuário.
+    /// </summary>
+    private async Task SendWelcomeEmailAsync(string toEmail, string userName)
+    {
+        try
+        {
+            await _emailNotificationService.SendWelcomeAsync(toEmail, userName, toEmail);
+            _logger.LogInformation("Email de boas-vindas enviado com sucesso para {Email}", toEmail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Falha ao enviar email de boas-vindas para {Email}. A conta foi criada normalmente.", toEmail);
+            // Não relançar exceção - criação do usuário já foi bem-sucedida
+        }
     }
 
     public async Task<UserCommandResult> UpdateAsync(int id, UserRequest request)

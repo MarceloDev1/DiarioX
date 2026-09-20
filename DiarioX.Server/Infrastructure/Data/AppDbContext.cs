@@ -24,6 +24,8 @@ public class AppDbContext : DbContext
     public DbSet<Turma> Turmas => Set<Turma>();
     public DbSet<Disciplina> Disciplinas => Set<Disciplina>();
     public DbSet<DisciplinaEtapaEnsino> DisciplinasEtapasEnsino => Set<DisciplinaEtapaEnsino>();
+    public DbSet<Professor> Professores => Set<Professor>();
+    public DbSet<ProfessorDisciplina> ProfessorDisciplinas => Set<ProfessorDisciplina>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,5 +45,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new TurmaConfiguration());
         modelBuilder.ApplyConfiguration(new DisciplinaConfiguration());
         modelBuilder.ApplyConfiguration(new DisciplinaEtapaEnsinoConfiguration());
+        modelBuilder.ApplyConfiguration(new ProfessorConfiguration());
+        modelBuilder.ApplyConfiguration(new ProfessorDisciplinaConfiguration());
     }
 }

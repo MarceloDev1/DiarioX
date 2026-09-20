@@ -32,6 +32,7 @@ builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepo
 builder.Services.AddScoped<IAnoLetivoRepository, AnoLetivoRepository>();
 builder.Services.AddScoped<ITurmaRepository, TurmaRepository>();
 builder.Services.AddScoped<IDisciplinaRepository, DisciplinaRepository>();
+builder.Services.AddScoped<IProfessorRepository, ProfessorRepository>();
 
 // Dependency Injection - Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -40,9 +41,11 @@ builder.Services.AddScoped<IModalidadeEnsinoService, ModalidadeEnsinoService>();
 builder.Services.AddScoped<IEtapaEnsinoService, EtapaEnsinoService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddHttpClient<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailNotificationService, EmailNotificationService>();
 builder.Services.AddScoped<IAnoLetivoService, AnoLetivoService>();
 builder.Services.AddScoped<ITurmaService, TurmaService>();
 builder.Services.AddScoped<IDisciplinaService, DisciplinaService>();
+builder.Services.AddScoped<IProfessorService, ProfessorService>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -89,12 +92,8 @@ using (var scope = app.Services.CreateScope())
 app.UseDefaultFiles();
 app.MapStaticAssets();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 

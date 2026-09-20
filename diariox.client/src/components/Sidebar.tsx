@@ -13,6 +13,7 @@ const cadastroSubItems = [
     { id: 'anos-letivos', label: '📅 Anos Letivos' },
     { id: 'disciplinas', label: '📝 Disciplinas' },
     { id: 'turmas', label: '🎓 Turmas' },
+    { id: 'professores', label: '👨‍🏫 Professores' },
     { id: 'usuarios', label: '👤 Usuários' },
 ];
 
