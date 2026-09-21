@@ -3,6 +3,7 @@ using System;
 using DiarioX.Server.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DiarioX.Server.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260920223446_AddAluno")]
+    partial class AddAluno
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -806,55 +809,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.ProfessorAlocacao", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Ativa")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("ativa");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<int>("DisciplinaId")
-                        .HasColumnType("integer")
-                        .HasColumnName("disciplina_id");
-
-                    b.Property<int>("ProfessorId")
-                        .HasColumnType("integer")
-                        .HasColumnName("professor_id");
-
-                    b.Property<int>("TurmaId")
-                        .HasColumnType("integer")
-                        .HasColumnName("turma_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DisciplinaId");
-
-                    b.HasIndex("TurmaId", "DisciplinaId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_professor_alocacoes_turma_disciplina_ativa")
-                        .HasFilter("ativa = TRUE");
-
-                    b.HasIndex("ProfessorId", "TurmaId", "DisciplinaId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_professor_alocacoes_professor_turma_disciplina");
-
-                    b.ToTable("professor_alocacoes", (string)null);
-                });
-
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.ProfessorDisciplina", b =>
                 {
                     b.Property<int>("Id")
@@ -1175,33 +1129,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.Navigation("Escola");
 
                     b.Navigation("Usuario");
-                });
-
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.ProfessorAlocacao", b =>
-                {
-                    b.HasOne("DiarioX.Server.Domain.Entities.Disciplina", "Disciplina")
-                        .WithMany()
-                        .HasForeignKey("DisciplinaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Professor", "Professor")
-                        .WithMany()
-                        .HasForeignKey("ProfessorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Turma", "Turma")
-                        .WithMany()
-                        .HasForeignKey("TurmaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Disciplina");
-
-                    b.Navigation("Professor");
-
-                    b.Navigation("Turma");
                 });
 
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.ProfessorDisciplina", b =>

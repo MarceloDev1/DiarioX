@@ -30,7 +30,8 @@ function LoginForm({ onLogin, onForgotPassword, onFirstAccess }: LoginFormProps)
             });
 
             if (response.ok) {
-                const data: { email?: string } = await response.json();
+                const data: { email?: string; token?: string } = await response.json();
+                if (data.token) sessionStorage.setItem('diariox_token', data.token);
                 onLogin(data.email ?? username);
             } else {
                 setError('Usuário ou senha inválidos.');

@@ -26,3 +26,8 @@ export function formatTelefone(value: string) {
     if (d.length <= 10) return d.replace(/^(\d{2})(\d{4})(\d{0,4})$/, '($1) $2-$3');
     return d.replace(/^(\d{2})(\d{5})(\d{0,4})$/, '($1) $2-$3');
 }
+
+export function formatCep(value: string) {
+    const cep = value.replace(/\D/g, '').slice(0, 8);
+    return cep.replace(/^(\d{5})(\d{1,3})$/, '$1-$2');
+}

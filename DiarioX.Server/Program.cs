@@ -33,6 +33,8 @@ builder.Services.AddScoped<IAnoLetivoRepository, AnoLetivoRepository>();
 builder.Services.AddScoped<ITurmaRepository, TurmaRepository>();
 builder.Services.AddScoped<IDisciplinaRepository, DisciplinaRepository>();
 builder.Services.AddScoped<IProfessorRepository, ProfessorRepository>();
+builder.Services.AddScoped<IProfessorAlocacaoRepository, ProfessorAlocacaoRepository>();
+builder.Services.AddScoped<IAlunoRepository, AlunoRepository>();
 
 // Dependency Injection - Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -46,6 +48,8 @@ builder.Services.AddScoped<IAnoLetivoService, AnoLetivoService>();
 builder.Services.AddScoped<ITurmaService, TurmaService>();
 builder.Services.AddScoped<IDisciplinaService, DisciplinaService>();
 builder.Services.AddScoped<IProfessorService, ProfessorService>();
+builder.Services.AddScoped<IProfessorAlocacaoService, ProfessorAlocacaoService>();
+builder.Services.AddScoped<IAlunoService, AlunoService>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -72,7 +76,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
 
     // Seed admin user
     if (!db.Users.Any(u => u.Email == "admin@diariox.local"))

@@ -7,6 +7,8 @@ import AnosLetivosPage from './anos-letivos/AnosLetivosPage';
 import TurmasPage from './turmas/TurmasPage';
 import DisciplinasPage from './disciplinas/DisciplinasPage';
 import ProfessoresPage from './professores/ProfessoresPage';
+import AlunosPage from './alunos/AlunosPage';
+import ProfessorAlocacoesPage from './professor-alocacoes/ProfessorAlocacoesPage';
 
 interface MainContentProps {
     page: string;
@@ -28,6 +30,10 @@ function MainContent({ page }: MainContentProps) {
             return <TurmasPage />;
         case 'professores':
             return <ProfessoresPage />;
+        case 'alocacao-professor':
+            return <ProfessorAlocacoesPage />;
+        case 'alunos':
+            return <AlunosPage />;
         case 'usuarios':
             return <UsuariosPage />;
         default:

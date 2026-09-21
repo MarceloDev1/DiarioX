@@ -227,6 +227,37 @@
     color: #44536b;
 }
 
+.allocation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+.allocation-group {
+    border: 1px solid #d8e2ef;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.allocation-group legend {
+    color: #0f3460;
+    font-weight: 700;
+    padding: 0 0.35rem;
+}
+
+.allocation-option {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem;
+    padding: 0.55rem 0;
+    align-items: center;
+}
+
+.allocation-option small {
+    grid-column: 2;
+    color: #8a97aa;
+}
+
 .form-actions {
     display: flex;
     gap: 0.75rem;

@@ -1,7 +1,9 @@
 using DiarioX.Server.Application.DTOs.Users;
+using DiarioX.Server.Application.Interfaces;
 using DiarioX.Server.Application.Services;
 using DiarioX.Server.Domain.Entities;
 using DiarioX.Server.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace DiarioX.Server.Tests.Application.Services;
@@ -14,6 +16,8 @@ public class UserServiceTests
         var userRepository = new Mock<IUserRepository>();
         var perfilRepository = new Mock<IPerfilRepository>();
         var usuarioPerfilRepository = new Mock<IUsuarioPerfilRepository>();
+        var emailNotificationService = new Mock<IEmailNotificationService>();
+        var logger = new Mock<ILogger<UserService>>();
 
         userRepository
             .Setup(r => r.GetAllAsync())
@@ -23,7 +27,7 @@ public class UserServiceTests
                 BuildUser(2, "user2@x.com", "11144477735", perfilId: null, perfilNome: null)
             });
 
-        var service = new UserService(userRepository.Object, perfilRepository.Object, usuarioPerfilRepository.Object);
+        var service = new UserService(userRepository.Object, perfilRepository.Object, usuarioPerfilRepository.Object, emailNotificationService.Object, logger.Object);
 
         var result = (await service.GetAllAsync()).ToList();
 
@@ -42,10 +46,12 @@ public class UserServiceTests
         var userRepository = new Mock<IUserRepository>();
         var perfilRepository = new Mock<IPerfilRepository>();
         var usuarioPerfilRepository = new Mock<IUsuarioPerfilRepository>();
+        var emailNotificationService = new Mock<IEmailNotificationService>();
+        var logger = new Mock<ILogger<UserService>>();
 
         userRepository.Setup(r => r.GetByIdAsync(42)).ReturnsAsync((User?)null);
 
-        var service = new UserService(userRepository.Object, perfilRepository.Object, usuarioPerfilRepository.Object);
+        var service = new UserService(userRepository.Object, perfilRepository.Object, usuarioPerfilRepository.Object, emailNotificationService.Object, logger.Object);
 
         var result = await service.GetByIdAsync(42);
 
@@ -58,11 +64,13 @@ public class UserServiceTests
         var userRepository = new Mock<IUserRepository>();
         var perfilRepository = new Mock<IPerfilRepository>();
         var usuarioPerfilRepository = new Mock<IUsuarioPerfilRepository>();
+        var emailNotificationService = new Mock<IEmailNotificationService>();
+        var logger = new Mock<ILogger<UserService>>();
 
         var request = BuildValidRequest(perfilId: 99);
         perfilRepository.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((Perfil?)null);
 
-        var service = new UserService(userRepository.Object, perfilRepository.Object, usuarioPerfilRepository.Object);
+        var service = new UserService(userRepository.Object, perfilRepository.Object, usuarioPerfilRepository.Object, emailNotificationService.Object, logger.Object);
 
         var result = await service.CreateAsync(request);
 
@@ -301,11 +309,13 @@ public class UserServiceTests
         var userRepository = new Mock<IUserRepository>();
         var perfilRepository = new Mock<IPerfilRepository>();
         var usuarioPerfilRepository = new Mock<IUsuarioPerfilRepository>();
+        var emailNotificationService = new Mock<IEmailNotificationService>();
+        var logger = new Mock<ILogger<UserService>>();
 
         userRepository.Setup(r => r.GetByEmailOrCpfAsync(It.IsAny<string>())).ReturnsAsync((User?)null);
         userRepository.Setup(r => r.GetByCpfAsync(It.IsAny<string>())).ReturnsAsync((User?)null);
 
-        var service = new UserService(userRepository.Object, perfilRepository.Object, usuarioPerfilRepository.Object);
+        var service = new UserService(userRepository.Object, perfilRepository.Object, usuarioPerfilRepository.Object, emailNotificationService.Object, logger.Object);
         return (service, userRepository, perfilRepository, usuarioPerfilRepository);
     }
 

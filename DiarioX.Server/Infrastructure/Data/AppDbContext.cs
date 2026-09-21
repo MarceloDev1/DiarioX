@@ -26,6 +26,8 @@ public class AppDbContext : DbContext
     public DbSet<DisciplinaEtapaEnsino> DisciplinasEtapasEnsino => Set<DisciplinaEtapaEnsino>();
     public DbSet<Professor> Professores => Set<Professor>();
     public DbSet<ProfessorDisciplina> ProfessorDisciplinas => Set<ProfessorDisciplina>();
+    public DbSet<ProfessorAlocacao> ProfessorAlocacoes => Set<ProfessorAlocacao>();
+    public DbSet<Aluno> Alunos => Set<Aluno>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -47,5 +49,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new DisciplinaEtapaEnsinoConfiguration());
         modelBuilder.ApplyConfiguration(new ProfessorConfiguration());
         modelBuilder.ApplyConfiguration(new ProfessorDisciplinaConfiguration());
+        modelBuilder.ApplyConfiguration(new ProfessorAlocacaoConfiguration());
+        modelBuilder.ApplyConfiguration(new AlunoConfiguration());
     }
 }
