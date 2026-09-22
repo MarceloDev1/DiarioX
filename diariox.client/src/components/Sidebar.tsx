@@ -7,18 +7,18 @@ interface SidebarProps {
 }
 
 const cadastroSubItems = [
-    { id: 'escolas', label: '🏫 Escolas' },
-    { id: 'modalidades-ensino', label: '📚 Modalidades de Ensino' },
-    { id: 'etapas-ensino', label: '📖 Etapas de Ensino' },
-    { id: 'anos-letivos', label: '📅 Anos Letivos' },
-    { id: 'disciplinas', label: '📝 Disciplinas' },
-    { id: 'turmas', label: '🎓 Turmas' },
-    { id: 'professores', label: '👨‍🏫 Professores' },
-    { id: 'alocacao-professor', label: '📋 Alocação de Professor' },
-    { id: 'alunos', label: '🎒 Alunos' },
-    { id: 'enturmar-aluno', label: '📌 Enturmar Aluno' },
-    { id: 'remanejar-aluno', label: '↔ Remanejar Aluno' },
-    { id: 'usuarios', label: '👤 Usuários' },
+    { id: 'escolas', label: ' Escolas' },
+    { id: 'modalidades-ensino', label: ' Modalidades de Ensino' },
+    { id: 'etapas-ensino', label: ' Etapas de Ensino' },
+    { id: 'anos-letivos', label: ' Anos Letivos' },
+    { id: 'disciplinas', label: ' Disciplinas' },
+    { id: 'turmas', label: ' Turmas' },
+    { id: 'professores', label: ' Professores' },
+    { id: 'alocacao-professor', label: ' Alocação de Professor' },
+    { id: 'alunos', label: ' Alunos' },
+    { id: 'enturmar-aluno', label: ' Enturmar Aluno' },
+    { id: 'remanejar-aluno', label: ' Remanejar Aluno' },
+    { id: 'usuarios', label: ' Usuários' },
 ];
 
 function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
@@ -37,7 +37,7 @@ function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
                     className={`sidebar-item ${currentPage === 'home' ? 'active' : ''}`}
                     onClick={() => onSelectPage('home')}
                 >
-                    🏠 Início
+                    Início
                 </button>
 
                 <button
@@ -45,7 +45,7 @@ function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
                     onClick={toggleCadastro}
                     aria-expanded={cadastroOpen}
                 >
-                    📋 Cadastro
+                    Cadastro
                     <span className={`sidebar-chevron ${cadastroOpen ? 'open' : ''}`}>›</span>
                 </button>
 
@@ -65,7 +65,7 @@ function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
             </nav>
             <div className="sidebar-footer">
                 <button className="logout-button" onClick={() => window.location.reload()}>
-                    🚪 Sair
+                    Sair
                 </button>
             </div>
         </aside>
