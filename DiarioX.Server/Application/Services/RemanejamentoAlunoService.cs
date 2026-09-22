@@ -7,11 +7,16 @@ namespace DiarioX.Server.Application.Services;
 
 public class RemanejamentoAlunoService : IRemanejamentoAlunoService
 {
+    private readonly IAlunoRepository _alunoRepository;
     private readonly IAlunoTurmaRepository _alunoTurmaRepository;
     private readonly ITurmaRepository _turmaRepository;
 
-    public RemanejamentoAlunoService(IAlunoTurmaRepository alunoTurmaRepository, ITurmaRepository turmaRepository)
+    public RemanejamentoAlunoService(
+        IAlunoRepository alunoRepository,
+        IAlunoTurmaRepository alunoTurmaRepository,
+        ITurmaRepository turmaRepository)
     {
+        _alunoRepository = alunoRepository;
         _alunoTurmaRepository = alunoTurmaRepository;
         _turmaRepository = turmaRepository;
     }
@@ -29,6 +34,44 @@ public class RemanejamentoAlunoService : IRemanejamentoAlunoService
             vinculo.Turma.AnoLetivo.AnoReferencia,
             vinculo.Turma.Turno,
             vinculo.DataInicio);
+    }
+
+    public async Task<RemanejamentoAlunoResult> EnturmarAsync(int alunoId, EnturmacaoAlunoRequest request)
+    {
+        if (alunoId <= 0 || request.TurmaId <= 0 || request.DataInicio == default)
+            return Invalid("Por favor, informe a data de início e a turma.");
+
+        var aluno = await _alunoRepository.GetByIdAsync(alunoId);
+        if (aluno is null)
+            return new(false, "Aluno não encontrado.", AlunoResultError.NotFound);
+
+        if (await _alunoTurmaRepository.GetAtivaByAlunoIdAsync(alunoId) is not null)
+            return Invalid("O aluno já possui enturmação ativa.");
+
+        var turma = await _turmaRepository.GetByIdAsync(request.TurmaId);
+        if (turma is null)
+            return new(false, "Turma não encontrada.", AlunoResultError.NotFound);
+
+        if (turma.Status != Turma.StatusAtivo || turma.EscolaId != aluno.EscolaId)
+            return Invalid("A turma deve estar ativa e pertencer à mesma escola do aluno.");
+
+        var hoje = DateOnly.FromDateTime(DateTime.Today);
+        if (request.DataInicio < turma.AnoLetivo.DataInicio || request.DataInicio > hoje)
+            return Invalid("A data de início deve estar entre o início do ano letivo e a data atual.");
+
+        if (!await _alunoTurmaRepository.HasVacancyAsync(turma.Id, request.DataInicio))
+            return new(false, "A turma não possui vagas disponíveis.", AlunoResultError.Conflict);
+
+        try
+        {
+            await _alunoTurmaRepository.EnturmarAsync(alunoId, turma.Id, request.DataInicio);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Invalid(exception.Message);
+        }
+
+        return new(true, $"Aluno enturmado com sucesso na turma {turma.NomeCompleto}!");
     }
 
     public async Task<RemanejamentoAlunoResult> RemanejarAsync(int alunoId, RemanejamentoAlunoRequest request)

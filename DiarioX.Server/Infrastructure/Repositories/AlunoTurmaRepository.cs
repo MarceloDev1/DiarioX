@@ -37,6 +37,29 @@ public class AlunoTurmaRepository : IAlunoTurmaRepository
         return ocupacao < turma.VagasOfertadas;
     }
 
+    public async Task EnturmarAsync(int alunoId, int turmaId, DateOnly dataInicio)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        var aluno = await _context.Set<Aluno>().FirstAsync(x => x.Id == alunoId);
+        var vinculoAtivo = await _context.Set<AlunoTurma>()
+            .AnyAsync(x => x.AlunoId == alunoId && x.DataFim == null);
+
+        if (vinculoAtivo)
+            throw new InvalidOperationException("O aluno já possui enturmação ativa.");
+
+        _context.Set<AlunoTurma>().Add(new AlunoTurma
+        {
+            AlunoId = alunoId,
+            TurmaId = turmaId,
+            DataInicio = dataInicio,
+        });
+
+        aluno.Status = Aluno.StatusAtivo;
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+    }
+
     public async Task RemanejarAsync(AlunoTurma vinculoOrigem, int turmaDestinoId, DateOnly dataMovimentacao)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();

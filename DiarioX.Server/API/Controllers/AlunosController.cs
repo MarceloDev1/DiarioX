@@ -135,6 +135,25 @@ public class AlunosController : ControllerBase
         return Ok(new { message = result.Message });
     }
 
+    [HttpPost("{id:int}/enturmacoes")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Enturmar([FromRoute] int id, [FromBody] EnturmacaoAlunoRequest request)
+    {
+        var result = await _remanejamentoAlunoService.EnturmarAsync(id, request);
+        if (!result.Success)
+            return result.Error switch
+            {
+                AlunoResultError.NotFound => NotFound(new { message = result.Message }),
+                AlunoResultError.Conflict => Conflict(new { message = result.Message }),
+                _ => BadRequest(new { message = result.Message })
+            };
+
+        return Ok(new { message = result.Message });
+    }
+
     private IActionResult MapError(AlunoCommandResult result)
     {
         return result.Error switch

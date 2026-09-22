@@ -8,6 +8,7 @@ import MainContent from './components/MainContent';
 function App() {
     const [currentUser, setCurrentUser] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState('home');
+    const [initialAlunoId, setInitialAlunoId] = useState<number | null>(null);
     const [resetToken, setResetToken] = useState<string | null>(null);
 
     useEffect(() => {
@@ -22,6 +23,11 @@ function App() {
         window.history.replaceState({}, '', '/');
     }
 
+    function handleNavigate(page: string, alunoId?: number) {
+        setCurrentPage(page);
+        setInitialAlunoId(alunoId ?? null);
+    }
+
     if (resetToken) {
         return <ResetPassword token={resetToken} onSuccess={handleResetSuccess} />;
     }
@@ -32,13 +38,13 @@ function App() {
 
     return (
         <div className="app-layout">
-            <Sidebar onSelectPage={setCurrentPage} currentPage={currentPage} />
+            <Sidebar onSelectPage={page => handleNavigate(page)} currentPage={currentPage} />
             <main className="main-area">
                 <header className="main-header">
                     <h1>Diário de Classe</h1>
                     <p>Olá, <strong>{currentUser}</strong>!</p>
                 </header>
-                <MainContent page={currentPage} />
+                <MainContent page={currentPage} onNavigate={handleNavigate} initialAlunoId={initialAlunoId} />
             </main>
         </div>
     );

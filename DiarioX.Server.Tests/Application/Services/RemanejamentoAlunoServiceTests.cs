@@ -101,10 +101,11 @@ public class RemanejamentoAlunoServiceTests
 
     private static (RemanejamentoAlunoService Service, Mock<IAlunoTurmaRepository> AlunoTurmaRepository, Mock<ITurmaRepository> TurmaRepository) BuildService()
     {
+        var alunoRepository = new Mock<IAlunoRepository>();
         var alunoTurmaRepository = new Mock<IAlunoTurmaRepository>();
         var turmaRepository = new Mock<ITurmaRepository>();
         alunoTurmaRepository.Setup(x => x.GetAtivaByAlunoIdAsync(1)).ReturnsAsync(BuildVinculo());
-        return (new RemanejamentoAlunoService(alunoTurmaRepository.Object, turmaRepository.Object), alunoTurmaRepository, turmaRepository);
+        return (new RemanejamentoAlunoService(alunoRepository.Object, alunoTurmaRepository.Object, turmaRepository.Object), alunoTurmaRepository, turmaRepository);
     }
 
     private static AlunoTurma BuildVinculo() => new()

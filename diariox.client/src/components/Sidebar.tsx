@@ -16,6 +16,7 @@ const cadastroSubItems = [
     { id: 'professores', label: '👨‍🏫 Professores' },
     { id: 'alocacao-professor', label: '📋 Alocação de Professor' },
     { id: 'alunos', label: '🎒 Alunos' },
+    { id: 'enturmar-aluno', label: '📌 Enturmar Aluno' },
     { id: 'remanejar-aluno', label: '↔ Remanejar Aluno' },
     { id: 'usuarios', label: '👤 Usuários' },
 ];

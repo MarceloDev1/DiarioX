@@ -8,14 +8,17 @@ import TurmasPage from './turmas/TurmasPage';
 import DisciplinasPage from './disciplinas/DisciplinasPage';
 import ProfessoresPage from './professores/ProfessoresPage';
 import AlunosPage from './alunos/AlunosPage';
+import EnturmarAlunoPage from './alunos/EnturmarAlunoPage';
 import ProfessorAlocacoesPage from './professor-alocacoes/ProfessorAlocacoesPage';
 import RemanejarAlunoPage from './alunos/RemanejarAlunoPage';
 
 interface MainContentProps {
     page: string;
+    onNavigate: (page: string, alunoId?: number) => void;
+    initialAlunoId: number | null;
 }
 
-function MainContent({ page }: MainContentProps) {
+function MainContent({ page, onNavigate, initialAlunoId }: MainContentProps) {
     switch (page) {
         case 'escolas':
             return <EscolasPage />;
@@ -34,7 +37,9 @@ function MainContent({ page }: MainContentProps) {
         case 'alocacao-professor':
             return <ProfessorAlocacoesPage />;
         case 'alunos':
-            return <AlunosPage />;
+            return <AlunosPage onEnturmar={alunoId => onNavigate('enturmar-aluno', alunoId)} />;
+        case 'enturmar-aluno':
+            return <EnturmarAlunoPage initialAlunoId={initialAlunoId} />;
         case 'remanejar-aluno':
             return <RemanejarAlunoPage />;
         case 'usuarios':

@@ -138,7 +138,11 @@ function calcularIdade(dataNascimento: string): number {
     return idade;
 }
 
-function AlunosPage() {
+interface AlunosPageProps {
+    onEnturmar: (alunoId: number) => void;
+}
+
+function AlunosPage({ onEnturmar }: AlunosPageProps) {
     const { items: alunos, isLoading, isSaving, error, load, save, remove } = useCrudData<Aluno>('/api/alunos');
 
     const [view, setView] = useState<View>('list');
@@ -240,6 +244,14 @@ function AlunosPage() {
 
         const result = await save(editingId, buildRequestBody());
         if (result) {
+            if (enturmar && !editingId) {
+                setForm(emptyForm);
+                setEditingId(null);
+                setFieldErrors(emptyFieldErrors);
+                onEnturmar(result.id);
+                return;
+            }
+
             const base = editingId
                 ? 'Aluno atualizado com sucesso!'
                 : `Aluno cadastrado com sucesso! Matrícula gerada: ${result.matricula}`;
