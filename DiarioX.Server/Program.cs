@@ -35,6 +35,7 @@ builder.Services.AddScoped<IDisciplinaRepository, DisciplinaRepository>();
 builder.Services.AddScoped<IProfessorRepository, ProfessorRepository>();
 builder.Services.AddScoped<IProfessorAlocacaoRepository, ProfessorAlocacaoRepository>();
 builder.Services.AddScoped<IAlunoRepository, AlunoRepository>();
+builder.Services.AddScoped<IAlunoTurmaRepository, AlunoTurmaRepository>();
 
 // Dependency Injection - Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -50,6 +51,7 @@ builder.Services.AddScoped<IDisciplinaService, DisciplinaService>();
 builder.Services.AddScoped<IProfessorService, ProfessorService>();
 builder.Services.AddScoped<IProfessorAlocacaoService, ProfessorAlocacaoService>();
 builder.Services.AddScoped<IAlunoService, AlunoService>();
+builder.Services.AddScoped<IRemanejamentoAlunoService, RemanejamentoAlunoService>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -15,7 +15,7 @@ public class AlunosControllerTests
         var alunos = new List<AlunoResponse> { BuildResponse(1), BuildResponse(2) };
         service.Setup(s => s.GetAllAsync()).ReturnsAsync(alunos);
 
-        var controller = new AlunosController(service.Object);
+        var controller = BuildController(service.Object);
 
         var result = await controller.GetAll();
 
@@ -31,7 +31,7 @@ public class AlunosControllerTests
         var aluno = BuildResponse(9);
         service.Setup(s => s.GetByIdAsync(9)).ReturnsAsync(new AlunoCommandResult(true, string.Empty, aluno));
 
-        var controller = new AlunosController(service.Object);
+        var controller = BuildController(service.Object);
 
         var result = await controller.GetById(9);
 
@@ -45,7 +45,7 @@ public class AlunosControllerTests
         var service = new Mock<IAlunoService>();
         service.Setup(s => s.GetByIdAsync(7)).ReturnsAsync(new AlunoCommandResult(false, "Aluno não encontrado.", Error: AlunoResultError.NotFound));
 
-        var controller = new AlunosController(service.Object);
+        var controller = BuildController(service.Object);
 
         var result = await controller.GetById(7);
 
@@ -63,7 +63,7 @@ public class AlunosControllerTests
 
         service.Setup(s => s.CreateAsync(request)).ReturnsAsync(commandResult);
 
-        var controller = new AlunosController(service.Object);
+        var controller = BuildController(service.Object);
 
         var result = await controller.Create(request);
 
@@ -82,7 +82,7 @@ public class AlunosControllerTests
 
         service.Setup(s => s.CreateAsync(request)).ReturnsAsync(commandResult);
 
-        var controller = new AlunosController(service.Object);
+        var controller = BuildController(service.Object);
 
         var result = await controller.Create(request);
 
@@ -99,7 +99,7 @@ public class AlunosControllerTests
 
         service.Setup(s => s.CreateAsync(request)).ReturnsAsync(commandResult);
 
-        var controller = new AlunosController(service.Object);
+        var controller = BuildController(service.Object);
 
         var result = await controller.Create(request);
 
@@ -116,7 +116,7 @@ public class AlunosControllerTests
 
         service.Setup(s => s.CreateAsync(request)).ReturnsAsync(commandResult);
 
-        var controller = new AlunosController(service.Object);
+        var controller = BuildController(service.Object);
 
         var result = await controller.Create(request);
 
@@ -134,7 +134,7 @@ public class AlunosControllerTests
 
         service.Setup(s => s.UpdateAsync(5, request)).ReturnsAsync(commandResult);
 
-        var controller = new AlunosController(service.Object);
+        var controller = BuildController(service.Object);
 
         var result = await controller.Update(5, request);
 
@@ -151,7 +151,7 @@ public class AlunosControllerTests
 
         service.Setup(s => s.UpdateAsync(100, request)).ReturnsAsync(commandResult);
 
-        var controller = new AlunosController(service.Object);
+        var controller = BuildController(service.Object);
 
         var result = await controller.Update(100, request);
 
@@ -167,7 +167,7 @@ public class AlunosControllerTests
 
         service.Setup(s => s.DeleteAsync(3)).ReturnsAsync(commandResult);
 
-        var controller = new AlunosController(service.Object);
+        var controller = BuildController(service.Object);
 
         var result = await controller.Delete(3);
 
@@ -183,7 +183,7 @@ public class AlunosControllerTests
 
         service.Setup(s => s.DeleteAsync(4)).ReturnsAsync(commandResult);
 
-        var controller = new AlunosController(service.Object);
+        var controller = BuildController(service.Object);
 
         var result = await controller.Delete(4);
 
@@ -208,6 +208,9 @@ public class AlunosControllerTests
         Bairro = "Bela Vista",
         EscolaId = 1,
     };
+
+    private static AlunosController BuildController(IAlunoService alunoService)
+        => new(alunoService, Mock.Of<IRemanejamentoAlunoService>());
 
     private static AlunoResponse BuildResponse(int id) => new(
         id,

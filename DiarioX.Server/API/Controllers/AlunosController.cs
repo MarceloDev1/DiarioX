@@ -17,10 +17,12 @@ namespace DiarioX.Server.API.Controllers;
 public class AlunosController : ControllerBase
 {
     private readonly IAlunoService _alunoService;
+    private readonly IRemanejamentoAlunoService _remanejamentoAlunoService;
 
-    public AlunosController(IAlunoService alunoService)
+    public AlunosController(IAlunoService alunoService, IRemanejamentoAlunoService remanejamentoAlunoService)
     {
         _alunoService = alunoService;
+        _remanejamentoAlunoService = remanejamentoAlunoService;
     }
 
     /// <summary>
@@ -47,6 +49,17 @@ public class AlunosController : ControllerBase
             return NotFound(new { message = result.Message });
 
         return Ok(result.Aluno);
+    }
+
+    [HttpGet("{id:int}/enturmacao-ativa")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetEnturmacaoAtiva([FromRoute] int id)
+    {
+        var enturmacao = await _remanejamentoAlunoService.GetEnturmacaoAtivaAsync(id);
+        return enturmacao is null
+            ? NotFound(new { message = "O aluno não possui enturmação ativa." })
+            : Ok(enturmacao);
     }
 
     /// <summary>
@@ -99,6 +112,25 @@ public class AlunosController : ControllerBase
         var result = await _alunoService.DeleteAsync(id);
         if (!result.Success)
             return MapError(result);
+
+        return Ok(new { message = result.Message });
+    }
+
+    [HttpPost("{id:int}/remanejamentos")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Remanejar([FromRoute] int id, [FromBody] RemanejamentoAlunoRequest request)
+    {
+        var result = await _remanejamentoAlunoService.RemanejarAsync(id, request);
+        if (!result.Success)
+            return result.Error switch
+            {
+                AlunoResultError.NotFound => NotFound(new { message = result.Message }),
+                AlunoResultError.Conflict => Conflict(new { message = result.Message }),
+                _ => BadRequest(new { message = result.Message })
+            };
 
         return Ok(new { message = result.Message });
     }

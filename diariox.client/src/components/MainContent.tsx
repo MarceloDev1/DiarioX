@@ -9,6 +9,7 @@ import DisciplinasPage from './disciplinas/DisciplinasPage';
 import ProfessoresPage from './professores/ProfessoresPage';
 import AlunosPage from './alunos/AlunosPage';
 import ProfessorAlocacoesPage from './professor-alocacoes/ProfessorAlocacoesPage';
+import RemanejarAlunoPage from './alunos/RemanejarAlunoPage';
 
 interface MainContentProps {
     page: string;
@@ -34,6 +35,8 @@ function MainContent({ page }: MainContentProps) {
             return <ProfessorAlocacoesPage />;
         case 'alunos':
             return <AlunosPage />;
+        case 'remanejar-aluno':
+            return <RemanejarAlunoPage />;
         case 'usuarios':
             return <UsuariosPage />;
         default:
