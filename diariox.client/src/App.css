@@ -8,6 +8,7 @@
     min-height: 100vh;
     display: block;
     box-sizing: border-box;
+    background: var(--bg-white);
 }
 
 .app-layout {
@@ -15,17 +16,36 @@
     grid-template-columns: 260px 1fr;
     min-height: 100vh;
     align-items: start;
+    background: var(--bg-white);
 }
 
 .main-area {
     padding: 2rem;
     min-width: 0;
     box-sizing: border-box;
+    background: var(--bg-white);
 }
 
 .main-header {
     text-align: center;
     margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.5rem;
+}
+
+.main-header h1 {
+    color: var(--text);
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0.5rem 0;
+    letter-spacing: -1px;
+}
+
+.main-header p {
+    color: var(--text-light);
+    font-size: 0.95rem;
 }
 
 th, td {
