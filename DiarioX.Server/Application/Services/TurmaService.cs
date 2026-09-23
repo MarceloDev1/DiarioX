@@ -54,39 +54,11 @@ public class TurmaService : ITurmaService
         if (!validation.Success)
             return validation;
 
-        var anoLetivo = await _anoLetivoRepository.GetByIdAsync(normalized.AnoLetivoId);
-        if (anoLetivo is null)
-            return NotFound("Ano letivo não encontrado.");
+        var (referencias, referenciasError) = await LoadReferenciasAsync(normalized, null);
+        if (referenciasError is not null)
+            return referenciasError;
 
-        var escola = await _escolaRepository.GetByIdAsync(normalized.EscolaId);
-        if (escola is null)
-            return NotFound("Escola não encontrada.");
-
-        var modalidade = await _modalidadeRepository.GetByIdAsync(normalized.ModalidadeEnsinoId);
-        if (modalidade is null)
-            return NotFound("Modalidade de ensino não encontrada.");
-
-        var etapa = await _etapaRepository.GetByIdAsync(normalized.EtapaEnsinoId);
-        if (etapa is null)
-            return NotFound("Ano de ensino / etapa não encontrado.");
-
-        if (etapa.ModalidadeEnsinoId != modalidade.Id)
-            return Invalid("A etapa de ensino selecionada não pertence à modalidade informada.");
-
-        var exists = await _turmaRepository.ExistsByCombinacaoAsync(
-            normalized.AnoLetivoId,
-            normalized.EscolaId,
-            normalized.EtapaEnsinoId,
-            normalized.NomeIdentificador,
-            normalized.Turno);
-
-        if (exists)
-        {
-            return new TurmaCommandResult(
-                false,
-                "Já existe uma turma cadastrada com essas mesmas características para esta escola.",
-                Error: TurmaResultError.Conflict);
-        }
+        var (anoLetivo, escola, modalidade, etapa) = referencias!.Value;
 
         var turma = new Turma
         {
@@ -105,6 +77,100 @@ public class TurmaService : ITurmaService
         var createdWithNav = await _turmaRepository.GetByIdAsync(created.Id);
 
         return new TurmaCommandResult(true, "Turma cadastrada com sucesso!", createdWithNav is null ? null : MapToResponse(createdWithNav));
+    }
+
+    public async Task<TurmaCommandResult> UpdateAsync(int id, TurmaRequest request)
+    {
+        var turma = await _turmaRepository.GetByIdAsync(id);
+        if (turma is null)
+            return NotFound("Turma não encontrada.");
+
+        var normalized = NormalizeRequest(request);
+        var validation = await ValidateRequestAsync(normalized);
+        if (!validation.Success)
+            return validation;
+
+        var (referencias, referenciasError) = await LoadReferenciasAsync(normalized, id);
+        if (referenciasError is not null)
+            return referenciasError;
+
+        var (_, _, modalidade, etapa) = referencias!.Value;
+
+        turma.AnoLetivoId = normalized.AnoLetivoId;
+        turma.EscolaId = normalized.EscolaId;
+        turma.ModalidadeEnsinoId = normalized.ModalidadeEnsinoId;
+        turma.EtapaEnsinoId = normalized.EtapaEnsinoId;
+        turma.NomeIdentificador = normalized.NomeIdentificador;
+        turma.NomeCompleto = BuildNomeCompleto(etapa.Nome, normalized.NomeIdentificador, modalidade.Nome, normalized.Turno);
+        turma.Turno = normalized.Turno;
+        turma.VagasOfertadas = normalized.VagasOfertadas;
+
+        await _turmaRepository.UpdateAsync(turma);
+        var updated = await _turmaRepository.GetByIdAsync(id);
+
+        return new TurmaCommandResult(true, "Turma atualizada com sucesso!", updated is null ? null : MapToResponse(updated));
+    }
+
+    public async Task<TurmaCommandResult> DeleteAsync(int id)
+    {
+        var turma = await _turmaRepository.GetByIdAsync(id);
+        if (turma is null)
+            return NotFound("Turma não encontrada.");
+
+        try
+        {
+            await _turmaRepository.DeleteAsync(id);
+        }
+        catch (Exception ex) when (ex.GetType().Name == "DbUpdateException")
+        {
+            return new TurmaCommandResult(
+                false,
+                "Não é possível excluir esta turma pois existem alunos ou professores vinculados a ela.",
+                Error: TurmaResultError.Conflict);
+        }
+
+        return new TurmaCommandResult(true, "Turma excluída com sucesso!");
+    }
+
+    private async Task<((AnoLetivo AnoLetivo, Escola Escola, ModalidadeEnsino Modalidade, EtapaEnsino Etapa)? Referencias, TurmaCommandResult? Error)> LoadReferenciasAsync(
+        TurmaRequest normalized, int? excludeId)
+    {
+        var anoLetivo = await _anoLetivoRepository.GetByIdAsync(normalized.AnoLetivoId);
+        if (anoLetivo is null)
+            return (null, NotFound("Ano letivo não encontrado."));
+
+        var escola = await _escolaRepository.GetByIdAsync(normalized.EscolaId);
+        if (escola is null)
+            return (null, NotFound("Escola não encontrada."));
+
+        var modalidade = await _modalidadeRepository.GetByIdAsync(normalized.ModalidadeEnsinoId);
+        if (modalidade is null)
+            return (null, NotFound("Modalidade de ensino não encontrada."));
+
+        var etapa = await _etapaRepository.GetByIdAsync(normalized.EtapaEnsinoId);
+        if (etapa is null)
+            return (null, NotFound("Ano de ensino / etapa não encontrado."));
+
+        if (etapa.ModalidadeEnsinoId != modalidade.Id)
+            return (null, Invalid("A etapa de ensino selecionada não pertence à modalidade informada."));
+
+        var exists = await _turmaRepository.ExistsByCombinacaoAsync(
+            normalized.AnoLetivoId,
+            normalized.EscolaId,
+            normalized.EtapaEnsinoId,
+            normalized.NomeIdentificador,
+            normalized.Turno,
+            excludeId);
+
+        if (exists)
+        {
+            return (null, new TurmaCommandResult(
+                false,
+                "Já existe uma turma cadastrada com essas mesmas características para esta escola.",
+                Error: TurmaResultError.Conflict));
+        }
+
+        return ((anoLetivo, escola, modalidade, etapa), null);
     }
 
     private async Task<TurmaCommandResult> ValidateRequestAsync(TurmaRequest request)

@@ -52,4 +52,13 @@ public class TurmaRepository : BaseRepository<Turma>, ITurmaRepository
             t.Turno == turno &&
             (!excludeId.HasValue || t.Id != excludeId.Value));
     }
+
+    public async Task DeleteAsync(int id)
+    {
+        var turma = await _dbSet.FindAsync(id);
+        if (turma is not null)
+        {
+            await DeleteAsync(turma);
+        }
+    }
 }

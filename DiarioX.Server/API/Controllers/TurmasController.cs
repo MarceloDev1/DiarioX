@@ -42,6 +42,26 @@ public class TurmasController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Turma!.Id }, result.Turma);
     }
 
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update([FromRoute] int id, [FromBody] TurmaRequest request)
+    {
+        var result = await _service.UpdateAsync(id, request);
+        if (!result.Success)
+            return MapError(result);
+
+        return Ok(result.Turma);
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete([FromRoute] int id)
+    {
+        var result = await _service.DeleteAsync(id);
+        if (!result.Success)
+            return MapError(result);
+
+        return Ok(new { message = result.Message });
+    }
+
     private IActionResult MapError(TurmaCommandResult result)
     {
         return result.Error switch

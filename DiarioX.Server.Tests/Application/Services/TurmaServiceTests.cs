@@ -2,6 +2,7 @@ using DiarioX.Server.Application.DTOs.Turmas;
 using DiarioX.Server.Application.Services;
 using DiarioX.Server.Domain.Entities;
 using DiarioX.Server.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 
 namespace DiarioX.Server.Tests.Application.Services;
@@ -124,6 +125,106 @@ public class TurmaServiceTests
         Assert.Equal(Turma.StatusAtivo, captured!.Status);
         Assert.Equal("3º Ano A - Ensino Fundamental - Manhã", captured.NomeCompleto);
         Assert.Equal("Turma A", captured.NomeIdentificador);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenTurmaNotFound_ReturnsNotFound()
+    {
+        var (service, turmaRepo, _, _, _, _) = BuildService();
+        turmaRepo.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((Turma?)null);
+
+        var result = await service.UpdateAsync(99, BuildValidRequest());
+
+        Assert.False(result.Success);
+        Assert.Equal(TurmaResultError.NotFound, result.Error);
+        Assert.Equal("Turma não encontrada.", result.Message);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenDuplicateExists_ReturnsConflict()
+    {
+        var (service, turmaRepo, anoRepo, escolaRepo, modalidadeRepo, etapaRepo) = BuildService();
+        SetupBaseDependencies(anoRepo, escolaRepo, modalidadeRepo, etapaRepo);
+        turmaRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(BuildEntity(10));
+        turmaRepo
+            .Setup(r => r.ExistsByCombinacaoAsync(1, 1, 1, "Turma A", Turma.TurnoManha, 10))
+            .ReturnsAsync(true);
+
+        var result = await service.UpdateAsync(10, BuildValidRequest());
+
+        Assert.False(result.Success);
+        Assert.Equal(TurmaResultError.Conflict, result.Error);
+        Assert.Equal("Já existe uma turma cadastrada com essas mesmas características para esta escola.", result.Message);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenValid_UpdatesTurmaAndRebuildsNomeCompleto()
+    {
+        var (service, turmaRepo, anoRepo, escolaRepo, modalidadeRepo, etapaRepo) = BuildService();
+        SetupBaseDependencies(anoRepo, escolaRepo, modalidadeRepo, etapaRepo);
+        var existing = BuildEntity(10);
+        turmaRepo.SetupSequence(r => r.GetByIdAsync(10))
+            .ReturnsAsync(existing)
+            .ReturnsAsync(BuildEntity(10));
+        turmaRepo
+            .Setup(r => r.ExistsByCombinacaoAsync(1, 1, 1, "Turma B", Turma.TurnoManha, 10))
+            .ReturnsAsync(false);
+
+        Turma? updated = null;
+        turmaRepo
+            .Setup(r => r.UpdateAsync(It.IsAny<Turma>()))
+            .Callback<Turma>(t => updated = t)
+            .Returns(Task.CompletedTask);
+
+        var request = BuildValidRequest();
+        request.NomeIdentificador = "Turma B";
+
+        var result = await service.UpdateAsync(10, request);
+
+        Assert.True(result.Success);
+        Assert.Equal("Turma atualizada com sucesso!", result.Message);
+        Assert.NotNull(updated);
+        Assert.Equal("Turma B", updated!.NomeIdentificador);
+        Assert.Equal("3º Ano B - Ensino Fundamental - Manhã", updated.NomeCompleto);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenTurmaNotFound_ReturnsNotFound()
+    {
+        var (service, turmaRepo, _, _, _, _) = BuildService();
+        turmaRepo.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((Turma?)null);
+
+        var result = await service.DeleteAsync(99);
+
+        Assert.False(result.Success);
+        Assert.Equal(TurmaResultError.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenTurmaHasDependents_ReturnsConflict()
+    {
+        var (service, turmaRepo, _, _, _, _) = BuildService();
+        turmaRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(BuildEntity(10));
+        turmaRepo.Setup(r => r.DeleteAsync(10)).ThrowsAsync(new DbUpdateException("fk violation"));
+
+        var result = await service.DeleteAsync(10);
+
+        Assert.False(result.Success);
+        Assert.Equal(TurmaResultError.Conflict, result.Error);
+        Assert.Equal("Não é possível excluir esta turma pois existem alunos ou professores vinculados a ela.", result.Message);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenValid_DeletesTurma()
+    {
+        var (service, turmaRepo, _, _, _, _) = BuildService();
+        turmaRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(BuildEntity(10));
+        turmaRepo.Setup(r => r.DeleteAsync(10)).Returns(Task.CompletedTask);
+
+        var result = await service.DeleteAsync(10);
+
+        Assert.True(result.Success);
+        Assert.Equal("Turma excluída com sucesso!", result.Message);
     }
 
     private static (TurmaService Service,

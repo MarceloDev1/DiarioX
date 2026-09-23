@@ -14,4 +14,6 @@ public interface ITurmaRepository
         string turno,
         int? excludeId = null);
     Task<Turma> AddAsync(Turma turma);
+    Task UpdateAsync(Turma turma);
+    Task DeleteAsync(int id);
 }

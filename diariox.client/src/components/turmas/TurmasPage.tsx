@@ -93,19 +93,32 @@ const emptyFieldErrors: TurmaFieldErrors = {
     vagasOfertadas: false,
 };
 
+const emptyFilters = {
+    anoLetivoId: '',
+    escolaId: '',
+    modalidadeEnsinoId: '',
+    etapaEnsinoId: '',
+    turno: '',
+    status: '',
+};
+
 function TurmasPage() {
-    const { items: turmas, isLoading, isSaving, error, load, save } = useCrudData<Turma>('/api/turmas');
+    const { items: turmas, isLoading, isSaving, error, load, save, remove } = useCrudData<Turma>('/api/turmas');
 
     const [view, setView] = useState<View>('list');
     const [form, setForm] = useState<TurmaFormState>(emptyForm);
     const [fieldErrors, setFieldErrors] = useState<TurmaFieldErrors>(emptyFieldErrors);
     const [localError, setLocalError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<number | null>(null);
 
     const [anosLetivos, setAnosLetivos] = useState<AnoLetivoOption[]>([]);
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
     const [modalidades, setModalidades] = useState<ModalidadeOption[]>([]);
     const [etapas, setEtapas] = useState<EtapaOption[]>([]);
+
+    const [filters, setFilters] = useState(emptyFilters);
+    const [appliedFilters, setAppliedFilters] = useState(emptyFilters);
 
     useEffect(() => {
         void load();
@@ -117,6 +130,12 @@ function TurmasPage() {
         const modalidadeId = parseInt(form.modalidadeEnsinoId);
         return etapas.filter(etapa => etapa.modalidadeEnsinoId === modalidadeId);
     }, [etapas, form.modalidadeEnsinoId]);
+
+    const etapasFiltroOptions = useMemo(() => {
+        if (!filters.modalidadeEnsinoId) return etapas;
+        const modalidadeId = parseInt(filters.modalidadeEnsinoId);
+        return etapas.filter(etapa => etapa.modalidadeEnsinoId === modalidadeId);
+    }, [etapas, filters.modalidadeEnsinoId]);
 
     const loadOptions = async () => {
         try {
@@ -186,6 +205,37 @@ function TurmasPage() {
         setLocalError(null);
     };
 
+    const handleFilterChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = event.target;
+
+        setFilters(current => {
+            const next = { ...current, [name]: value };
+
+            if (name === 'modalidadeEnsinoId') {
+                const modalidadeId = value ? parseInt(value) : 0;
+                const etapaValida = current.etapaEnsinoId
+                    ? etapas.some(etapa => etapa.id === parseInt(current.etapaEnsinoId) && etapa.modalidadeEnsinoId === modalidadeId)
+                    : true;
+
+                if (!etapaValida) {
+                    next.etapaEnsinoId = '';
+                }
+            }
+
+            return next;
+        });
+    };
+
+    const handleConsultar = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setAppliedFilters(filters);
+    };
+
+    const handleLimparFiltros = () => {
+        setFilters(emptyFilters);
+        setAppliedFilters(emptyFilters);
+    };
+
     const validateForm = () => {
         const nextErrors: TurmaFieldErrors = {
             anoLetivoId: !form.anoLetivoId,
@@ -219,17 +269,28 @@ function TurmasPage() {
         };
     };
 
+    const filteredTurmas = turmas.filter(turma => {
+        const matchAno = !appliedFilters.anoLetivoId || turma.anoLetivoId === parseInt(appliedFilters.anoLetivoId);
+        const matchEscola = !appliedFilters.escolaId || turma.escolaId === parseInt(appliedFilters.escolaId);
+        const matchModalidade = !appliedFilters.modalidadeEnsinoId || turma.modalidadeEnsinoId === parseInt(appliedFilters.modalidadeEnsinoId);
+        const matchEtapa = !appliedFilters.etapaEnsinoId || turma.etapaEnsinoId === parseInt(appliedFilters.etapaEnsinoId);
+        const matchTurno = !appliedFilters.turno || turma.turno === appliedFilters.turno;
+        const matchStatus = !appliedFilters.status || turma.status === appliedFilters.status;
+        return matchAno && matchEscola && matchModalidade && matchEtapa && matchTurno && matchStatus;
+    });
+
     const handleSave = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setSuccessMessage(null);
 
         if (!validateForm()) return;
 
-        const saved = await save(null, buildPayload());
+        const saved = await save(editingId, buildPayload());
         if (saved) {
             setLocalError(null);
             setFieldErrors(emptyFieldErrors);
-            setSuccessMessage('Turma cadastrada com sucesso!');
+            setSuccessMessage(editingId !== null ? 'Turma atualizada com sucesso!' : 'Turma cadastrada com sucesso!');
+            setEditingId(null);
             setForm(emptyForm);
             setView('list');
             await load();
@@ -261,6 +322,7 @@ function TurmasPage() {
         setSuccessMessage(null);
         setLocalError(null);
         setFieldErrors(emptyFieldErrors);
+        setEditingId(null);
         setForm(current => ({
             ...emptyForm,
             anoLetivoId: current.anoLetivoId,
@@ -268,10 +330,28 @@ function TurmasPage() {
         setView('form');
     };
 
+    const handleEdit = (turma: Turma) => {
+        setSuccessMessage(null);
+        setLocalError(null);
+        setFieldErrors(emptyFieldErrors);
+        setEditingId(turma.id);
+        setForm({
+            anoLetivoId: String(turma.anoLetivoId),
+            escolaId: String(turma.escolaId),
+            modalidadeEnsinoId: String(turma.modalidadeEnsinoId),
+            etapaEnsinoId: String(turma.etapaEnsinoId),
+            nomeIdentificador: turma.nomeIdentificador,
+            turno: turma.turno,
+            vagasOfertadas: String(turma.vagasOfertadas),
+        });
+        setView('form');
+    };
+
     const handleCancel = () => {
         setSuccessMessage(null);
         setLocalError(null);
         setFieldErrors(emptyFieldErrors);
+        setEditingId(null);
         setForm(current => ({
             ...emptyForm,
             anoLetivoId: current.anoLetivoId,
@@ -292,6 +372,13 @@ function TurmasPage() {
         }));
     };
 
+    const handleDelete = async (id: number) => {
+        if (!window.confirm('Tem certeza que deseja excluir esta turma?')) return;
+
+        setSuccessMessage(null);
+        await remove(id);
+    };
+
     const mergedError = localError ?? error;
 
     if (view === 'form') {
@@ -300,8 +387,8 @@ function TurmasPage() {
                 <div className="content-card">
                     <div className="section-header">
                         <div>
-                            <h2>Cadastro de Turma</h2>
-                            <p>Preencha os campos obrigatórios para cadastrar uma nova turma.</p>
+                            <h2>{editingId !== null ? 'Editar Turma' : 'Cadastro de Turma'}</h2>
+                            <p>{editingId !== null ? 'Altere os dados e salve para atualizar.' : 'Preencha os campos obrigatórios para cadastrar uma nova turma.'}</p>
                         </div>
                         <button type="button" className="secondary-button cancel-button" onClick={handleCancel}>
                             Cancelar
@@ -442,11 +529,13 @@ function TurmasPage() {
 
                         <div className="form-actions">
                             <button type="submit" disabled={isSaving}>
-                                Salvar
+                                {editingId !== null ? 'Atualizar Turma' : 'Salvar'}
                             </button>
-                            <button type="button" onClick={handleSaveAndAddAnother} disabled={isSaving}>
-                                Salvar e Adicionar Outra
-                            </button>
+                            {editingId === null && (
+                                <button type="button" onClick={handleSaveAndAddAnother} disabled={isSaving}>
+                                    Salvar e Adicionar Outra
+                                </button>
+                            )}
                             <button type="button" onClick={handleClear}>
                                 Limpar
                             </button>
@@ -470,15 +559,119 @@ function TurmasPage() {
                     </button>
                 </div>
 
+                <form className="filter-bar" onSubmit={handleConsultar}>
+                    <div className="filter-field">
+                        <label htmlFor="filtro-turma-ano">Ano Letivo</label>
+                        <select
+                            id="filtro-turma-ano"
+                            name="anoLetivoId"
+                            value={filters.anoLetivoId}
+                            onChange={handleFilterChange}
+                            className="filter-input"
+                        >
+                            <option value="">Todos</option>
+                            {anosLetivos.map(ano => (
+                                <option key={ano.id} value={String(ano.id)}>
+                                    {ano.anoReferencia}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="filter-field">
+                        <label htmlFor="filtro-turma-escola">Escola</label>
+                        <select
+                            id="filtro-turma-escola"
+                            name="escolaId"
+                            value={filters.escolaId}
+                            onChange={handleFilterChange}
+                            className="filter-input"
+                        >
+                            <option value="">Todas</option>
+                            {escolas.map(escola => (
+                                <option key={escola.id} value={String(escola.id)}>
+                                    {escola.nome}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="filter-field">
+                        <label htmlFor="filtro-turma-modalidade">Modalidade</label>
+                        <select
+                            id="filtro-turma-modalidade"
+                            name="modalidadeEnsinoId"
+                            value={filters.modalidadeEnsinoId}
+                            onChange={handleFilterChange}
+                            className="filter-input"
+                        >
+                            <option value="">Todas</option>
+                            {modalidades.map(modalidade => (
+                                <option key={modalidade.id} value={String(modalidade.id)}>
+                                    {modalidade.nome}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="filter-field">
+                        <label htmlFor="filtro-turma-etapa">Etapa</label>
+                        <select
+                            id="filtro-turma-etapa"
+                            name="etapaEnsinoId"
+                            value={filters.etapaEnsinoId}
+                            onChange={handleFilterChange}
+                            className="filter-input"
+                        >
+                            <option value="">Todas</option>
+                            {etapasFiltroOptions.map(etapa => (
+                                <option key={etapa.id} value={String(etapa.id)}>
+                                    {etapa.nome}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="filter-field">
+                        <label htmlFor="filtro-turma-turno">Turno</label>
+                        <select
+                            id="filtro-turma-turno"
+                            name="turno"
+                            value={filters.turno}
+                            onChange={handleFilterChange}
+                            className="filter-input"
+                        >
+                            <option value="">Todos</option>
+                            {turnos.map(turno => (
+                                <option key={turno.value} value={turno.value}>
+                                    {turno.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="filter-field">
+                        <label htmlFor="filtro-turma-status">Status</label>
+                        <select
+                            id="filtro-turma-status"
+                            name="status"
+                            value={filters.status}
+                            onChange={handleFilterChange}
+                            className="filter-input"
+                        >
+                            <option value="">Todos</option>
+                            <option value="ATIVO">Ativo</option>
+                            <option value="INATIVO">Inativo</option>
+                        </select>
+                    </div>
+                    <button type="submit" className="filter-button">Consultar</button>
+                    <button type="button" className="filter-button filter-button-static" onClick={handleLimparFiltros}>Limpar</button>
+                </form>
+
                 <FeedbackMessage message={successMessage} type="success" />
                 <FeedbackMessage message={error} />
 
-                {isLoading || turmas.length === 0 ? (
+                {isLoading || filteredTurmas.length === 0 ? (
                     <EmptyState
                         loading={isLoading}
                         loadingMessage="Carregando turmas..."
                         emptyMessage="Nenhuma turma encontrada."
-                        emptySubMessage="Clique em Nova Turma para cadastrar."
+                        emptySubMessage={turmas.length === 0 ? 'Clique em Nova Turma para cadastrar.' : 'Tente ajustar os filtros.'}
                     />
                 ) : (
                     <div className="table-responsive">
@@ -493,10 +686,11 @@ function TurmasPage() {
                                     <th>Turno</th>
                                     <th>Vagas</th>
                                     <th>Status</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {turmas.map(turma => (
+                                {filteredTurmas.map(turma => (
                                     <tr key={turma.id}>
                                         <td>{turma.nomeCompleto}</td>
                                         <td>{turma.anoReferencia}</td>
@@ -509,6 +703,12 @@ function TurmasPage() {
                                             <span className={`status-pill ${turma.status === 'ATIVO' ? 'status-active' : 'status-inactive'}`}>
                                                 {turma.status}
                                             </span>
+                                        </td>
+                                        <td>
+                                            <div className="action-group">
+                                                <button type="button" className="table-action-button" onClick={() => handleEdit(turma)}>Editar</button>
+                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(turma.id)}>Excluir</button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
