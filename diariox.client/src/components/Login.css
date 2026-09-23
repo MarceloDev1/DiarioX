@@ -3,23 +3,34 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    background: radial-gradient(circle at center, #3b1766 0%, #1c0d33 45%, #0a0614 100%);
     padding: 1rem;
 }
 
 .login-card {
     background: #ffffff;
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 2.5rem 2rem;
     width: 100%;
     max-width: 440px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.login-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    width: 52px;
+    height: 52px;
+    color: #7C2BE8;
+    font-size: 2.75rem;
 }
 
 .login-title {
-    font-size: 2rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    color: #0f3460;
+    color: #111827;
     margin: 0 0 0.5rem;
     text-align: center;
 }
@@ -57,9 +68,9 @@
     }
 
         .first-access-progress span.active {
-            background: #0f3460;
+            background: #7C2BE8;
             color: #ffffff;
-            border-color: #0f3460;
+            border-color: #7C2BE8;
         }
 
 .form-group {
@@ -71,29 +82,68 @@
     .form-group label {
         font-size: 0.875rem;
         font-weight: 600;
-        color: #374151;
+        color: #111827;
         text-align: left;
     }
 
-    .form-group input {
-        padding: 0.65rem 0.875rem;
-        border: 1.5px solid #d1d5db;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        color: #111827;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        outline: none;
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 0.875rem;
+    color: #9ca3af;
+    font-size: 1.05rem;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.toggle-password-visibility {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0.25rem;
+    font-size: 1.05rem;
+    transition: color 0.2s;
+}
+
+    .toggle-password-visibility:hover {
+        color: #7C2BE8;
     }
 
-        .form-group input:focus {
-            border-color: #0f3460;
-            box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.15);
-        }
+.login-card .form-group input {
+    width: 100%;
+    padding: 0.65rem 0.875rem 0.65rem 2.5rem;
+    border: 1.5px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    color: #111827;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    box-sizing: border-box;
+}
 
-        .form-group input:disabled {
-            background: #f3f4f6;
-            cursor: not-allowed;
-        }
+    .login-card .form-group input:focus {
+        border-color: #7C2BE8;
+        box-shadow: 0 0 0 3px rgba(124, 43, 232, 0.15);
+    }
+
+    .login-card .form-group input:disabled {
+        background: #f3f4f6;
+        cursor: not-allowed;
+    }
+
+.input-with-icon:has(input#password) input {
+    padding-right: 2.5rem;
+}
 
 .password-header {
     display: flex;
@@ -104,7 +154,7 @@
 .forgot-password-link {
     background: none;
     border: none;
-    color: #0f3460;
+    color: #111827;
     font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
@@ -113,7 +163,7 @@
 }
 
     .forgot-password-link:hover {
-        color: #1e4a76;
+        color: #7C2BE8;
         text-decoration: underline;
     }
 
@@ -147,11 +197,11 @@
 }
 
 .login-button {
-    padding: 0.7rem;
-    background: #0f3460;
+    padding: 0.75rem;
+    background: #7C2BE8;
     color: #ffffff;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
@@ -160,7 +210,7 @@
 }
 
     .login-button:hover:not(:disabled) {
-        background: #16213e;
+        background: #6B21C4;
     }
 
     .login-button:active:not(:disabled) {
@@ -175,9 +225,9 @@
 .secondary-button {
     padding: 0.62rem;
     background: #ffffff;
-    color: #0f3460;
-    border: 1px solid #93a4bc;
-    border-radius: 8px;
+    color: #7C2BE8;
+    border: 1px solid #d8b4fe;
+    border-radius: 10px;
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
@@ -187,22 +237,22 @@
 .first-access {
     text-align: center;
     font-size: 0.85rem;
-    color: #6b7280;
+    color: #111827;
     margin-top: 0.5rem;
 }
 
 .first-access-link {
     background: none;
     border: none;
-    color: #0f3460;
-    font-weight: 600;
+    color: #7C2BE8;
+    font-weight: 700;
     cursor: pointer;
     padding: 0;
     transition: color 0.2s;
 }
 
     .first-access-link:hover {
-        color: #1e4a76;
+        color: #6B21C4;
         text-decoration: underline;
     }
 

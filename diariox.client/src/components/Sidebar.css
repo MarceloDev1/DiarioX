@@ -81,6 +81,8 @@
     transition: all 0.2s;
     font-weight: 500;
     border-radius: 8px;
+    box-sizing: border-box;
+    width: calc(100% - 1rem);
     margin: 0 0.5rem;
 }
 

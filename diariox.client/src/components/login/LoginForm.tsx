@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 
 interface LoginFormProps {
     onLogin: (username: string) => void;
@@ -11,6 +12,7 @@ function LoginForm({ onLogin, onForgotPassword, onFirstAccess }: LoginFormProps)
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
@@ -50,15 +52,18 @@ function LoginForm({ onLogin, onForgotPassword, onFirstAccess }: LoginFormProps)
             <form onSubmit={handleSubmit} className="login-form" noValidate>
                 <div className="form-group">
                     <label htmlFor="username">Usuário (E-mail ou CPF)</label>
-                    <input
-                        id="username"
-                        type="text"
-                        autoComplete="username"
-                        placeholder="seu@email.com ou 00000000000"
-                        value={username}
-                        onChange={e => setUsername(e.target.value)}
-                        disabled={loading}
-                    />
+                    <div className="input-with-icon">
+                        <FiMail className="input-icon" />
+                        <input
+                            id="username"
+                            type="text"
+                            autoComplete="username"
+                            placeholder="seu@email.com ou 00000000000"
+                            value={username}
+                            onChange={e => setUsername(e.target.value)}
+                            disabled={loading}
+                        />
+                    </div>
                 </div>
 
                 <div className="form-group">
@@ -68,15 +73,27 @@ function LoginForm({ onLogin, onForgotPassword, onFirstAccess }: LoginFormProps)
                             Esqueci minha senha
                         </button>
                     </div>
-                    <input
-                        id="password"
-                        type="password"
-                        autoComplete="current-password"
-                        placeholder="Digite sua senha"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        disabled={loading}
-                    />
+                    <div className="input-with-icon">
+                        <FiLock className="input-icon" />
+                        <input
+                            id="password"
+                            type={showPassword ? 'text' : 'password'}
+                            autoComplete="current-password"
+                            placeholder="Digite sua senha"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            disabled={loading}
+                        />
+                        <button
+                            type="button"
+                            className="toggle-password-visibility"
+                            onClick={() => setShowPassword(show => !show)}
+                            tabIndex={-1}
+                            aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                        >
+                            {showPassword ? <FiEyeOff /> : <FiEye />}
+                        </button>
+                    </div>
                 </div>
 
                 {error && <p className="login-error">{error}</p>}
@@ -86,7 +103,7 @@ function LoginForm({ onLogin, onForgotPassword, onFirstAccess }: LoginFormProps)
                 </button>
 
                 <div className="first-access">
-                    <span>E seu primeiro acesso?</span>{' '}
+                    <span>É seu primeiro acesso?</span>{' '}
                     <button type="button" className="first-access-link" onClick={onFirstAccess}>
                         Primeiro Acesso
                     </button>
