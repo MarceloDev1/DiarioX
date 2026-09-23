@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using DiarioX.Server.Application.DTOs.ModalidadesEnsino;
 using DiarioX.Server.Application.Interfaces;
 using DiarioX.Server.Domain.Entities;
@@ -7,6 +8,8 @@ namespace DiarioX.Server.Application.Services;
 
 public class ModalidadeEnsinoService : IModalidadeEnsinoService
 {
+    private static readonly Regex SiglaRegex = new(@"^[A-Z0-9-]+$", RegexOptions.Compiled);
+
     private readonly IModalidadeEnsinoRepository _repository;
 
     public ModalidadeEnsinoService(IModalidadeEnsinoRepository repository)
@@ -86,6 +89,12 @@ public class ModalidadeEnsinoService : IModalidadeEnsinoService
 
         if (string.IsNullOrWhiteSpace(request.Sigla))
             return Invalid("Sigla obrigatoria.");
+
+        if (request.Sigla.Length > 10)
+            return Invalid("Sigla deve ter no maximo 10 caracteres.");
+
+        if (!SiglaRegex.IsMatch(request.Sigla))
+            return Invalid("Sigla deve conter apenas letras, numeros e hifen.");
 
         if (request.Status != ModalidadeEnsino.StatusAtivo && request.Status != ModalidadeEnsino.StatusInativo)
             return Invalid("Status invalido. Valores permitidos: ATIVO ou INATIVO.");

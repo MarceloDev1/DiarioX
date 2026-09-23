@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
 import FeedbackMessage from '../ui/FeedbackMessage';
@@ -31,7 +31,7 @@ const emptyForm: ModalidadeEnsinoFormState = {
 function ModalidadesEnsinoPage() {
     const { items: modalidades, isLoading, isSaving, error, load, save, remove } =
         useCrudData<ModalidadeEnsino>('/api/modalidadesensino');
-    const { form, editingId, handleFieldChange, startEdit, clear } =
+    const { form, setForm, editingId, handleFieldChange, startEdit, clear } =
         useCrudForm<ModalidadeEnsinoFormState & Record<string, unknown>>(
             emptyForm as ModalidadeEnsinoFormState & Record<string, unknown>
         );
@@ -65,6 +65,14 @@ function ModalidadesEnsinoPage() {
         const matchSigla = !appliedSigla || m.sigla.toLowerCase().includes(appliedSigla.toLowerCase());
         return matchNome && matchSigla;
     });
+
+    const handleSiglaChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const sanitized = e.target.value
+            .toUpperCase()
+            .replace(/[^A-Z0-9-]/g, '')
+            .slice(0, 10);
+        setForm((current) => ({ ...current, sigla: sanitized }));
+    };
 
     const handleNova = () => {
         setFormError(null);
@@ -147,8 +155,10 @@ function ModalidadesEnsinoPage() {
                                     id="modalidade-sigla"
                                     name="sigla"
                                     value={form.sigla as string}
-                                    onChange={handleFieldChange}
+                                    onChange={handleSiglaChange}
                                     type="text"
+                                    maxLength={10}
+                                    placeholder="Ex: EJA-MED"
                                     required
                                 />
                             </div>
