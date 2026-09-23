@@ -41,13 +41,14 @@ const emptyForm: EtapaEnsinoFormState = {
 function EtapasEnsinoPage() {
     const { items: etapas, isLoading, isSaving, error, load, save, remove } =
         useCrudData<EtapaEnsino>('/api/etapasensino');
-    const { form, editingId, handleFieldChange, startEdit, clear } =
+    const { form, setForm, editingId, handleFieldChange, startEdit, clear } =
         useCrudForm<EtapaEnsinoFormState & Record<string, unknown>>(
             emptyForm as EtapaEnsinoFormState & Record<string, unknown>
         );
 
     const [modalidades, setModalidades] = useState<ModalidadeOption[]>([]);
     const [view, setView] = useState<View>('list');
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     const [filterNome, setFilterNome] = useState('');
     const [filterModalidadeId, setFilterModalidadeId] = useState('');
@@ -90,6 +91,7 @@ function EtapasEnsinoPage() {
 
     const handleNova = () => {
         clear();
+        setSuccessMessage(null);
         setView('form');
     };
 
@@ -101,20 +103,26 @@ function EtapasEnsinoPage() {
             ordemCronologica: String(etapa.ordemCronologica),
             idadeRecomendada: etapa.idadeRecomendada != null ? String(etapa.idadeRecomendada) : '',
         });
+        setSuccessMessage(null);
         setView('form');
     };
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
+    const buildPayload = () => {
         const idadeStr = (form.idadeRecomendada as string).trim();
-        const saved = await save(editingId, {
+        return {
             modalidadeEnsinoId: parseInt(form.modalidadeEnsinoId as string),
             nome: (form.nome as string).trim(),
             sigla: (form.sigla as string).trim(),
             ordemCronologica: parseInt(form.ordemCronologica as string),
             idadeRecomendada: idadeStr ? parseInt(idadeStr) : null,
-        });
+        };
+    };
+
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setSuccessMessage(null);
+
+        const saved = await save(editingId, buildPayload());
 
         if (saved) {
             clear();
@@ -122,8 +130,24 @@ function EtapasEnsinoPage() {
         }
     };
 
+    const handleSaveAndAddAnother = async () => {
+        setSuccessMessage(null);
+
+        const saved = await save(editingId, buildPayload());
+
+        if (saved) {
+            setSuccessMessage('Etapa de ensino cadastrada com sucesso!');
+            setForm(current => ({
+                ...emptyForm,
+                modalidadeEnsinoId: current.modalidadeEnsinoId,
+            }));
+            await load();
+        }
+    };
+
     const handleCancel = () => {
         clear();
+        setSuccessMessage(null);
         setView('list');
     };
 
@@ -145,6 +169,7 @@ function EtapasEnsinoPage() {
                         </button>
                     </div>
 
+                    <FeedbackMessage message={successMessage} type="success" />
                     <FeedbackMessage message={error} />
 
                     <form className="cadastro-form escola-form" onSubmit={handleSubmit}>
@@ -220,9 +245,14 @@ function EtapasEnsinoPage() {
                             <button type="submit" disabled={isSaving}>
                                 {editingId !== null ? 'Atualizar Etapa' : 'Salvar Etapa'}
                             </button>
+                            {editingId === null && (
+                                <button type="button" onClick={handleSaveAndAddAnother} disabled={isSaving}>
+                                    Salvar e Criar Outro
+                                </button>
+                            )}
                             <button
                                 type="button"
-                                onClick={() => clear()}
+                                onClick={() => { clear(); setSuccessMessage(null); }}
                             >
                                 Limpar
                             </button>
