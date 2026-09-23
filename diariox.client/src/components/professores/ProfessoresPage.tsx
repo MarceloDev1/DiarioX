@@ -275,7 +275,7 @@ function ProfessoresPage() {
     return (
         <div className="page-container">
             <div className="page-header">
-                <h1>👨‍🏫 Professores</h1>
+                <h1> Professores</h1>
             </div>
 
             <FeedbackMessage message={error} type="error" />

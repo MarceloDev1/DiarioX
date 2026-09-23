@@ -328,7 +328,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
     return (
         <div className="page-container">
             <div className="page-header">
-                <h1>🎒 Alunos</h1>
+                <h1> Alunos</h1>
             </div>
 
             <FeedbackMessage message={error} type="error" />
