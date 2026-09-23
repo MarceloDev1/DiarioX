@@ -7,12 +7,13 @@ import ForgotPasswordForm from './login/ForgotPasswordForm';
 
 interface LoginProps {
     onLogin: (username: string) => void;
+    initialViewMode?: ViewMode;
 }
 
 type ViewMode = 'login' | 'first-access' | 'forgot-password';
 
-function Login({ onLogin }: LoginProps) {
-    const [viewMode, setViewMode] = useState<ViewMode>('login');
+function Login({ onLogin, initialViewMode = 'login' }: LoginProps) {
+    const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
 
     return (
         <div className="login-container">

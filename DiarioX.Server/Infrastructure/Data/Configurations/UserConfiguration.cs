@@ -52,6 +52,14 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.UltimoAcesso)
             .HasColumnName("ultimo_acesso");
 
+        builder.Property(x => x.FailedLoginAttempts)
+            .HasColumnName("failed_login_attempts")
+            .HasDefaultValue(0)
+            .IsRequired();
+
+        builder.Property(x => x.LockoutEnd)
+            .HasColumnName("lockout_end");
+
         builder.Property(x => x.CreatedAt)
             .HasColumnName("created_at")
             .HasDefaultValueSql("NOW()");

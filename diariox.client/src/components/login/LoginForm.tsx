@@ -36,7 +36,8 @@ function LoginForm({ onLogin, onForgotPassword, onFirstAccess }: LoginFormProps)
                 if (data.token) sessionStorage.setItem('diariox_token', data.token);
                 onLogin(data.email ?? username);
             } else {
-                setError('Usuário ou senha inválidos.');
+                const data: { message?: string } = await response.json().catch(() => ({}));
+                setError(data.message ?? 'Usuário ou senha inválidos.');
             }
         } catch {
             setError('Erro ao conectar ao servidor.');

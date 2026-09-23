@@ -37,32 +37,43 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
-    public async Task<LoginResponse?> LoginAsync(LoginRequest request)
+    public async Task<LoginResult> LoginAsync(LoginRequest request)
     {
         var rawLogin = request.GetEffectiveLogin();
         if (string.IsNullOrWhiteSpace(rawLogin) || string.IsNullOrWhiteSpace(request.Password))
-            return null;
+            return LoginResult.Fail(LoginFailureReason.InvalidCredentials);
 
         var login = NormalizeLogin(rawLogin);
         if (string.IsNullOrWhiteSpace(login) || !IsValidLogin(login))
-            return null;
+            return LoginResult.Fail(LoginFailureReason.InvalidCredentials);
 
         var user = await _userRepository.GetByEmailOrCpfAsync(login);
 
         if (user is null)
-            return null;
+            return LoginResult.Fail(LoginFailureReason.InvalidCredentials);
 
-        if (user.Status != User.StatusAtivo)
-            return null;
+        if (user.Status == User.StatusBloqueado)
+            return LoginResult.Fail(LoginFailureReason.UserBlocked);
+
+        if (user.Status == User.StatusInativo)
+            return LoginResult.Fail(LoginFailureReason.UserInactive);
+
+        var now = DateTime.UtcNow;
+        if (user.IsLockedOut(now))
+            return LoginResult.Fail(LoginFailureReason.AccountLocked);
 
         if (!user.VerifyPassword(request.Password))
-            return null;
+        {
+            user.RegisterFailedLoginAttempt(now);
+            await _userRepository.UpdateAsync(user);
+            return LoginResult.Fail(user.IsLockedOut(now) ? LoginFailureReason.AccountLocked : LoginFailureReason.InvalidCredentials);
+        }
 
-        user.UltimoAcesso = DateTime.UtcNow;
+        user.RegisterSuccessfulLogin(now);
         await _userRepository.UpdateAsync(user);
 
         var token = GenerateJwtToken(user.Email);
-        return token;
+        return LoginResult.Ok(token);
     }
 
     public async Task<FirstAccessOperationResponse> ValidateFirstAccessAsync(FirstAccessValidationRequest request)

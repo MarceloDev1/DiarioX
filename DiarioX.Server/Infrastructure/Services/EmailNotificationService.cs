@@ -10,17 +10,23 @@ public class EmailNotificationService : IEmailNotificationService
 {
     private readonly IEmailService _emailService;
     private readonly ILogger<EmailNotificationService> _logger;
+    private readonly IConfiguration _configuration;
 
-    public EmailNotificationService(IEmailService emailService, ILogger<EmailNotificationService> logger)
+    public EmailNotificationService(IEmailService emailService, ILogger<EmailNotificationService> logger, IConfiguration configuration)
     {
         _emailService = emailService;
         _logger = logger;
+        _configuration = configuration;
     }
+
+    private string GetAppUrl() => string.IsNullOrWhiteSpace(_configuration["AppUrl"])
+        ? "https://localhost:5173"
+        : _configuration["AppUrl"]!.TrimEnd('/');
 
     public async Task SendWelcomeAsync(string toEmail, string userName, string loginEmail)
     {
         var subject = "Bem-vindo ao Diário de Classe! 🎓";
-        var htmlBody = BuildWelcomeTemplate(userName, loginEmail);
+        var htmlBody = BuildWelcomeTemplate(userName, loginEmail, GetAppUrl());
 
         try
         {
@@ -37,7 +43,7 @@ public class EmailNotificationService : IEmailNotificationService
     public async Task SendWelcomeProfessorAsync(string toEmail, string professorName, string escolaName, string loginEmail)
     {
         var subject = "Bem-vindo ao Diário de Classe, Professor! 👨‍🏫";
-        var htmlBody = BuildWelcomeProfessorTemplate(professorName, escolaName, loginEmail);
+        var htmlBody = BuildWelcomeProfessorTemplate(professorName, escolaName, loginEmail, GetAppUrl());
 
         try
         {
@@ -71,7 +77,7 @@ public class EmailNotificationService : IEmailNotificationService
     /// <summary>
     /// Constrói template HTML de boas-vindas para novo usuário.
     /// </summary>
-    private static string BuildWelcomeTemplate(string userName, string loginEmail)
+    private static string BuildWelcomeTemplate(string userName, string loginEmail, string appUrl)
     {
         return $@"
 <!DOCTYPE html>
@@ -124,11 +130,11 @@ public class EmailNotificationService : IEmailNotificationService
             </div>
 
             <div style=""text-align: center;"">
-                <a href=""https://diariox.online/login"" class=""cta-button"">Acessar Plataforma</a>
+                <a href=""{appUrl}/primeiro-acesso"" class=""cta-button"">Acessar Plataforma</a>
             </div>
 
             <div class=""welcome-text"" style=""font-size: 14px; color: #666; margin-top: 30px;"">
-                <p>Se tiver dúvidas ou precisar de ajuda, acesse nossa <a href=""https://diariox.online/ajuda"" style=""color: #667eea; text-decoration: none;"">central de suporte</a>.</p>
+                <p>Se tiver dúvidas ou precisar de ajuda, acesse nossa <a href=""{appUrl}/ajuda"" style=""color: #667eea; text-decoration: none;"">central de suporte</a>.</p>
             </div>
         </div>
         <div class=""footer"">
@@ -143,7 +149,7 @@ public class EmailNotificationService : IEmailNotificationService
     /// <summary>
     /// Constrói template HTML de boas-vindas para novo professor.
     /// </summary>
-    private static string BuildWelcomeProfessorTemplate(string professorName, string escolaName, string loginEmail)
+    private static string BuildWelcomeProfessorTemplate(string professorName, string escolaName, string loginEmail, string appUrl)
     {
         return $@"
 <!DOCTYPE html>
@@ -205,16 +211,16 @@ public class EmailNotificationService : IEmailNotificationService
             </div>
 
             <div style=""text-align: center;"">
-                <a href=""https://diariox.online/login"" class=""cta-button"">Acessar Minha Conta</a>
+                <a href=""{appUrl}/primeiro-acesso"" class=""cta-button"">Acessar Minha Conta</a>
             </div>
 
             <div class=""welcome-text"" style=""font-size: 14px; color: #666; margin-top: 30px; background: #f0f0f0; padding: 15px; border-radius: 5px;"">
                 <p><strong>💡 Primeira vez?</strong></p>
-                <p>Confira nosso <a href=""https://diariox.online/tutorial"" style=""color: #f5576c; text-decoration: none;"">tutorial de primeiros passos</a> para aprender como usar todas as funcionalidades.</p>
+                <p>Confira nosso <a href=""{appUrl}/tutorial"" style=""color: #f5576c; text-decoration: none;"">tutorial de primeiros passos</a> para aprender como usar todas as funcionalidades.</p>
             </div>
 
             <div class=""welcome-text"" style=""font-size: 14px; color: #666;"">
-                <p>Precisando de ajuda? Acesse nossa <a href=""https://diariox.online/suporte-professor"" style=""color: #f5576c; text-decoration: none;"">central de suporte para professores</a>.</p>
+                <p>Precisando de ajuda? Acesse nossa <a href=""{appUrl}/suporte-professor"" style=""color: #f5576c; text-decoration: none;"">central de suporte para professores</a>.</p>
             </div>
         </div>
         <div class=""footer"">

@@ -10,6 +10,7 @@ function App() {
     const [currentPage, setCurrentPage] = useState('home');
     const [initialAlunoId, setInitialAlunoId] = useState<number | null>(null);
     const [resetToken, setResetToken] = useState<string | null>(null);
+    const isFirstAccessRoute = window.location.pathname === '/primeiro-acesso';
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -33,7 +34,7 @@ function App() {
     }
 
     if (!currentUser) {
-        return <Login onLogin={setCurrentUser} />;
+        return <Login onLogin={setCurrentUser} initialViewMode={isFirstAccessRoute ? 'first-access' : 'login'} />;
     }
 
     return (

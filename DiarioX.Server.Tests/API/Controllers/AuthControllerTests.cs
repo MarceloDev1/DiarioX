@@ -17,7 +17,7 @@ public class AuthControllerTests
         var env = CreateEnvironment(isDevelopment: false);
 
         var request = new LoginRequest { Login = "usuario@x.com", Password = "errada" };
-        authService.Setup(s => s.LoginAsync(request)).ReturnsAsync((LoginResponse?)null);
+        authService.Setup(s => s.LoginAsync(request)).ReturnsAsync(LoginResult.Fail(LoginFailureReason.InvalidCredentials));
 
         var controller = new AuthController(authService.Object, emailService.Object, env.Object);
 
@@ -25,6 +25,66 @@ public class AuthControllerTests
 
         var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
         Assert.Equal("Usuário ou senha inválidos.", GetPropertyValue(unauthorized.Value, "message"));
+    }
+
+    [Fact]
+    public async Task Login_WhenUserBlocked_ReturnsUnauthorizedWithBlockedMessage()
+    {
+        var authService = new Mock<IAuthService>();
+        var emailService = new Mock<IEmailService>();
+        var env = CreateEnvironment(isDevelopment: false);
+
+        var request = new LoginRequest { Login = "usuario@x.com", Password = "Senha@123" };
+        authService.Setup(s => s.LoginAsync(request)).ReturnsAsync(LoginResult.Fail(LoginFailureReason.UserBlocked));
+
+        var controller = new AuthController(authService.Object, emailService.Object, env.Object);
+
+        var result = await controller.Login(request);
+
+        var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
+        Assert.Equal(
+            "Acesso negado. Usuário Bloqueado no sistema. Entre em contato com a secretaria/suporte.",
+            GetPropertyValue(unauthorized.Value, "message"));
+    }
+
+    [Fact]
+    public async Task Login_WhenUserInactive_ReturnsUnauthorizedWithInactiveMessage()
+    {
+        var authService = new Mock<IAuthService>();
+        var emailService = new Mock<IEmailService>();
+        var env = CreateEnvironment(isDevelopment: false);
+
+        var request = new LoginRequest { Login = "usuario@x.com", Password = "Senha@123" };
+        authService.Setup(s => s.LoginAsync(request)).ReturnsAsync(LoginResult.Fail(LoginFailureReason.UserInactive));
+
+        var controller = new AuthController(authService.Object, emailService.Object, env.Object);
+
+        var result = await controller.Login(request);
+
+        var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
+        Assert.Equal(
+            "Acesso negado. Usuário inativo no sistema. Use o primeiro acesso para ativar sua conta.",
+            GetPropertyValue(unauthorized.Value, "message"));
+    }
+
+    [Fact]
+    public async Task Login_WhenAccountLocked_ReturnsUnauthorizedWithLockoutMessage()
+    {
+        var authService = new Mock<IAuthService>();
+        var emailService = new Mock<IEmailService>();
+        var env = CreateEnvironment(isDevelopment: false);
+
+        var request = new LoginRequest { Login = "usuario@x.com", Password = "Senha@123" };
+        authService.Setup(s => s.LoginAsync(request)).ReturnsAsync(LoginResult.Fail(LoginFailureReason.AccountLocked));
+
+        var controller = new AuthController(authService.Object, emailService.Object, env.Object);
+
+        var result = await controller.Login(request);
+
+        var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
+        Assert.Equal(
+            "Conta bloqueada temporariamente devido a múltiplas tentativas. Tente novamente mais tarde ou recupere sua senha.",
+            GetPropertyValue(unauthorized.Value, "message"));
     }
 
     [Fact]
@@ -36,7 +96,7 @@ public class AuthControllerTests
 
         var request = new LoginRequest { Login = "usuario@x.com", Password = "Senha@123" };
         var response = new LoginResponse("jwt-token", "usuario@x.com", DateTime.UtcNow.AddMinutes(60));
-        authService.Setup(s => s.LoginAsync(request)).ReturnsAsync(response);
+        authService.Setup(s => s.LoginAsync(request)).ReturnsAsync(LoginResult.Ok(response));
 
         var controller = new AuthController(authService.Object, emailService.Object, env.Object);
 

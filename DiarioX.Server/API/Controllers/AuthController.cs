@@ -22,12 +22,25 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var response = await _authService.LoginAsync(request);
+        var result = await _authService.LoginAsync(request);
 
-        if (response is null)
-            return Unauthorized(new { message = "Usuário ou senha inválidos." });
+        if (!result.Success)
+        {
+            var message = result.FailureReason switch
+            {
+                LoginFailureReason.UserBlocked =>
+                    "Acesso negado. Usuário Bloqueado no sistema. Entre em contato com a secretaria/suporte.",
+                LoginFailureReason.UserInactive =>
+                    "Acesso negado. Usuário inativo no sistema. Use o primeiro acesso para ativar sua conta.",
+                LoginFailureReason.AccountLocked =>
+                    "Conta bloqueada temporariamente devido a múltiplas tentativas. Tente novamente mais tarde ou recupere sua senha.",
+                _ => "Usuário ou senha inválidos.",
+            };
 
-        return Ok(response);
+            return Unauthorized(new { message });
+        }
+
+        return Ok(result.Response);
     }
 
     [HttpPost("first-access/validate")]

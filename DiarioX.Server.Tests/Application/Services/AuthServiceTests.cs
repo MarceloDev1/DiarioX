@@ -25,15 +25,15 @@ public class AuthServiceTests
 
         var result = await fixture.Service.LoginAsync(request);
 
-        Assert.NotNull(result);
-        Assert.False(string.IsNullOrWhiteSpace(result!.Token));
-        Assert.Equal("usuario@x.com", result.Email);
+        Assert.True(result.Success);
+        Assert.False(string.IsNullOrWhiteSpace(result.Response!.Token));
+        Assert.Equal("usuario@x.com", result.Response.Email);
         Assert.True(user.UltimoAcesso.HasValue);
         fixture.UserRepository.Verify(r => r.UpdateAsync(user), Times.Once);
     }
 
     [Fact]
-    public async Task LoginAsync_WhenUserInactive_ReturnsNull()
+    public async Task LoginAsync_WhenUserInactive_ReturnsUserInactiveFailure()
     {
         var fixture = BuildService();
         var user = BuildActiveUser(email: "usuario@x.com", cpf: "52998224725", password: "Senha@123");
@@ -45,12 +45,31 @@ public class AuthServiceTests
 
         var result = await fixture.Service.LoginAsync(new LoginRequest { Login = "usuario@x.com", Password = "Senha@123" });
 
-        Assert.Null(result);
+        Assert.False(result.Success);
+        Assert.Equal(LoginFailureReason.UserInactive, result.FailureReason);
         fixture.UserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
     }
 
     [Fact]
-    public async Task LoginAsync_WhenPasswordInvalid_ReturnsNull()
+    public async Task LoginAsync_WhenUserBlocked_ReturnsUserBlockedFailure()
+    {
+        var fixture = BuildService();
+        var user = BuildActiveUser(email: "usuario@x.com", cpf: "52998224725", password: "Senha@123");
+        user.Status = User.StatusBloqueado;
+
+        fixture.UserRepository
+            .Setup(r => r.GetByEmailOrCpfAsync("usuario@x.com"))
+            .ReturnsAsync(user);
+
+        var result = await fixture.Service.LoginAsync(new LoginRequest { Login = "usuario@x.com", Password = "Senha@123" });
+
+        Assert.False(result.Success);
+        Assert.Equal(LoginFailureReason.UserBlocked, result.FailureReason);
+        fixture.UserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task LoginAsync_WhenPasswordInvalid_ReturnsInvalidCredentialsAndRecordsAttempt()
     {
         var fixture = BuildService();
         var user = BuildActiveUser(email: "usuario@x.com", cpf: "52998224725", password: "Senha@123");
@@ -61,7 +80,46 @@ public class AuthServiceTests
 
         var result = await fixture.Service.LoginAsync(new LoginRequest { Login = "usuario@x.com", Password = "errada" });
 
-        Assert.Null(result);
+        Assert.False(result.Success);
+        Assert.Equal(LoginFailureReason.InvalidCredentials, result.FailureReason);
+        Assert.Equal(1, user.FailedLoginAttempts);
+        fixture.UserRepository.Verify(r => r.UpdateAsync(user), Times.Once);
+    }
+
+    [Fact]
+    public async Task LoginAsync_WhenFifthConsecutiveFailure_LocksAccountTemporarily()
+    {
+        var fixture = BuildService();
+        var user = BuildActiveUser(email: "usuario@x.com", cpf: "52998224725", password: "Senha@123");
+        user.FailedLoginAttempts = User.MaxFailedLoginAttempts - 1;
+
+        fixture.UserRepository
+            .Setup(r => r.GetByEmailOrCpfAsync("usuario@x.com"))
+            .ReturnsAsync(user);
+
+        var result = await fixture.Service.LoginAsync(new LoginRequest { Login = "usuario@x.com", Password = "errada" });
+
+        Assert.False(result.Success);
+        Assert.Equal(LoginFailureReason.AccountLocked, result.FailureReason);
+        Assert.Equal(0, user.FailedLoginAttempts);
+        Assert.True(user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow);
+    }
+
+    [Fact]
+    public async Task LoginAsync_WhenAccountCurrentlyLockedOut_ReturnsAccountLockedWithoutCheckingPassword()
+    {
+        var fixture = BuildService();
+        var user = BuildActiveUser(email: "usuario@x.com", cpf: "52998224725", password: "Senha@123");
+        user.LockoutEnd = DateTime.UtcNow.AddMinutes(10);
+
+        fixture.UserRepository
+            .Setup(r => r.GetByEmailOrCpfAsync("usuario@x.com"))
+            .ReturnsAsync(user);
+
+        var result = await fixture.Service.LoginAsync(new LoginRequest { Login = "usuario@x.com", Password = "Senha@123" });
+
+        Assert.False(result.Success);
+        Assert.Equal(LoginFailureReason.AccountLocked, result.FailureReason);
         fixture.UserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
     }
 
