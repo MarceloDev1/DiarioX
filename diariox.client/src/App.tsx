@@ -29,6 +29,12 @@ function App() {
         setInitialAlunoId(alunoId ?? null);
     }
 
+    function handleLogout() {
+        sessionStorage.removeItem('diariox_token');
+        setCurrentUser(null);
+        setCurrentPage('home');
+    }
+
     if (resetToken) {
         return <ResetPassword token={resetToken} onSuccess={handleResetSuccess} />;
     }
@@ -43,7 +49,12 @@ function App() {
             <main className="main-area">
                 <header className="main-header">
                     <h1>Diário de Classe</h1>
-                    <p>Olá, <strong>{currentUser}</strong>!</p>
+                    <div className="main-header-user">
+                        <p>Olá, <strong>{currentUser}</strong>!</p>
+                        <button type="button" className="logout-button" onClick={handleLogout}>
+                            Sair
+                        </button>
+                    </div>
                 </header>
                 <MainContent page={currentPage} onNavigate={handleNavigate} initialAlunoId={initialAlunoId} />
             </main>

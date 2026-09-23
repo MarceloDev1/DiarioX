@@ -287,7 +287,7 @@ public class UserServiceTests
 
         Assert.False(result.Success);
         Assert.Equal(UserResultError.Conflict, result.Error);
-        Assert.Equal("Nao e possivel remover este usuario pois ele esta associado a outros registros.", result.Message);
+        Assert.Equal("Não é possivel remover este usuário pois ele esta associado a outros registros.", result.Message);
     }
 
     [Fact]
@@ -300,7 +300,7 @@ public class UserServiceTests
         var result = await service.Service.DeleteAsync(10);
 
         Assert.True(result.Success);
-        Assert.Equal("Usuario removido com sucesso.", result.Message);
+        Assert.Equal("Usuário removido com sucesso.", result.Message);
         service.UserRepository.Verify(r => r.DeleteAsync(10), Times.Once);
     }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './Sidebar.css';
-import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser } from 'react-icons/fi';
 import { MdSchool, MdPeople, MdManageAccounts } from 'react-icons/md';
 
 function LogoIcon() {
@@ -33,6 +33,7 @@ const menuItems = [
     { id: 'alunos', label: 'Alunos', icon: MdPeople },
     { id: 'enturmar-aluno', label: 'Enturmar Aluno', icon: FiUserCheck },
     { id: 'remanejar-aluno', label: 'Remanejar Aluno', icon: FiRotateCcw },
+    { id: 'usuarios', label: 'Usuários', icon: FiUser },
 ];
 
 function Sidebar({ onSelectPage, currentPage }: SidebarProps) {

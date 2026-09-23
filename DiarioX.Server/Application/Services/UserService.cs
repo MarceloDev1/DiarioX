@@ -178,11 +178,11 @@ public class UserService : IUserService
         {
             return new UserCommandResult(
                 false,
-                "Nao e possivel remover este usuario pois ele esta associado a outros registros.",
+                "Não é possivel remover este usuário pois ele esta associado a outros registros.",
                 Error: UserResultError.Conflict);
         }
 
-        return new UserCommandResult(true, "Usuario removido com sucesso.");
+        return new UserCommandResult(true, "Usuário removido com sucesso.");
     }
 
     private async Task<UserCommandResult> ValidateForCreateAsync(UserRequest request)

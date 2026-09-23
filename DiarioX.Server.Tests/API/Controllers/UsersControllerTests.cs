@@ -171,7 +171,7 @@ public class UsersControllerTests
         var serviceMock = new Mock<IUserService>();
         var commandResult = new UserCommandResult(
             Success: true,
-            Message: "Usuario removido com sucesso.");
+            Message: "Usuário removido com sucesso.");
 
         serviceMock.Setup(s => s.DeleteAsync(4)).ReturnsAsync(commandResult);
 
@@ -180,7 +180,7 @@ public class UsersControllerTests
         var result = await controller.Delete(4);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal("Usuario removido com sucesso.", GetMessage(ok.Value));
+        Assert.Equal("Usuário removido com sucesso.", GetMessage(ok.Value));
     }
 
     [Fact]
