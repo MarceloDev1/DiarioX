@@ -153,6 +153,17 @@ function AnosLetivosPage() {
         setPeriodos(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p));
     };
 
+    const validatePeriodosEncadeamento = (): string | null => {
+        for (let i = 1; i < periodos.length; i++) {
+            const anterior = periodos[i - 1];
+            const atual = periodos[i];
+            if (anterior.dataTermino && atual.dataInicio && atual.dataInicio <= anterior.dataTermino) {
+                return `A data de início do ${atual.nome} deve ser posterior à data de término do ${anterior.nome}.`;
+            }
+        }
+        return null;
+    };
+
     const handleCancel = () => {
         setEditingId(null);
         setForm(emptyForm);
@@ -163,6 +174,13 @@ function AnosLetivosPage() {
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        const encadeamentoError = validatePeriodosEncadeamento();
+        if (encadeamentoError) {
+            setError(encadeamentoError);
+            return;
+        }
+
         setIsSaving(true);
         setError(null);
 
