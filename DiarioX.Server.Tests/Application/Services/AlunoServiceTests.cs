@@ -259,13 +259,83 @@ public class AlunoServiceTests
         fixture.AlunoRepository.Verify(r => r.DeleteAsync(aluno), Times.Once);
     }
 
-    private static (AlunoService Service, Mock<IAlunoRepository> AlunoRepository, Mock<IEscolaRepository> EscolaRepository) BuildService()
+    [Fact]
+    public async Task UpdateStatusAsync_WhenInativando_SetsStatusInativo()
+    {
+        var fixture = BuildService();
+        var aluno = BuildAluno(5, "20260001");
+        fixture.AlunoRepository.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(aluno);
+
+        var result = await fixture.Service.UpdateStatusAsync(5, new AlunoStatusRequest { Status = " inativo " });
+
+        Assert.True(result.Success);
+        Assert.Equal("Aluno inativado com sucesso!", result.Message);
+        Assert.Equal(Aluno.StatusInativo, aluno.Status);
+        fixture.AlunoRepository.Verify(r => r.UpdateAsync(aluno), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_WhenAtivandoSemEnturmacao_SetsAguardandoEnturmacao()
+    {
+        var fixture = BuildService();
+        var aluno = BuildAluno(5, "20260001");
+        aluno.Status = Aluno.StatusInativo;
+        fixture.AlunoRepository.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(aluno);
+        fixture.AlunoTurmaRepository.Setup(r => r.GetAtivaByAlunoIdAsync(5)).ReturnsAsync((AlunoTurma?)null);
+
+        var result = await fixture.Service.UpdateStatusAsync(5, new AlunoStatusRequest { Status = Aluno.StatusAtivo });
+
+        Assert.True(result.Success);
+        Assert.Equal(Aluno.StatusAtivoAguardandoEnturmacao, aluno.Status);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_WhenAtivandoComEnturmacaoAtiva_SetsAtivo()
+    {
+        var fixture = BuildService();
+        var aluno = BuildAluno(5, "20260001");
+        aluno.Status = Aluno.StatusInativo;
+        fixture.AlunoRepository.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(aluno);
+        fixture.AlunoTurmaRepository.Setup(r => r.GetAtivaByAlunoIdAsync(5)).ReturnsAsync(new AlunoTurma { AlunoId = 5, TurmaId = 1 });
+
+        var result = await fixture.Service.UpdateStatusAsync(5, new AlunoStatusRequest { Status = Aluno.StatusAtivo });
+
+        Assert.True(result.Success);
+        Assert.Equal(Aluno.StatusAtivo, aluno.Status);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_WhenStatusInvalido_ReturnsValidationError()
+    {
+        var fixture = BuildService();
+
+        var result = await fixture.Service.UpdateStatusAsync(5, new AlunoStatusRequest { Status = "ATIVO_AGUARDANDO_ENTURMACAO" });
+
+        Assert.False(result.Success);
+        Assert.Equal(AlunoResultError.Validation, result.Error);
+        fixture.AlunoRepository.Verify(r => r.UpdateAsync(It.IsAny<Aluno>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_WhenNotFound_ReturnsNotFound()
+    {
+        var fixture = BuildService();
+        fixture.AlunoRepository.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((Aluno?)null);
+
+        var result = await fixture.Service.UpdateStatusAsync(99, new AlunoStatusRequest { Status = Aluno.StatusInativo });
+
+        Assert.False(result.Success);
+        Assert.Equal(AlunoResultError.NotFound, result.Error);
+    }
+
+    private static (AlunoService Service, Mock<IAlunoRepository> AlunoRepository, Mock<IEscolaRepository> EscolaRepository, Mock<IAlunoTurmaRepository> AlunoTurmaRepository) BuildService()
     {
         var alunoRepository = new Mock<IAlunoRepository>();
         var escolaRepository = new Mock<IEscolaRepository>();
+        var alunoTurmaRepository = new Mock<IAlunoTurmaRepository>();
 
-        var service = new AlunoService(alunoRepository.Object, escolaRepository.Object);
-        return (service, alunoRepository, escolaRepository);
+        var service = new AlunoService(alunoRepository.Object, escolaRepository.Object, alunoTurmaRepository.Object);
+        return (service, alunoRepository, escolaRepository, alunoTurmaRepository);
     }
 
     private static AlunoRequest BuildValidRequest() => new()

@@ -738,7 +738,7 @@ function TurmasPage() {
                                             </span>
                                         </td>
                                         <td>
-                                            <div className="action-group">
+                                            <div className="action-group vertical">
                                                 <button type="button" className="table-action-button" onClick={() => handleEdit(turma)}>Editar</button>
                                                 <button
                                                     type="button"

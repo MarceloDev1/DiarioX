@@ -8,5 +8,6 @@ public interface IModalidadeEnsinoService
     Task<ModalidadeEnsinoResponse?> GetByIdAsync(int id);
     Task<ModalidadeEnsinoCommandResult> CreateAsync(ModalidadeEnsinoRequest request);
     Task<ModalidadeEnsinoCommandResult> UpdateAsync(int id, ModalidadeEnsinoRequest request);
+    Task<ModalidadeEnsinoCommandResult> UpdateStatusAsync(int id, ModalidadeEnsinoStatusRequest request);
     Task<ModalidadeEnsinoCommandResult> DeleteAsync(int id);
 }

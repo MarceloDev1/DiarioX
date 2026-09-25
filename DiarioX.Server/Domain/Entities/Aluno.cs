@@ -4,6 +4,7 @@ public class Aluno
 {
     public const string StatusAtivoAguardandoEnturmacao = "ATIVO_AGUARDANDO_ENTURMACAO";
     public const string StatusAtivo = "ATIVO";
+    public const string StatusInativo = "INATIVO";
 
     public const string SexoMasculino = "MASCULINO";
     public const string SexoFeminino = "FEMININO";

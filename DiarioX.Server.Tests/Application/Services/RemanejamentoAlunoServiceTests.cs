@@ -99,6 +99,25 @@ public class RemanejamentoAlunoServiceTests
         alunoTurmaRepository.Verify(x => x.RemanejarAsync(It.IsAny<AlunoTurma>(), 2, data), Times.Once);
     }
 
+    [Fact]
+    public async Task RemanejarAsync_WhenAlunoInativo_ReturnsValidation()
+    {
+        var (service, alunoTurmaRepository, _) = BuildService();
+        var vinculo = BuildVinculo();
+        vinculo.Aluno.Status = Aluno.StatusInativo;
+        alunoTurmaRepository.Setup(x => x.GetAtivaByAlunoIdAsync(1)).ReturnsAsync(vinculo);
+
+        var result = await service.RemanejarAsync(1, new RemanejamentoAlunoRequest
+        {
+            TurmaDestinoId = 2,
+            DataMovimentacao = DateOnly.FromDateTime(DateTime.Today)
+        });
+
+        Assert.False(result.Success);
+        Assert.Equal(AlunoResultError.Validation, result.Error);
+        Assert.Equal("Não é possível remanejar um aluno inativo.", result.Message);
+    }
+
     private static (RemanejamentoAlunoService Service, Mock<IAlunoTurmaRepository> AlunoTurmaRepository, Mock<ITurmaRepository> TurmaRepository) BuildService()
     {
         var alunoRepository = new Mock<IAlunoRepository>();

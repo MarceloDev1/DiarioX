@@ -1,5 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
+import { readApiError } from '../../utils/api';
 import { formatCpf, formatTelefone, formatCep } from '../../utils/formatters';
 import { validateCpf } from '../../utils/validators';
 import FeedbackMessage from '../ui/FeedbackMessage';
@@ -152,23 +153,29 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
 
+    const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null);
+
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
 
-    const loadEscolas = async () => {
-        try {
-            const response = await fetch('/api/escolas');
-            if (response.ok) {
-                const data = (await response.json()) as EscolaOption[];
-                setEscolas(data.filter(escola => escola.status === 'ATIVO'));
-            }
-        } catch {
-            setLocalError('Falha ao carregar escolas do formulário.');
-        }
-    };
-
     useEffect(() => {
+        let cancelled = false;
+
+        async function loadEscolas() {
+            try {
+                const response = await fetch('/api/escolas');
+                if (cancelled) return;
+                if (response.ok) {
+                    const data = (await response.json()) as EscolaOption[];
+                    setEscolas(data.filter(escola => escola.status === 'ATIVO'));
+                }
+            } catch {
+                if (!cancelled) setLocalError('Falha ao carregar escolas do formulário.');
+            }
+        }
+
         void load();
         void loadEscolas();
+        return () => { cancelled = true; };
     }, []);
 
     const handleFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -308,6 +315,34 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         }
     };
 
+    const handleToggleStatus = async (aluno: Aluno) => {
+        const inativar = aluno.status !== 'INATIVO';
+        const confirmMessage = inativar
+            ? 'Tem certeza que deseja inativar este aluno? Alunos inativos não podem ser enturmados nem remanejados.'
+            : 'Tem certeza que deseja ativar este aluno?';
+        if (!window.confirm(confirmMessage)) return;
+
+        setSuccessMessage(null);
+        setLocalError(null);
+        setStatusUpdatingId(aluno.id);
+        try {
+            const response = await fetch(`/api/alunos/${aluno.id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: inativar ? 'INATIVO' : 'ATIVO' }),
+            });
+            if (!response.ok) throw new Error(await readApiError(response));
+
+            setSuccessMessage(inativar ? 'Aluno inativado com sucesso!' : 'Aluno ativado com sucesso!');
+            setTimeout(() => setSuccessMessage(null), 3000);
+            await load();
+        } catch (e) {
+            setLocalError(e instanceof Error ? e.message : 'Falha ao alterar o status do aluno.');
+        } finally {
+            setStatusUpdatingId(null);
+        }
+    };
+
     const handleNewAluno = () => {
         setEditingId(null);
         setForm(emptyForm);
@@ -355,7 +390,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                         <th>Nome</th>
                                         <th>Matrícula</th>
                                         <th>CPF do Aluno</th>
-                                        <th>Responsável 1</th>
+                                        <th>Responsável</th>
                                         <th>Telefone</th>
                                         <th>Escola</th>
                                         <th>Status</th>
@@ -367,7 +402,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                         <tr key={aluno.id}>
                                             <td>{aluno.nome}</td>
                                             <td>{aluno.matricula}</td>
-                                            <td>{aluno.cpfAluno ? formatCpf(aluno.cpfAluno) : '—'}</td>
+                                            <td className="nowrap-cell">{aluno.cpfAluno ? formatCpf(aluno.cpfAluno) : '—'}</td>
                                             <td>{aluno.responsavelNome1}</td>
                                             <td>{formatTelefone(aluno.responsavelTelefone1)}</td>
                                             <td>{aluno.escolaNome}</td>
@@ -377,19 +412,19 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                                     label={aluno.status === 'ATIVO_AGUARDANDO_ENTURMACAO' ? 'Aguardando Enturmação' : undefined}
                                                 />
                                             </td>
-                                            <td className="actions-cell">
-                                                <button
-                                                    className="btn btn-sm btn-info"
-                                                    onClick={() => handleEditClick(aluno)}
-                                                >
-                                                    ✏️ Editar
-                                                </button>
-                                                <button
-                                                    className="btn btn-sm btn-danger"
-                                                    onClick={() => handleDeleteClick(aluno.id)}
-                                                >
-                                                    🗑️ Deletar
-                                                </button>
+                                            <td>
+                                                <div className="action-group vertical">
+                                                    <button type="button" className="table-action-button" onClick={() => handleEditClick(aluno)}>Editar</button>
+                                                    <button
+                                                        type="button"
+                                                        className="table-action-button"
+                                                        onClick={() => handleToggleStatus(aluno)}
+                                                        disabled={statusUpdatingId === aluno.id}
+                                                    >
+                                                        {aluno.status === 'INATIVO' ? 'Ativar' : 'Inativar'}
+                                                    </button>
+                                                    <button type="button" className="table-action-button danger" onClick={() => handleDeleteClick(aluno.id)}>Excluir</button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

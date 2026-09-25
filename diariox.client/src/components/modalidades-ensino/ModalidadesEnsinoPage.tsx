@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
+import { readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import StatusPill from '../ui/StatusPill';
 import EmptyState from '../ui/EmptyState';
@@ -37,6 +38,9 @@ function ModalidadesEnsinoPage() {
         );
     const [formError, setFormError] = useState<string | null>(null);
     const [view, setView] = useState<View>('list');
+    const [listError, setListError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null);
 
     const [filterNome, setFilterNome] = useState('');
     const [filterSigla, setFilterSigla] = useState('');
@@ -76,12 +80,16 @@ function ModalidadesEnsinoPage() {
 
     const handleNova = () => {
         setFormError(null);
+        setSuccessMessage(null);
+        setListError(null);
         clear();
         setView('form');
     };
 
     const handleEdit = (modalidade: ModalidadeEnsino) => {
         setFormError(null);
+        setSuccessMessage(null);
+        setListError(null);
         startEdit(modalidade.id, {
             nome: modalidade.nome,
             sigla: modalidade.sigla,
@@ -118,6 +126,33 @@ function ModalidadesEnsinoPage() {
 
     const handleDelete = async (id: number) => {
         await remove(id);
+    };
+
+    const handleToggleStatus = async (modalidade: ModalidadeEnsino) => {
+        const inativar = modalidade.status === 'ATIVO';
+        const confirmMessage = inativar
+            ? 'Tem certeza que deseja inativar esta modalidade de ensino?'
+            : 'Tem certeza que deseja ativar esta modalidade de ensino?';
+        if (!window.confirm(confirmMessage)) return;
+
+        setSuccessMessage(null);
+        setListError(null);
+        setStatusUpdatingId(modalidade.id);
+        try {
+            const response = await fetch(`/api/modalidadesensino/${modalidade.id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: inativar ? 'INATIVO' : 'ATIVO' }),
+            });
+            if (!response.ok) throw new Error(await readApiError(response));
+
+            setSuccessMessage(inativar ? 'Modalidade inativada com sucesso!' : 'Modalidade ativada com sucesso!');
+            await load();
+        } catch (e) {
+            setListError(e instanceof Error ? e.message : 'Falha ao alterar o status da modalidade.');
+        } finally {
+            setStatusUpdatingId(null);
+        }
     };
 
     if (view === 'form') {
@@ -253,7 +288,8 @@ function ModalidadesEnsinoPage() {
                     <button type="button" className="filter-button filter-button-static" onClick={handleLimparFiltros}>Limpar</button>
                 </form>
 
-                <FeedbackMessage message={error} />
+                <FeedbackMessage message={successMessage} type="success" />
+                <FeedbackMessage message={listError ?? error} />
 
                 {isLoading || filteredModalidades.length === 0 ? (
                     <EmptyState
@@ -284,8 +320,16 @@ function ModalidadesEnsinoPage() {
                                         <td>{m.descricao}</td>
                                         <td><StatusPill status={m.status} /></td>
                                         <td>
-                                            <div className="action-group">
+                                            <div className="action-group vertical">
                                                 <button type="button" className="table-action-button" onClick={() => handleEdit(m)}>Editar</button>
+                                                <button
+                                                    type="button"
+                                                    className="table-action-button"
+                                                    onClick={() => handleToggleStatus(m)}
+                                                    disabled={statusUpdatingId === m.id}
+                                                >
+                                                    {m.status === 'ATIVO' ? 'Inativar' : 'Ativar'}
+                                                </button>
                                                 <button type="button" className="table-action-button danger" onClick={() => handleDelete(m.id)}>Excluir</button>
                                             </div>
                                         </td>

@@ -52,6 +52,16 @@ public class ModalidadesEnsinoController : ControllerBase
         return Ok(result.ModalidadeEnsino);
     }
 
+    [HttpPatch("{id:int}/status")]
+    public async Task<IActionResult> UpdateStatus([FromRoute] int id, [FromBody] ModalidadeEnsinoStatusRequest request)
+    {
+        var result = await _service.UpdateStatusAsync(id, request);
+        if (!result.Success)
+            return MapError(result);
+
+        return Ok(new { message = result.Message, modalidadeEnsino = result.ModalidadeEnsino });
+    }
+
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete([FromRoute] int id)
     {

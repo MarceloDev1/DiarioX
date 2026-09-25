@@ -12,11 +12,13 @@ public class AlunoService : IAlunoService
 
     private readonly IAlunoRepository _alunoRepository;
     private readonly IEscolaRepository _escolaRepository;
+    private readonly IAlunoTurmaRepository _alunoTurmaRepository;
 
-    public AlunoService(IAlunoRepository alunoRepository, IEscolaRepository escolaRepository)
+    public AlunoService(IAlunoRepository alunoRepository, IEscolaRepository escolaRepository, IAlunoTurmaRepository alunoTurmaRepository)
     {
         _alunoRepository = alunoRepository;
         _escolaRepository = escolaRepository;
+        _alunoTurmaRepository = alunoTurmaRepository;
     }
 
     public async Task<AlunoCommandResult> GetByIdAsync(int id)
@@ -105,6 +107,34 @@ public class AlunoService : IAlunoService
 
         var updated = await _alunoRepository.GetByIdAsync(id);
         return new AlunoCommandResult(true, "Aluno atualizado com sucesso!", MapToResponse(updated!));
+    }
+
+    public async Task<AlunoCommandResult> UpdateStatusAsync(int id, AlunoStatusRequest request)
+    {
+        var status = (request.Status ?? string.Empty).Trim().ToUpperInvariant();
+        if (status != Aluno.StatusAtivo && status != Aluno.StatusInativo)
+            return Invalid("Status inválido. Valores permitidos: ATIVO ou INATIVO.");
+
+        var aluno = await _alunoRepository.GetByIdAsync(id);
+        if (aluno is null)
+            return NotFound("Aluno não encontrado.");
+
+        if (status == Aluno.StatusInativo)
+        {
+            aluno.Status = Aluno.StatusInativo;
+        }
+        else
+        {
+            // Ao reativar, o status volta a refletir a enturmação atual do aluno.
+            var enturmacaoAtiva = await _alunoTurmaRepository.GetAtivaByAlunoIdAsync(id);
+            aluno.Status = enturmacaoAtiva is null ? Aluno.StatusAtivoAguardandoEnturmacao : Aluno.StatusAtivo;
+        }
+
+        aluno.UpdatedAt = DateTime.UtcNow;
+        await _alunoRepository.UpdateAsync(aluno);
+
+        var message = status == Aluno.StatusInativo ? "Aluno inativado com sucesso!" : "Aluno ativado com sucesso!";
+        return new AlunoCommandResult(true, message, MapToResponse(aluno));
     }
 
     public async Task<AlunoCommandResult> DeleteAsync(int id)

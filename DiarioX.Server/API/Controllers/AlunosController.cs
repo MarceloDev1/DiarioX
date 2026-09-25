@@ -102,6 +102,26 @@ public class AlunosController : ControllerBase
     }
 
     /// <summary>
+    /// Inativa ou reativa um aluno.
+    /// </summary>
+    /// <remarks>
+    /// Ao reativar, o status volta para ATIVO se houver enturmação ativa,
+    /// ou ATIVO_AGUARDANDO_ENTURMACAO caso contrário.
+    /// </remarks>
+    [HttpPatch("{id:int}/status")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateStatus([FromRoute] int id, [FromBody] AlunoStatusRequest request)
+    {
+        var result = await _alunoService.UpdateStatusAsync(id, request);
+        if (!result.Success)
+            return MapError(result);
+
+        return Ok(new { message = result.Message, aluno = result.Aluno });
+    }
+
+    /// <summary>
     /// Remove um aluno do sistema.
     /// </summary>
     [HttpDelete("{id:int}")]

@@ -45,6 +45,9 @@ public class RemanejamentoAlunoService : IRemanejamentoAlunoService
         if (aluno is null)
             return new(false, "Aluno não encontrado.", AlunoResultError.NotFound);
 
+        if (aluno.Status == Aluno.StatusInativo)
+            return Invalid("Não é possível enturmar um aluno inativo.");
+
         if (await _alunoTurmaRepository.GetAtivaByAlunoIdAsync(alunoId) is not null)
             return Invalid("O aluno já possui enturmação ativa.");
 
@@ -82,6 +85,9 @@ public class RemanejamentoAlunoService : IRemanejamentoAlunoService
         var vinculoOrigem = await _alunoTurmaRepository.GetAtivaByAlunoIdAsync(alunoId);
         if (vinculoOrigem is null)
             return new(false, "O aluno não possui enturmação ativa.", AlunoResultError.NotFound);
+
+        if (vinculoOrigem.Aluno.Status == Aluno.StatusInativo)
+            return Invalid("Não é possível remanejar um aluno inativo.");
 
         var turmaDestino = await _turmaRepository.GetByIdAsync(request.TurmaDestinoId);
         if (turmaDestino is null)

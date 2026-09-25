@@ -72,6 +72,25 @@ public class ModalidadeEnsinoService : IModalidadeEnsinoService
         return new ModalidadeEnsinoCommandResult(true, "Modalidade de ensino atualizada com sucesso.", MapToResponse(updated!));
     }
 
+    public async Task<ModalidadeEnsinoCommandResult> UpdateStatusAsync(int id, ModalidadeEnsinoStatusRequest request)
+    {
+        var status = (request.Status ?? string.Empty).Trim().ToUpperInvariant();
+        if (status != ModalidadeEnsino.StatusAtivo && status != ModalidadeEnsino.StatusInativo)
+            return Invalid("Status invalido. Valores permitidos: ATIVO ou INATIVO.");
+
+        var modalidade = await _repository.GetByIdAsync(id);
+        if (modalidade is null)
+            return new ModalidadeEnsinoCommandResult(false, "Modalidade de ensino nao encontrada.", Error: ModalidadeEnsinoResultError.NotFound);
+
+        modalidade.Status = status;
+        await _repository.UpdateAsync(modalidade);
+
+        var message = status == ModalidadeEnsino.StatusAtivo
+            ? "Modalidade de ensino ativada com sucesso."
+            : "Modalidade de ensino inativada com sucesso.";
+        return new ModalidadeEnsinoCommandResult(true, message, MapToResponse(modalidade));
+    }
+
     public async Task<ModalidadeEnsinoCommandResult> DeleteAsync(int id)
     {
         var modalidade = await _repository.GetByIdAsync(id);

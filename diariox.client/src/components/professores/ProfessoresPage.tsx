@@ -358,7 +358,7 @@ function ProfessoresPage() {
                                                 <StatusPill status={professor.situacao as 'ATIVO' | 'INATIVO' | 'BLOQUEADO'} />
                                             </td>
                                             <td>
-                                                <div className="action-group">
+                                                <div className="action-group vertical">
                                                     <button type="button" className="table-action-button" onClick={() => handleEditClick(professor)}>Editar</button>
                                                     <button
                                                         type="button"

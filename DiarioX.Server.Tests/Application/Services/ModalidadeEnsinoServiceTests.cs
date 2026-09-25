@@ -11,6 +11,46 @@ public class ModalidadeEnsinoServiceTests
     // ── GetAllAsync ──────────────────────────────────────────────────────────
 
     [Fact]
+    public async Task UpdateStatusAsync_WhenInativando_UpdatesStatus()
+    {
+        var (service, repo) = BuildService();
+        var existing = BuildEntity(3);
+        existing.Status = ModalidadeEnsino.StatusAtivo;
+        repo.Setup(r => r.GetByIdAsync(3)).ReturnsAsync(existing);
+
+        var result = await service.UpdateStatusAsync(3, new ModalidadeEnsinoStatusRequest { Status = " inativo " });
+
+        Assert.True(result.Success);
+        Assert.Equal(ModalidadeEnsino.StatusInativo, existing.Status);
+        Assert.Equal(ModalidadeEnsino.StatusInativo, result.ModalidadeEnsino!.Status);
+        repo.Verify(r => r.UpdateAsync(existing), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_WhenStatusInvalid_ReturnsValidationError()
+    {
+        var (service, repo) = BuildService();
+
+        var result = await service.UpdateStatusAsync(3, new ModalidadeEnsinoStatusRequest { Status = "X" });
+
+        Assert.False(result.Success);
+        Assert.Equal(ModalidadeEnsinoResultError.Validation, result.Error);
+        repo.Verify(r => r.UpdateAsync(It.IsAny<ModalidadeEnsino>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_WhenNotFound_ReturnsNotFound()
+    {
+        var (service, repo) = BuildService();
+        repo.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((ModalidadeEnsino?)null);
+
+        var result = await service.UpdateStatusAsync(99, new ModalidadeEnsinoStatusRequest { Status = ModalidadeEnsino.StatusInativo });
+
+        Assert.False(result.Success);
+        Assert.Equal(ModalidadeEnsinoResultError.NotFound, result.Error);
+    }
+
+    [Fact]
     public async Task GetAllAsync_ReturnsMappedResponses()
     {
         var (service, repo) = BuildService();

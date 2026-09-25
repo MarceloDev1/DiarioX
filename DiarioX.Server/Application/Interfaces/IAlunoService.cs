@@ -8,5 +8,6 @@ public interface IAlunoService
     Task<IEnumerable<AlunoResponse>> GetAllAsync();
     Task<AlunoCommandResult> CreateAsync(AlunoRequest request);
     Task<AlunoCommandResult> UpdateAsync(int id, AlunoRequest request);
+    Task<AlunoCommandResult> UpdateStatusAsync(int id, AlunoStatusRequest request);
     Task<AlunoCommandResult> DeleteAsync(int id);
 }
