@@ -15,6 +15,11 @@ public class UserService : IUserService
         "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,}$",
         RegexOptions.Compiled);
 
+    // Usuários cadastrados aqui sempre pertencem à instituição da requisição;
+    // o perfil Administrador fica reservado aos usuários globais.
+    private const string AdministradorExclusivoMessage =
+        "O perfil Administrador e exclusivo dos administradores globais e nao pode ser atribuido a usuarios da instituicao.";
+
     private readonly IUserRepository _userRepository;
     private readonly IPerfilRepository _perfilRepository;
     private readonly IUsuarioPerfilRepository _usuarioPerfilRepository;
@@ -56,6 +61,9 @@ public class UserService : IUserService
             var perfil = await _perfilRepository.GetByIdAsync(normalized.PerfilId.Value);
             if (perfil is null)
                 return Invalid("Perfil nao encontrado.");
+
+            if (IsAdministrador(perfil))
+                return Invalid(AdministradorExclusivoMessage);
         }
 
         var validation = await ValidateForCreateAsync(normalized);
@@ -125,6 +133,9 @@ public class UserService : IUserService
             var perfil = await _perfilRepository.GetByIdAsync(normalized.PerfilId.Value);
             if (perfil is null)
                 return Invalid("Perfil nao encontrado.");
+
+            if (IsAdministrador(perfil))
+                return Invalid(AdministradorExclusivoMessage);
         }
 
         var validation = await ValidateForUpdateAsync(normalized, id);
@@ -291,6 +302,9 @@ public class UserService : IUserService
 
     private static UserCommandResult Invalid(string message)
         => new(false, message, Error: UserResultError.Validation);
+
+    private static bool IsAdministrador(Perfil perfil)
+        => string.Equals(perfil.Nome, Perfil.Administrador, StringComparison.OrdinalIgnoreCase);
 
     private static UserResponse MapToResponse(User user)
     {

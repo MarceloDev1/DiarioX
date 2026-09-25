@@ -1,6 +1,6 @@
 namespace DiarioX.Server.Domain.Entities;
 
-public class Turma
+public class Turma : ITenantEntity
 {
     public const string StatusAtivo = "ATIVO";
     public const string StatusInativo = "INATIVO";
@@ -11,6 +11,7 @@ public class Turma
     public const string TurnoIntegral = "INTEGRAL";
 
     public int Id { get; set; }
+    public int TenantId { get; set; }
     public int AnoLetivoId { get; set; }
     public AnoLetivo AnoLetivo { get; set; } = null!;
     public int EscolaId { get; set; }

@@ -10,18 +10,17 @@ public class EmailNotificationService : IEmailNotificationService
 {
     private readonly IEmailService _emailService;
     private readonly ILogger<EmailNotificationService> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly IAppUrlProvider _appUrlProvider;
 
-    public EmailNotificationService(IEmailService emailService, ILogger<EmailNotificationService> logger, IConfiguration configuration)
+    public EmailNotificationService(IEmailService emailService, ILogger<EmailNotificationService> logger, IAppUrlProvider appUrlProvider)
     {
         _emailService = emailService;
         _logger = logger;
-        _configuration = configuration;
+        _appUrlProvider = appUrlProvider;
     }
 
-    private string GetAppUrl() => string.IsNullOrWhiteSpace(_configuration["AppUrl"])
-        ? "https://localhost:5173"
-        : _configuration["AppUrl"]!.TrimEnd('/');
+    // Links dos e-mails apontam para o subdomínio da instituição, onde o usuário consegue entrar.
+    private string GetAppUrl() => _appUrlProvider.GetAppUrl();
 
     public async Task SendWelcomeAsync(string toEmail, string userName, string loginEmail)
     {

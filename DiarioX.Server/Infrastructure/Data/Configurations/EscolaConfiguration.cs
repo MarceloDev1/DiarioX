@@ -16,7 +16,7 @@ public class EscolaConfiguration : IEntityTypeConfiguration<Escola>
             .HasColumnName("id")
             .UseIdentityByDefaultColumn();
 
-        builder.HasIndex(x => x.CodigoInep)
+        builder.HasIndex(x => new { x.TenantId, x.CodigoInep })
             .HasDatabaseName("IX_escolas_codigo_inep")
             .IsUnique();
 

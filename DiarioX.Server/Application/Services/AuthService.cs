@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using DiarioX.Server.Application.Auth;
 using DiarioX.Server.Application.DTOs.Auth;
 using DiarioX.Server.Application.Interfaces;
 using DiarioX.Server.Domain.Entities;
@@ -19,20 +20,26 @@ public class AuthService : IAuthService
 
     private readonly IUserRepository _userRepository;
     private readonly IPasswordResetTokenRepository _passwordResetTokenRepository;
+    private readonly ITenantRepository _tenantRepository;
     private readonly IEmailService _emailService;
+    private readonly IAppUrlProvider _appUrlProvider;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         IUserRepository userRepository,
         IPasswordResetTokenRepository passwordResetTokenRepository,
+        ITenantRepository tenantRepository,
         IEmailService emailService,
+        IAppUrlProvider appUrlProvider,
         IConfiguration configuration,
         ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
         _passwordResetTokenRepository = passwordResetTokenRepository;
+        _tenantRepository = tenantRepository;
         _emailService = emailService;
+        _appUrlProvider = appUrlProvider;
         _configuration = configuration;
         _logger = logger;
     }
@@ -47,6 +54,8 @@ public class AuthService : IAuthService
         if (string.IsNullOrWhiteSpace(login) || !IsValidLogin(login))
             return LoginResult.Fail(LoginFailureReason.InvalidCredentials);
 
+        // A busca já vem restrita à instituição do subdomínio (ou aos Administradores globais
+        // no host de administração) pelo filtro de tenant do AppDbContext.
         var user = await _userRepository.GetByEmailOrCpfAsync(login);
 
         if (user is null)
@@ -69,11 +78,31 @@ public class AuthService : IAuthService
             return LoginResult.Fail(user.IsLockedOut(now) ? LoginFailureReason.AccountLocked : LoginFailureReason.InvalidCredentials);
         }
 
+        Tenant? tenant = null;
+        if (user.TenantId is int tenantId)
+        {
+            tenant = await _tenantRepository.GetByIdAsync(tenantId);
+            if (tenant is null || tenant.Status != Tenant.StatusAtivo)
+                return LoginResult.Fail(LoginFailureReason.InvalidCredentials);
+        }
+
         user.RegisterSuccessfulLogin(now);
         await _userRepository.UpdateAsync(user);
 
-        var token = GenerateJwtToken(user.Email);
-        return LoginResult.Ok(token);
+        return LoginResult.Ok(GenerateJwtToken(user, tenant));
+    }
+
+    public async Task<LoginResponse?> SelectTenantAsync(int userId, int tenantId)
+    {
+        var user = await _userRepository.GetGlobalByIdAsync(userId);
+        if (user is null || user.Status != User.StatusAtivo)
+            return null;
+
+        var tenant = await _tenantRepository.GetByIdAsync(tenantId);
+        if (tenant is null || tenant.Status != Tenant.StatusAtivo)
+            return null;
+
+        return GenerateJwtToken(user, tenant);
     }
 
     public async Task<FirstAccessOperationResponse> ValidateFirstAccessAsync(FirstAccessValidationRequest request)
@@ -152,9 +181,8 @@ public class AuthService : IAuthService
         var resetToken = PasswordResetToken.Create(user.Id, tokenHash);
         await _passwordResetTokenRepository.AddAsync(resetToken);
 
-        var appUrl = string.IsNullOrWhiteSpace(_configuration["AppUrl"])
-            ? "https://localhost:5173"
-            : _configuration["AppUrl"]!.TrimEnd('/');
+        // O link aponta para o subdomínio da instituição, onde o token de redefinição é válido.
+        var appUrl = _appUrlProvider.GetAppUrl();
         var resetUrl = $"{appUrl}/redefinir-senha?token={Uri.EscapeDataString(plainToken)}";
 
         try
@@ -230,20 +258,31 @@ public class AuthService : IAuthService
         </html>
         """;
 
-    private LoginResponse GenerateJwtToken(string email)
+    private LoginResponse GenerateJwtToken(User user, Tenant? tenant)
     {
         var jwtSettings = _configuration.GetSection("Jwt");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expiresInMinutes = int.Parse(jwtSettings["ExpiresInMinutes"] ?? "60");
         var expiresAt = DateTime.UtcNow.AddMinutes(expiresInMinutes);
+        var isGlobalAdmin = user.TenantId is null;
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, email),
-            new Claim(JwtRegisteredClaimNames.Email, email),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         };
+
+        if (isGlobalAdmin)
+            claims.Add(new Claim(AppClaimTypes.GlobalAdmin, "true"));
+
+        // Sem tenant_id o token só acessa a área global (seleção e gestão de instituições).
+        if (tenant is not null)
+        {
+            claims.Add(new Claim(AppClaimTypes.TenantId, tenant.Id.ToString()));
+            claims.Add(new Claim(AppClaimTypes.TenantSlug, tenant.Slug));
+        }
 
         var token = new JwtSecurityToken(
             issuer: jwtSettings["Issuer"],
@@ -255,8 +294,11 @@ public class AuthService : IAuthService
 
         return new LoginResponse(
             Token: new JwtSecurityTokenHandler().WriteToken(token),
-            Email: email,
-            ExpiresAt: expiresAt
+            Email: user.Email,
+            ExpiresAt: expiresAt,
+            TenantId: tenant?.Id,
+            TenantNome: tenant?.Nome,
+            IsGlobalAdmin: isGlobalAdmin
         );
     }
 

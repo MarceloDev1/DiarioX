@@ -16,13 +16,35 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasColumnName("id")
             .UseIdentityByDefaultColumn();
 
+        builder.Property(x => x.TenantId)
+            .HasColumnName("tenant_id");
+
+        builder.HasOne<Tenant>()
+            .WithMany()
+            .HasForeignKey(x => x.TenantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Usuário de instituição: e-mail e CPF únicos dentro da instituição
+        builder.HasIndex(x => new { x.TenantId, x.Email })
+            .HasDatabaseName("IX_users_tenant_email")
+            .IsUnique()
+            .HasFilter("tenant_id IS NOT NULL");
+
+        builder.HasIndex(x => new { x.TenantId, x.Cpf })
+            .HasDatabaseName("IX_users_tenant_cpf")
+            .IsUnique()
+            .HasFilter("tenant_id IS NOT NULL");
+
+        // Administrador global: e-mail e CPF únicos entre os usuários globais
         builder.HasIndex(x => x.Email)
-            .HasDatabaseName("IX_users_email")
-            .IsUnique();
+            .HasDatabaseName("IX_users_email_global")
+            .IsUnique()
+            .HasFilter("tenant_id IS NULL");
 
         builder.HasIndex(x => x.Cpf)
-            .HasDatabaseName("IX_users_cpf")
-            .IsUnique();
+            .HasDatabaseName("IX_users_cpf_global")
+            .IsUnique()
+            .HasFilter("tenant_id IS NULL");
 
         builder.Property(x => x.Email)
             .HasColumnName("email")

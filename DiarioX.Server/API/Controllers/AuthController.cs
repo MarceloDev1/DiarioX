@@ -1,5 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using DiarioX.Server.Application.Auth;
 using DiarioX.Server.Application.DTOs.Auth;
 using DiarioX.Server.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DiarioX.Server.API.Controllers;
@@ -19,6 +23,7 @@ public class AuthController : ControllerBase
         _env = env;
     }
 
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -43,6 +48,24 @@ public class AuthController : ControllerBase
         return Ok(result.Response);
     }
 
+    /// <summary>
+    /// Administrador global escolhe a instituição em que vai atuar; devolve um novo token com ela.
+    /// </summary>
+    [Authorize(Policy = AppPolicies.GlobalAdmin)]
+    [HttpPost("select-tenant")]
+    public async Task<IActionResult> SelectTenant([FromBody] SelectTenantRequest request)
+    {
+        if (!int.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Sub), out var userId))
+            return Unauthorized();
+
+        var response = await _authService.SelectTenantAsync(userId, request.TenantId);
+        if (response is null)
+            return NotFound(new { message = "Instituição não encontrada ou inativa." });
+
+        return Ok(response);
+    }
+
+    [AllowAnonymous]
     [HttpPost("first-access/validate")]
     public async Task<IActionResult> ValidateFirstAccess([FromBody] FirstAccessValidationRequest request)
     {
@@ -54,6 +77,7 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpPost("first-access/activate")]
     public async Task<IActionResult> ActivateFirstAccess([FromBody] FirstAccessActivationRequest request)
     {
@@ -65,6 +89,7 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
@@ -72,6 +97,7 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
@@ -83,6 +109,7 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpPost("test-email")]
     public async Task<IActionResult> TestEmail([FromBody] string toEmail)
     {

@@ -1,11 +1,12 @@
 namespace DiarioX.Server.Domain.Entities;
 
-public class ModalidadeEnsino
+public class ModalidadeEnsino : ITenantEntity
 {
     public const string StatusAtivo = "ATIVO";
     public const string StatusInativo = "INATIVO";
 
     public int Id { get; set; }
+    public int TenantId { get; set; }
     public string Nome { get; set; } = string.Empty;
     public string Sigla { get; set; } = string.Empty;
     public string? CodigoMec { get; set; }

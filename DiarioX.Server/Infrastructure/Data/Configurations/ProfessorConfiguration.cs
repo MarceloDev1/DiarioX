@@ -31,16 +31,16 @@ public class ProfessorConfiguration : IEntityTypeConfiguration<Professor>
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Índices
-        builder.HasIndex(x => x.Cpf)
+        // Índices (unicidade dentro da instituição: o mesmo professor pode atuar em outra rede)
+        builder.HasIndex(x => new { x.TenantId, x.Cpf })
             .HasDatabaseName("IX_professores_cpf")
             .IsUnique();
 
-        builder.HasIndex(x => x.Matricula)
+        builder.HasIndex(x => new { x.TenantId, x.Matricula })
             .HasDatabaseName("IX_professores_matricula")
             .IsUnique();
 
-        builder.HasIndex(x => x.Email)
+        builder.HasIndex(x => new { x.TenantId, x.Email })
             .HasDatabaseName("IX_professores_email")
             .IsUnique();
 

@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
+import { startSession, type LoginResponse, type Session } from '../../utils/api';
 
 interface LoginFormProps {
-    onLogin: (username: string) => void;
+    onLogin: (session: Session) => void;
     onForgotPassword: () => void;
     onFirstAccess: () => void;
 }
@@ -32,9 +33,8 @@ function LoginForm({ onLogin, onForgotPassword, onFirstAccess }: LoginFormProps)
             });
 
             if (response.ok) {
-                const data: { email?: string; token?: string } = await response.json();
-                if (data.token) sessionStorage.setItem('diariox_token', data.token);
-                onLogin(data.email ?? username);
+                const data = (await response.json()) as LoginResponse;
+                onLogin(startSession(data));
             } else {
                 const data: { message?: string } = await response.json().catch(() => ({}));
                 setError(data.message ?? 'Usuário ou senha inválidos.');

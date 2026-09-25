@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ChangeEvent } from 'react';
+import { apiFetch } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 
@@ -73,7 +74,7 @@ async function readApiError(res: Response): Promise<string> {
 
 function AnosLetivosPage() {
     const [anos, setAnos] = useState<AnoLetivo[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -85,23 +86,16 @@ function AnosLetivosPage() {
     const [filterAno, setFilterAno] = useState('');
     const [appliedAno, setAppliedAno] = useState('');
 
+    // O estado só é atualizado nos callbacks da requisição (isLoading já começa true).
     useEffect(() => {
-        void load();
+        apiFetch('/api/anosletivos')
+            .then(async res => {
+                if (!res.ok) throw new Error(await readApiError(res));
+                setAnos((await res.json()) as AnoLetivo[]);
+            })
+            .catch(e => setError(e instanceof Error ? e.message : 'Falha ao carregar dados.'))
+            .finally(() => setIsLoading(false));
     }, []);
-
-    const load = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const res = await fetch('/api/anosletivos');
-            if (!res.ok) throw new Error(await readApiError(res));
-            setAnos((await res.json()) as AnoLetivo[]);
-        } catch (e) {
-            setError(e instanceof Error ? e.message : 'Falha ao carregar dados.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const handleConsultar = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -200,7 +194,7 @@ function AnosLetivosPage() {
         try {
             const url = editingId !== null ? `/api/anosletivos/${editingId}` : '/api/anosletivos';
             const method = editingId !== null ? 'PUT' : 'POST';
-            const res = await fetch(url, {
+            const res = await apiFetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
@@ -230,7 +224,7 @@ function AnosLetivosPage() {
     const handleDelete = async (id: number) => {
         setError(null);
         try {
-            const res = await fetch(`/api/anosletivos/${id}`, { method: 'DELETE' });
+            const res = await apiFetch(`/api/anosletivos/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(await readApiError(res));
             setAnos(prev => prev.filter(a => a.id !== id));
         } catch (err) {

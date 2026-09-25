@@ -19,7 +19,7 @@ public class AnoLetivoConfiguration : IEntityTypeConfiguration<AnoLetivo>
         builder.Property(x => x.DataTermino).HasColumnName("data_termino").HasColumnType("date").IsRequired();
         builder.Property(x => x.TipoPeriodo).HasColumnName("tipo_periodo").HasMaxLength(20).IsRequired();
 
-        builder.HasIndex(x => x.AnoReferencia)
+        builder.HasIndex(x => new { x.TenantId, x.AnoReferencia })
             .HasDatabaseName("IX_anos_letivos_ano_referencia")
             .IsUnique();
     }

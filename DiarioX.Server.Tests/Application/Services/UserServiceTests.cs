@@ -276,6 +276,40 @@ public class UserServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_WhenPerfilIsAdministrador_ReturnsValidationError()
+    {
+        var service = BuildService();
+        var request = BuildValidRequest(perfilId: 1);
+        service.PerfilRepository.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Perfil { Id = 1, Nome = Perfil.Administrador });
+
+        var result = await service.Service.CreateAsync(request);
+
+        Assert.False(result.Success);
+        Assert.Equal(UserResultError.Validation, result.Error);
+        Assert.Contains("Administrador", result.Message);
+        service.UserRepository.Verify(r => r.AddAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenPerfilIsAdministrador_ReturnsValidationError()
+    {
+        var service = BuildService();
+        var request = BuildValidRequest(perfilId: 1);
+
+        service.UserRepository
+            .Setup(r => r.GetByIdAsync(5))
+            .ReturnsAsync(BuildUser(5, "atual@x.com", "52998224725", perfilId: 2, perfilNome: "Professor"));
+        service.PerfilRepository.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Perfil { Id = 1, Nome = "administrador" });
+
+        var result = await service.Service.UpdateAsync(5, request);
+
+        Assert.False(result.Success);
+        Assert.Equal(UserResultError.Validation, result.Error);
+        service.UserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
+        service.UsuarioPerfilRepository.Verify(r => r.UpdateAsync(It.IsAny<UsuarioPerfil>()), Times.Never);
+    }
+
+    [Fact]
     public async Task DeleteAsync_WhenRepositoryThrows_ReturnsConflict()
     {
         var service = BuildService();

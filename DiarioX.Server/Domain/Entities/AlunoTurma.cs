@@ -1,8 +1,9 @@
 namespace DiarioX.Server.Domain.Entities;
 
-public class AlunoTurma
+public class AlunoTurma : ITenantEntity
 {
     public int Id { get; set; }
+    public int TenantId { get; set; }
     public int AlunoId { get; set; }
     public Aluno Aluno { get; set; } = null!;
     public int TurmaId { get; set; }

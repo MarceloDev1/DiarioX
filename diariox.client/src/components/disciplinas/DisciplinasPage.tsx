@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ChangeEvent } from 'react';
+import { apiFetch } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 
@@ -68,8 +69,8 @@ function DisciplinasPage() {
             setError(null);
             try {
                 const [discRes, etapasRes] = await Promise.all([
-                    fetch('/api/disciplinas'),
-                    fetch('/api/etapasensino'),
+                    apiFetch('/api/disciplinas'),
+                    apiFetch('/api/etapasensino'),
                 ]);
                 if (cancelled) return;
 
@@ -179,7 +180,7 @@ function DisciplinasPage() {
         try {
             const url = editingId !== null ? `/api/disciplinas/${editingId}` : '/api/disciplinas';
             const method = editingId !== null ? 'PUT' : 'POST';
-            const res = await fetch(url, {
+            const res = await apiFetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
@@ -210,7 +211,7 @@ function DisciplinasPage() {
 
         setError(null);
         try {
-            const res = await fetch(`/api/disciplinas/${id}`, { method: 'DELETE' });
+            const res = await apiFetch(`/api/disciplinas/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(await readApiError(res));
             setDisciplinas(prev => prev.filter(d => d.id !== id));
         } catch (err) {

@@ -1,6 +1,6 @@
 namespace DiarioX.Server.Domain.Entities;
 
-public class Professor
+public class Professor : ITenantEntity
 {
     public const string StatusAtivo = "ATIVO";
     public const string StatusInativo = "INATIVO";
@@ -8,6 +8,7 @@ public class Professor
     public const string StatusLicenciado = "LICENCIADO";
 
     public int Id { get; set; }
+    public int TenantId { get; set; }
     public int? UsuarioId { get; set; }
     public int EscolaId { get; set; }
 

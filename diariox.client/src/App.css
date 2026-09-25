@@ -36,6 +36,16 @@
     gap: 1rem;
 }
 
+.main-header-tenant {
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    background-color: #f3e8ff;
+    color: #6c3fc5;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 .logout-button {
     padding: 0.5rem 1rem;
     border: 1px solid #6c3fc5;

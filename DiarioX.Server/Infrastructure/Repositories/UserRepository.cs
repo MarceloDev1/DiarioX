@@ -20,6 +20,18 @@ public class UserRepository : BaseRepository<User>, IUserRepository
             .FirstOrDefaultAsync(u => u.Id == id);
     }
 
+    /// <summary>
+    /// Busca um Administrador global ignorando a instituição selecionada no token,
+    /// usado quando ele troca de instituição.
+    /// </summary>
+    public async Task<User?> GetGlobalByIdAsync(int id)
+    {
+        return await _dbSet
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == id && u.TenantId == null);
+    }
+
     public async Task<User?> GetByCpfAsync(string cpf)
     {
         return await _dbSet

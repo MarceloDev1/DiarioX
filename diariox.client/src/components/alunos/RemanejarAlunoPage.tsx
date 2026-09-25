@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { readApiError } from '../../utils/api';
+import { apiFetch, readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import '../MainContent.css';
@@ -33,11 +33,6 @@ interface EnturmacaoAtiva {
 
 const turnos: Record<string, string> = { MANHA: 'Manhã', TARDE: 'Tarde', NOITE: 'Noite', INTEGRAL: 'Integral' };
 
-const authHeaders = (): Record<string, string> => {
-    const token = sessionStorage.getItem('diariox_token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 function RemanejarAlunoPage() {
     const [alunos, setAlunos] = useState<Aluno[]>([]);
     const [turmas, setTurmas] = useState<Turma[]>([]);
@@ -52,8 +47,8 @@ function RemanejarAlunoPage() {
 
     useEffect(() => {
         void Promise.all([
-            fetch('/api/alunos', { headers: authHeaders() }),
-            fetch('/api/turmas', { headers: authHeaders() }),
+            apiFetch('/api/alunos'),
+            apiFetch('/api/turmas'),
         ]).then(async ([alunosResponse, turmasResponse]) => {
             if (!alunosResponse.ok) throw new Error(await readApiError(alunosResponse));
             if (!turmasResponse.ok) throw new Error(await readApiError(turmasResponse));
@@ -72,7 +67,7 @@ function RemanejarAlunoPage() {
         if (!id) return;
 
         try {
-            const response = await fetch(`/api/alunos/${id}/enturmacao-ativa`, { headers: authHeaders() });
+            const response = await apiFetch(`/api/alunos/${id}/enturmacao-ativa`);
             if (!response.ok) throw new Error(await readApiError(response));
             setEnturmacao(await response.json() as EnturmacaoAtiva);
         } catch (reason) {
@@ -90,9 +85,9 @@ function RemanejarAlunoPage() {
         setError(null);
         setSuccess(null);
         try {
-            const response = await fetch(`/api/alunos/${alunoId}/remanejamentos`, {
+            const response = await apiFetch(`/api/alunos/${alunoId}/remanejamentos`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ turmaDestinoId: Number(turmaDestinoId), dataMovimentacao }),
             });
             if (!response.ok) throw new Error(await readApiError(response));

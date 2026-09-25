@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
-import { readApiError } from '../../utils/api';
+import { apiFetch, readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 
@@ -140,10 +140,10 @@ function TurmasPage() {
         async function loadOptions() {
             try {
                 const [anosRes, escolasRes, modalidadesRes, etapasRes] = await Promise.all([
-                    fetch('/api/anosletivos'),
-                    fetch('/api/escolas'),
-                    fetch('/api/modalidadesensino'),
-                    fetch('/api/etapasensino'),
+                    apiFetch('/api/anosletivos'),
+                    apiFetch('/api/escolas'),
+                    apiFetch('/api/modalidadesensino'),
+                    apiFetch('/api/etapasensino'),
                 ]);
                 if (cancelled) return;
 
@@ -396,7 +396,7 @@ function TurmasPage() {
         setLocalError(null);
         setStatusUpdatingId(turma.id);
         try {
-            const response = await fetch(`/api/turmas/${turma.id}/status`, {
+            const response = await apiFetch(`/api/turmas/${turma.id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: inativar ? 'INATIVO' : 'ATIVO' }),

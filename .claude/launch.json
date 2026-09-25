@@ -5,7 +5,8 @@
       "name": "dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "diariox.client"],
-      "port": 5173
+      "port": 63784,
+      "url": "https://localhost:63784"
     }
   ]
 }
