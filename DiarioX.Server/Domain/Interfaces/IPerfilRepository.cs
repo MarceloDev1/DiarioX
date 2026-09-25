@@ -6,4 +6,5 @@ public interface IPerfilRepository
 {
     Task<IEnumerable<Perfil>> GetAllAsync();
     Task<Perfil?> GetByIdAsync(int id);
+    Task<Perfil?> GetByNomeAsync(string nome);
 }

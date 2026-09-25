@@ -27,6 +27,7 @@ public class ProfessorService : IProfessorService
     private readonly IUserService _userService;
     private readonly IEmailNotificationService _emailNotificationService;
     private readonly ILogger<ProfessorService> _logger;
+    private readonly IPerfilRepository _perfilRepository;
 
     public ProfessorService(
         IProfessorRepository professorRepository,
@@ -34,7 +35,8 @@ public class ProfessorService : IProfessorService
         IEscolaRepository escolaRepository,
         IUserService userService,
         IEmailNotificationService emailNotificationService,
-        ILogger<ProfessorService> logger)
+        ILogger<ProfessorService> logger,
+        IPerfilRepository perfilRepository)
     {
         _professorRepository = professorRepository;
         _disciplinaRepository = disciplinaRepository;
@@ -42,6 +44,7 @@ public class ProfessorService : IProfessorService
         _userService = userService;
         _emailNotificationService = emailNotificationService;
         _logger = logger;
+        _perfilRepository = perfilRepository;
     }
 
     public async Task<ProfessorCommandResult> GetByIdAsync(int id)
@@ -433,9 +436,11 @@ public class ProfessorService : IProfessorService
 
     private async Task<int?> GetProfessorPerfilIdAsync()
     {
-        // TODO: Implementar busca de Perfil "Professor" no banco
-        // Por enquanto, retornar null e deixar sem perfil
-        return null;
+        var perfil = await _perfilRepository.GetByNomeAsync(Perfil.Professor);
+        if (perfil is null)
+            _logger.LogWarning("Perfil {Perfil} não encontrado; usuário do professor será criado sem perfil.", Perfil.Professor);
+
+        return perfil?.Id;
     }
 
     private static ProfessorCommandResult Invalid(string message)

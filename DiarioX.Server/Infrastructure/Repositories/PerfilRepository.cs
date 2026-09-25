@@ -25,4 +25,11 @@ public class PerfilRepository : BaseRepository<Perfil>, IPerfilRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == id);
     }
+
+    public async Task<Perfil?> GetByNomeAsync(string nome)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Nome.ToLower() == nome.ToLower());
+    }
 }

@@ -45,7 +45,8 @@ public class ProfessorServiceTests
             .ReturnsAsync(professor);
 
         var service = new ProfessorService(profRepository.Object, disciplinaRepository.Object,
-            escolaRepository.Object, userService.Object, emailNotificationService.Object, logger.Object);
+            escolaRepository.Object, userService.Object, emailNotificationService.Object, logger.Object,
+            new Mock<IPerfilRepository>().Object);
 
         // Act
         var result = await service.GetByIdAsync(1);
@@ -83,7 +84,8 @@ public class ProfessorServiceTests
             .Returns(Task.CompletedTask);
 
         var service = new ProfessorService(profRepository.Object, disciplinaRepository.Object,
-            escolaRepository.Object, userService.Object, emailNotificationService.Object, logger.Object);
+            escolaRepository.Object, userService.Object, emailNotificationService.Object, logger.Object,
+            new Mock<IPerfilRepository>().Object);
 
         // Act
         var result = await service.DeleteAsync(1);
@@ -108,7 +110,8 @@ public class ProfessorServiceTests
             .ReturnsAsync((Professor)null);
 
         var service = new ProfessorService(profRepository.Object, disciplinaRepository.Object,
-            escolaRepository.Object, userService.Object, emailNotificationService.Object, logger.Object);
+            escolaRepository.Object, userService.Object, emailNotificationService.Object, logger.Object,
+            new Mock<IPerfilRepository>().Object);
 
         // Act
         var result = await service.GetByIdAsync(999);
@@ -133,7 +136,8 @@ public class ProfessorServiceTests
             .ReturnsAsync((Professor)null);
 
         var service = new ProfessorService(profRepository.Object, disciplinaRepository.Object,
-            escolaRepository.Object, userService.Object, emailNotificationService.Object, logger.Object);
+            escolaRepository.Object, userService.Object, emailNotificationService.Object, logger.Object,
+            new Mock<IPerfilRepository>().Object);
 
         // Act
         var result = await service.DeleteAsync(999);
@@ -198,7 +202,8 @@ public class ProfessorServiceTests
     private static ProfessorService BuildService(Mock<IProfessorRepository> profRepository)
         => new(profRepository.Object, new Mock<IDisciplinaRepository>().Object,
             new Mock<IEscolaRepository>().Object, new Mock<IUserService>().Object,
-            new Mock<IEmailNotificationService>().Object, new Mock<ILogger<ProfessorService>>().Object);
+            new Mock<IEmailNotificationService>().Object, new Mock<ILogger<ProfessorService>>().Object,
+            new Mock<IPerfilRepository>().Object);
 
     [Fact]
     public async Task GetAllAsync_ReturnsAllProfessors()
@@ -253,7 +258,8 @@ public class ProfessorServiceTests
             .ReturnsAsync(professors);
 
         var service = new ProfessorService(profRepository.Object, disciplinaRepository.Object,
-            escolaRepository.Object, userService.Object, emailNotificationService.Object, logger.Object);
+            escolaRepository.Object, userService.Object, emailNotificationService.Object, logger.Object,
+            new Mock<IPerfilRepository>().Object);
 
         // Act
         var result = await service.GetAllAsync();
@@ -299,7 +305,8 @@ public class ProfessorServiceTests
             .ReturnsAsync(professors);
 
         var service = new ProfessorService(profRepository.Object, disciplinaRepository.Object,
-            escolaRepository.Object, userService.Object, emailNotificationService.Object, logger.Object);
+            escolaRepository.Object, userService.Object, emailNotificationService.Object, logger.Object,
+            new Mock<IPerfilRepository>().Object);
 
         // Act
         var result = await service.GetByEscolaIdAsync(1);

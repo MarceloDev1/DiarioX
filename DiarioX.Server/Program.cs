@@ -93,6 +93,21 @@ using (var scope = app.Services.CreateScope())
         db.Users.Add(adminUser);
         db.SaveChanges();
     }
+
+    // Garante que o admin padrão tenha o perfil global de Administrador
+    var admin = db.Users.First(u => u.Email == "admin@diariox.local");
+    var perfilAdministrador = db.Perfis.FirstOrDefault(p => p.Nome.ToLower() == Perfil.Administrador.ToLower());
+    if (perfilAdministrador is not null &&
+        !db.UsuariosPerfis.Any(up => up.UsuarioId == admin.Id && up.PerfilId == perfilAdministrador.Id && up.EscolaId == null))
+    {
+        db.UsuariosPerfis.Add(new UsuarioPerfil
+        {
+            UsuarioId = admin.Id,
+            PerfilId = perfilAdministrador.Id,
+            EscolaId = null,
+        });
+        db.SaveChanges();
+    }
 }
 
 app.UseDefaultFiles();
