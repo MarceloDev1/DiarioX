@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './Sidebar.css';
-import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight } from 'react-icons/fi';
 import { MdSchool, MdPeople, MdManageAccounts } from 'react-icons/md';
 
 function LogoIcon() {
@@ -12,6 +12,8 @@ function LogoIcon() {
         </svg>
     );
 }
+
+const COLLAPSED_KEY = 'diariox_sidebar_collapsed';
 
 interface SidebarProps {
     onSelectPage: (page: string) => void;
@@ -41,15 +43,44 @@ function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
     const isCadastroActive = cadastroItem?.submenu?.some(item => item.id === currentPage);
     const [cadastroOpen, setCadastroOpen] = useState(isCadastroActive);
 
+    const [collapsed, setCollapsed] = useState(() => {
+        try {
+            return localStorage.getItem(COLLAPSED_KEY) === 'true';
+        } catch {
+            return false;
+        }
+    });
+
     const toggleCadastro = () => setCadastroOpen(open => !open);
 
+    const toggleCollapsed = () => {
+        setCollapsed(current => {
+            const next = !current;
+            try {
+                localStorage.setItem(COLLAPSED_KEY, String(next));
+            } catch {
+                // preferência apenas visual; ignora falha de armazenamento
+            }
+            return next;
+        });
+    };
+
     return (
-        <aside className="sidebar">
+        <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
             <div className="sidebar-header">
                 <div className="sidebar-logo">
                     <LogoIcon />
-                    <span>Diário X</span>
+                    <span className="sidebar-label">Diário X</span>
                 </div>
+                <button
+                    type="button"
+                    className="sidebar-toggle"
+                    onClick={toggleCollapsed}
+                    aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+                    title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+                >
+                    {collapsed ? <FiChevronsRight /> : <FiChevronsLeft />}
+                </button>
             </div>
             <nav className="sidebar-nav">
                 {menuItems.map(item => {
@@ -61,10 +92,11 @@ function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
                                     className={`sidebar-item sidebar-group ${isCadastroActive ? 'active' : ''}`}
                                     onClick={toggleCadastro}
                                     aria-expanded={cadastroOpen}
+                                    title={collapsed ? item.label : undefined}
                                 >
                                     <span className="sidebar-item-content">
                                         <Icon className="sidebar-icon" />
-                                        <span>{item.label}</span>
+                                        <span className="sidebar-label">{item.label}</span>
                                     </span>
                                     <span className={`sidebar-chevron ${cadastroOpen ? 'open' : ''}`}>›</span>
                                 </button>
@@ -78,10 +110,11 @@ function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
                                                     key={subitem.id}
                                                     className={`sidebar-item sidebar-subitem ${currentPage === subitem.id ? 'active' : ''}`}
                                                     onClick={() => onSelectPage(subitem.id)}
+                                                    title={collapsed ? subitem.label : undefined}
                                                 >
                                                     <span className="sidebar-item-content">
                                                         <SubIcon className="sidebar-icon" />
-                                                        <span>{subitem.label}</span>
+                                                        <span className="sidebar-label">{subitem.label}</span>
                                                     </span>
                                                 </button>
                                             );
@@ -98,10 +131,11 @@ function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
                             key={item.id}
                             className={`sidebar-item ${currentPage === item.id ? 'active' : ''}`}
                             onClick={() => onSelectPage(item.id)}
+                            title={collapsed ? item.label : undefined}
                         >
                             <span className="sidebar-item-content">
                                 <Icon className="sidebar-icon" />
-                                <span>{item.label}</span>
+                                <span className="sidebar-label">{item.label}</span>
                             </span>
                         </button>
                     );

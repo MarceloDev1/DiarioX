@@ -9,6 +9,63 @@
     top: 0;
     overflow: hidden;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    transition: width 0.2s ease;
+}
+
+.sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid #2a2a3e;
+    border-radius: 8px;
+    color: #b8b8c8;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(138, 56, 245, 0.2);
+    color: #fff;
+}
+
+/* Menu recolhido (somente desktop): apenas ícones */
+@media (min-width: 769px) {
+    .sidebar.collapsed {
+        width: 76px;
+    }
+
+    .sidebar.collapsed .sidebar-header {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1rem 0.5rem;
+    }
+
+    .sidebar.collapsed .sidebar-label,
+    .sidebar.collapsed .sidebar-chevron {
+        display: none;
+    }
+
+    .sidebar.collapsed .sidebar-item,
+    .sidebar.collapsed .sidebar-subitem {
+        padding: 0.75rem 0;
+        justify-content: center;
+    }
+
+    .sidebar.collapsed .sidebar-item-content {
+        justify-content: center;
+        flex: 0;
+    }
+
+    .sidebar.collapsed .sidebar-submenu {
+        border-left: 2px solid rgba(138, 56, 245, 0.35);
+        margin-left: 0.5rem;
+    }
 }
 
 @media (max-width: 768px) {
@@ -40,6 +97,10 @@
         padding: 0.5rem 0.75rem;
         font-size: 0.85rem;
     }
+
+    .sidebar-toggle {
+        display: none;
+    }
 }
 
 .sidebar-header {
@@ -47,6 +108,10 @@
     padding: 1.5rem 1rem;
     border-bottom: 1px solid #2a2a3e;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
 }
 
 .sidebar-logo {
