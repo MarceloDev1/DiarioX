@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
-import { readApiError } from '../../utils/api';
+import { apiFetch, readApiError } from '../../utils/api';
 import { formatCpf, formatTelefone, formatCep } from '../../utils/formatters';
 import { validateCpf } from '../../utils/validators';
 import FeedbackMessage from '../ui/FeedbackMessage';
@@ -162,7 +162,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
 
         async function loadEscolas() {
             try {
-                const response = await fetch('/api/escolas');
+                const response = await apiFetch('/api/escolas');
                 if (cancelled) return;
                 if (response.ok) {
                     const data = (await response.json()) as EscolaOption[];
@@ -326,7 +326,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         setLocalError(null);
         setStatusUpdatingId(aluno.id);
         try {
-            const response = await fetch(`/api/alunos/${aluno.id}/status`, {
+            const response = await apiFetch(`/api/alunos/${aluno.id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: inativar ? 'INATIVO' : 'ATIVO' }),

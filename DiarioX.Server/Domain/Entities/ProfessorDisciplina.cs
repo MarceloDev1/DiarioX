@@ -1,8 +1,9 @@
 namespace DiarioX.Server.Domain.Entities;
 
-public class ProfessorDisciplina
+public class ProfessorDisciplina : ITenantEntity
 {
     public int Id { get; set; }
+    public int TenantId { get; set; }
     public int ProfessorId { get; set; }
     public int DisciplinaId { get; set; }
 

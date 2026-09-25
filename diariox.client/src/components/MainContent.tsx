@@ -11,6 +11,7 @@ import AlunosPage from './alunos/AlunosPage';
 import EnturmarAlunoPage from './alunos/EnturmarAlunoPage';
 import ProfessorAlocacoesPage from './professor-alocacoes/ProfessorAlocacoesPage';
 import RemanejarAlunoPage from './alunos/RemanejarAlunoPage';
+import InstituicoesPage from './tenants/InstituicoesPage';
 
 interface MainContentProps {
     page: string;
@@ -44,6 +45,8 @@ function MainContent({ page, onNavigate, initialAlunoId }: MainContentProps) {
             return <RemanejarAlunoPage />;
         case 'usuarios':
             return <UsuariosPage />;
+        case 'instituicoes':
+            return <InstituicoesPage />;
         default:
             return (
                 <div className="content-card">

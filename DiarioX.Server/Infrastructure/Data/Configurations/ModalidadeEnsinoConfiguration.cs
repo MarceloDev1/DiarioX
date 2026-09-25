@@ -16,11 +16,11 @@ public class ModalidadeEnsinoConfiguration : IEntityTypeConfiguration<Modalidade
             .HasColumnName("id")
             .UseIdentityByDefaultColumn();
 
-        builder.HasIndex(x => x.Nome)
+        builder.HasIndex(x => new { x.TenantId, x.Nome })
             .HasDatabaseName("IX_modalidades_ensino_nome")
             .IsUnique();
 
-        builder.HasIndex(x => x.Sigla)
+        builder.HasIndex(x => new { x.TenantId, x.Sigla })
             .HasDatabaseName("IX_modalidades_ensino_sigla")
             .IsUnique();
 

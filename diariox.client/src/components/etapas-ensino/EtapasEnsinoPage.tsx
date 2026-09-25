@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { apiFetch } from '../../utils/api';
 import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
 import FeedbackMessage from '../ui/FeedbackMessage';
@@ -57,18 +58,13 @@ function EtapasEnsinoPage() {
 
     useEffect(() => {
         void load();
-        void fetchModalidades();
+        apiFetch('/api/modalidadesensino')
+            .then(res => (res.ok ? (res.json() as Promise<ModalidadeOption[]>) : null))
+            .then(data => {
+                if (data) setModalidades(data.filter(m => m.status === 'ATIVO'));
+            })
+            .catch(() => { /* ignore */ });
     }, []);
-
-    const fetchModalidades = async () => {
-        try {
-            const res = await fetch('/api/modalidadesensino');
-            if (res.ok) {
-                const data = (await res.json()) as ModalidadeOption[];
-                setModalidades(data.filter(m => m.status === 'ATIVO'));
-            }
-        } catch { /* ignore */ }
-    };
 
     const handleConsultar = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();

@@ -4,19 +4,33 @@ import Login from './components/Login';
 import ResetPassword from './components/ResetPassword';
 import Sidebar from './components/Sidebar';
 import MainContent from './components/MainContent';
+import TenantPicker from './components/tenants/TenantPicker';
+import InstituicoesPage from './components/tenants/InstituicoesPage';
+import { clearSession, UNAUTHORIZED_EVENT, type Session } from './utils/api';
 
 function App() {
-    const [currentUser, setCurrentUser] = useState<string | null>(null);
+    const [session, setSession] = useState<Session | null>(null);
+    // Administrador global sem instituição selecionada pode abrir a gestão de instituições.
+    const [managingTenants, setManagingTenants] = useState(false);
     const [currentPage, setCurrentPage] = useState('home');
     const [initialAlunoId, setInitialAlunoId] = useState<number | null>(null);
-    const [resetToken, setResetToken] = useState<string | null>(null);
+    // O link do e-mail de redefinição abre /redefinir-senha?token=...; lido uma vez ao carregar.
+    const [resetToken, setResetToken] = useState<string | null>(() =>
+        window.location.pathname === '/redefinir-senha'
+            ? new URLSearchParams(window.location.search).get('token')
+            : null
+    );
     const isFirstAccessRoute = window.location.pathname === '/primeiro-acesso';
 
+    // Token expirado ou inválido em qualquer chamada da API: volta para o login.
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const isResetRoute = window.location.pathname === '/redefinir-senha';
-        const token = isResetRoute ? params.get('token') : null;
-        if (token) setResetToken(token);
+        const handleUnauthorized = () => {
+            clearSession();
+            setSession(null);
+            setCurrentPage('home');
+        };
+        window.addEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
+        return () => window.removeEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
     }, []);
 
     function handleResetSuccess() {
@@ -30,8 +44,15 @@ function App() {
     }
 
     function handleLogout() {
-        sessionStorage.removeItem('diariox_token');
-        setCurrentUser(null);
+        setManagingTenants(false);
+        clearSession();
+        setSession(null);
+        setCurrentPage('home');
+    }
+
+    function handleChangeTenant() {
+        setManagingTenants(false);
+        setSession(current => current && { ...current, tenantId: null, tenantNome: null });
         setCurrentPage('home');
     }
 
@@ -39,18 +60,48 @@ function App() {
         return <ResetPassword token={resetToken} onSuccess={handleResetSuccess} />;
     }
 
-    if (!currentUser) {
-        return <Login onLogin={setCurrentUser} initialViewMode={isFirstAccessRoute ? 'first-access' : 'login'} />;
+    if (!session) {
+        return <Login onLogin={setSession} initialViewMode={isFirstAccessRoute ? 'first-access' : 'login'} />;
+    }
+
+    // Administrador global precisa escolher uma instituição antes de acessar os cadastros.
+    if (session.isGlobalAdmin && session.tenantId === null) {
+        if (managingTenants) {
+            return (
+                <main className="main-area">
+                    <header className="main-header">
+                        <h1>Diário de Classe</h1>
+                        <div className="main-header-user">
+                            <button type="button" className="logout-button" onClick={() => setManagingTenants(false)}>
+                                Escolher instituição
+                            </button>
+                            <button type="button" className="logout-button" onClick={handleLogout}>
+                                Sair
+                            </button>
+                        </div>
+                    </header>
+                    <InstituicoesPage />
+                </main>
+            );
+        }
+
+        return <TenantPicker onSelect={setSession} onManage={() => setManagingTenants(true)} onLogout={handleLogout} />;
     }
 
     return (
         <div className="app-layout">
-            <Sidebar onSelectPage={page => handleNavigate(page)} currentPage={currentPage} />
+            <Sidebar onSelectPage={page => handleNavigate(page)} currentPage={currentPage} isGlobalAdmin={session.isGlobalAdmin} />
             <main className="main-area">
                 <header className="main-header">
                     <h1>Diário de Classe</h1>
                     <div className="main-header-user">
-                        <p>Olá, <strong>{currentUser}</strong>!</p>
+                        {session.tenantNome && <span className="main-header-tenant">{session.tenantNome}</span>}
+                        <p>Olá, <strong>{session.email}</strong>!</p>
+                        {session.isGlobalAdmin && (
+                            <button type="button" className="logout-button" onClick={handleChangeTenant}>
+                                Trocar instituição
+                            </button>
+                        )}
                         <button type="button" className="logout-button" onClick={handleLogout}>
                             Sair
                         </button>

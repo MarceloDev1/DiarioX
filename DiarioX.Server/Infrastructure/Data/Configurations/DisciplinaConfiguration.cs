@@ -40,7 +40,7 @@ public class DisciplinaConfiguration : IEntityTypeConfiguration<Disciplina>
             .HasForeignKey(de => de.DisciplinaId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(x => x.Codigo)
+        builder.HasIndex(x => new { x.TenantId, x.Codigo })
             .HasDatabaseName("IX_disciplinas_codigo")
             .IsUnique();
 

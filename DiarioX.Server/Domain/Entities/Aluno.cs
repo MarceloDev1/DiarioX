@@ -1,6 +1,6 @@
 namespace DiarioX.Server.Domain.Entities;
 
-public class Aluno
+public class Aluno : ITenantEntity
 {
     public const string StatusAtivoAguardandoEnturmacao = "ATIVO_AGUARDANDO_ENTURMACAO";
     public const string StatusAtivo = "ATIVO";
@@ -10,6 +10,7 @@ public class Aluno
     public const string SexoFeminino = "FEMININO";
 
     public int Id { get; set; }
+    public int TenantId { get; set; }
 
     // RN02: gerada automaticamente (ano + sequencial) e imutável após a criação.
     public string Matricula { get; set; } = string.Empty;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { readApiError } from '../utils/api';
+import { apiFetch, readApiError } from '../utils/api';
 
 export function useCrudData<T extends { id: number }>(endpoint: string) {
     const [items, setItems] = useState<T[]>([]);
@@ -11,7 +11,7 @@ export function useCrudData<T extends { id: number }>(endpoint: string) {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch(endpoint);
+            const response = await apiFetch(endpoint);
             if (!response.ok) throw new Error(await readApiError(response));
             const data = (await response.json()) as T[];
             setItems(data);
@@ -28,7 +28,7 @@ export function useCrudData<T extends { id: number }>(endpoint: string) {
         try {
             const isEditing = editingId !== null;
             const url = isEditing ? `${endpoint}/${editingId}` : endpoint;
-            const response = await fetch(url, {
+            const response = await apiFetch(url, {
                 method: isEditing ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
@@ -52,7 +52,7 @@ export function useCrudData<T extends { id: number }>(endpoint: string) {
     const remove = async (id: number): Promise<boolean> => {
         setError(null);
         try {
-            const response = await fetch(`${endpoint}/${id}`, { method: 'DELETE' });
+            const response = await apiFetch(`${endpoint}/${id}`, { method: 'DELETE' });
             if (!response.ok) throw new Error(await readApiError(response));
             setItems((current) => current.filter((i) => i.id !== id));
             return true;

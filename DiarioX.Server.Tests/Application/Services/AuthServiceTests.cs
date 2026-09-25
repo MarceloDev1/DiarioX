@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using DiarioX.Server.Application.Auth;
 using DiarioX.Server.Application.DTOs.Auth;
 using DiarioX.Server.Application.Interfaces;
 using DiarioX.Server.Application.Services;
@@ -342,6 +344,136 @@ public class AuthServiceTests
         Assert.True(loginResult.Success);
     }
 
+    [Fact]
+    public async Task LoginAsync_WhenTenantUser_EmitsTenantClaimsAndTenantData()
+    {
+        var (fixture, tenantRepository) = BuildServiceWithTenants();
+        var user = BuildActiveUser(email: "usuario@x.com", cpf: "52998224725", password: "Senha@123");
+        user.Id = 42;
+        user.TenantId = 7;
+
+        fixture.UserRepository.Setup(r => r.GetByEmailOrCpfAsync("usuario@x.com")).ReturnsAsync(user);
+        tenantRepository.Setup(r => r.GetByIdAsync(7)).ReturnsAsync(BuildTenant(7, "colegio-x"));
+
+        var result = await fixture.Service.LoginAsync(new LoginRequest { Login = "usuario@x.com", Password = "Senha@123" });
+
+        Assert.True(result.Success);
+        Assert.Equal(7, result.Response!.TenantId);
+        Assert.Equal("Colégio colegio-x", result.Response.TenantNome);
+        Assert.False(result.Response.IsGlobalAdmin);
+
+        var claims = ReadClaims(result.Response.Token);
+        Assert.Equal("42", claims[JwtRegisteredClaimNames.Sub]);
+        Assert.Equal("7", claims[AppClaimTypes.TenantId]);
+        Assert.Equal("colegio-x", claims[AppClaimTypes.TenantSlug]);
+        Assert.False(claims.ContainsKey(AppClaimTypes.GlobalAdmin));
+    }
+
+    [Fact]
+    public async Task LoginAsync_WhenGlobalAdmin_EmitsGlobalAdminClaimWithoutTenant()
+    {
+        var fixture = BuildService();
+        var user = BuildActiveUser(email: "admin@x.com", cpf: "52998224725", password: "Senha@123");
+        user.TenantId = null;
+
+        fixture.UserRepository.Setup(r => r.GetByEmailOrCpfAsync("admin@x.com")).ReturnsAsync(user);
+
+        var result = await fixture.Service.LoginAsync(new LoginRequest { Login = "admin@x.com", Password = "Senha@123" });
+
+        Assert.True(result.Success);
+        Assert.True(result.Response!.IsGlobalAdmin);
+        Assert.Null(result.Response.TenantId);
+
+        var claims = ReadClaims(result.Response.Token);
+        Assert.Equal("true", claims[AppClaimTypes.GlobalAdmin]);
+        Assert.False(claims.ContainsKey(AppClaimTypes.TenantId));
+    }
+
+    [Fact]
+    public async Task LoginAsync_WhenTenantInactive_ReturnsInvalidCredentials()
+    {
+        var (fixture, tenantRepository) = BuildServiceWithTenants();
+        var user = BuildActiveUser(email: "usuario@x.com", cpf: "52998224725", password: "Senha@123");
+        user.TenantId = 7;
+
+        var tenant = BuildTenant(7, "colegio-x");
+        tenant.Status = Tenant.StatusInativo;
+
+        fixture.UserRepository.Setup(r => r.GetByEmailOrCpfAsync("usuario@x.com")).ReturnsAsync(user);
+        tenantRepository.Setup(r => r.GetByIdAsync(7)).ReturnsAsync(tenant);
+
+        var result = await fixture.Service.LoginAsync(new LoginRequest { Login = "usuario@x.com", Password = "Senha@123" });
+
+        Assert.False(result.Success);
+        Assert.Equal(LoginFailureReason.InvalidCredentials, result.FailureReason);
+        fixture.UserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SelectTenantAsync_WhenGlobalAdminAndTenantActive_ReturnsTokenForTenant()
+    {
+        var (fixture, tenantRepository) = BuildServiceWithTenants();
+        var admin = BuildActiveUser(email: "admin@x.com", cpf: "52998224725", password: "Senha@123");
+        admin.Id = 1;
+
+        fixture.UserRepository.Setup(r => r.GetGlobalByIdAsync(1)).ReturnsAsync(admin);
+        tenantRepository.Setup(r => r.GetByIdAsync(3)).ReturnsAsync(BuildTenant(3, "rede-y"));
+
+        var response = await fixture.Service.SelectTenantAsync(1, 3);
+
+        Assert.NotNull(response);
+        Assert.Equal(3, response!.TenantId);
+        Assert.True(response.IsGlobalAdmin);
+
+        var claims = ReadClaims(response.Token);
+        Assert.Equal("3", claims[AppClaimTypes.TenantId]);
+        Assert.Equal("rede-y", claims[AppClaimTypes.TenantSlug]);
+        Assert.Equal("true", claims[AppClaimTypes.GlobalAdmin]);
+    }
+
+    [Fact]
+    public async Task SelectTenantAsync_WhenUserIsNotGlobal_ReturnsNull()
+    {
+        var (fixture, tenantRepository) = BuildServiceWithTenants();
+
+        fixture.UserRepository.Setup(r => r.GetGlobalByIdAsync(5)).ReturnsAsync((User?)null);
+        tenantRepository.Setup(r => r.GetByIdAsync(3)).ReturnsAsync(BuildTenant(3, "rede-y"));
+
+        var response = await fixture.Service.SelectTenantAsync(5, 3);
+
+        Assert.Null(response);
+    }
+
+    [Fact]
+    public async Task SelectTenantAsync_WhenTenantInactive_ReturnsNull()
+    {
+        var (fixture, tenantRepository) = BuildServiceWithTenants();
+        var admin = BuildActiveUser(email: "admin@x.com", cpf: "52998224725", password: "Senha@123");
+
+        var tenant = BuildTenant(3, "rede-y");
+        tenant.Status = Tenant.StatusInativo;
+
+        fixture.UserRepository.Setup(r => r.GetGlobalByIdAsync(1)).ReturnsAsync(admin);
+        tenantRepository.Setup(r => r.GetByIdAsync(3)).ReturnsAsync(tenant);
+
+        var response = await fixture.Service.SelectTenantAsync(1, 3);
+
+        Assert.Null(response);
+    }
+
+    private static Tenant BuildTenant(int id, string slug) => new()
+    {
+        Id = id,
+        Nome = $"Colégio {slug}",
+        Slug = slug,
+        Status = Tenant.StatusAtivo,
+    };
+
+    private static Dictionary<string, string> ReadClaims(string token) =>
+        new JwtSecurityTokenHandler().ReadJwtToken(token).Claims
+            .GroupBy(c => c.Type)
+            .ToDictionary(g => g.Key, g => g.First().Value);
+
     private static User BuildActiveUser(string email, string cpf, string password, DateTime? birthDate = null)
     {
         var user = new User
@@ -361,12 +493,24 @@ public class AuthServiceTests
         Mock<IPasswordResetTokenRepository> PasswordResetTokenRepository,
         Mock<IEmailService> EmailService,
         Mock<ILogger<AuthService>> Logger)
-        BuildService()
+        BuildService() => BuildServiceWithTenants().Fixture;
+
+    private static ((AuthService Service,
+        Mock<IUserRepository> UserRepository,
+        Mock<IPasswordResetTokenRepository> PasswordResetTokenRepository,
+        Mock<IEmailService> EmailService,
+        Mock<ILogger<AuthService>> Logger) Fixture,
+        Mock<ITenantRepository> TenantRepository)
+        BuildServiceWithTenants()
     {
         var userRepository = new Mock<IUserRepository>();
         var passwordResetTokenRepository = new Mock<IPasswordResetTokenRepository>();
+        var tenantRepository = new Mock<ITenantRepository>();
         var emailService = new Mock<IEmailService>();
+        var appUrlProvider = new Mock<IAppUrlProvider>();
         var logger = new Mock<ILogger<AuthService>>();
+
+        appUrlProvider.Setup(p => p.GetAppUrl()).Returns("https://localhost:5173");
 
         var settings = new Dictionary<string, string?>
         {
@@ -384,10 +528,12 @@ public class AuthServiceTests
         var service = new AuthService(
             userRepository.Object,
             passwordResetTokenRepository.Object,
+            tenantRepository.Object,
             emailService.Object,
+            appUrlProvider.Object,
             configuration,
             logger.Object);
 
-        return (service, userRepository, passwordResetTokenRepository, emailService, logger);
+        return ((service, userRepository, passwordResetTokenRepository, emailService, logger), tenantRepository);
     }
 }

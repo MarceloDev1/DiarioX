@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiFetch } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import '../MainContent.css';
@@ -32,11 +33,6 @@ interface GradeItem {
 
 const turnoLabels: Record<string, string> = { MANHA: 'Manhã', TARDE: 'Tarde', NOITE: 'Noite', INTEGRAL: 'Integral' };
 
-const authHeaders = (): Record<string, string> => {
-    const token = sessionStorage.getItem('diariox_token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 function ProfessorAlocacoesPage() {
     const [professores, setProfessores] = useState<Professor[]>([]);
     const [disponiveis, setDisponiveis] = useState<Disponibilidade[]>([]);
@@ -49,7 +45,7 @@ function ProfessorAlocacoesPage() {
     const [success, setSuccess] = useState<string | null>(null);
 
     useEffect(() => {
-        void fetch('/api/professores', { headers: authHeaders() })
+        void apiFetch('/api/professores')
             .then(response => response.ok ? response.json() : Promise.reject(new Error('Falha ao carregar professores.')))
             .then(data => setProfessores(data as Professor[]))
             .catch(reason => setError(reason instanceof Error ? reason.message : 'Falha ao carregar professores.'));
@@ -68,7 +64,7 @@ function ProfessorAlocacoesPage() {
 
         setLoading(true);
         try {
-            const response = await fetch(`/api/professor-alocacoes/professor/${id}/disponiveis`, { headers: authHeaders() });
+            const response = await apiFetch(`/api/professor-alocacoes/professor/${id}/disponiveis`);
             if (!response.ok) throw new Error('Falha ao carregar turmas disponíveis.');
             setDisponiveis(await response.json() as Disponibilidade[]);
         } catch (reason) {
@@ -120,9 +116,9 @@ function ProfessorAlocacoesPage() {
         setError(null);
         setSuccess(null);
         try {
-            const response = await fetch('/api/professor-alocacoes', {
+            const response = await apiFetch('/api/professor-alocacoes', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     professorId: Number(professorId),
                     itens: grade.map(item => ({ turmaId: item.turmaId, disciplinaId: item.disciplinaId, substituirAlocacaoId: item.substituirAlocacaoId })),

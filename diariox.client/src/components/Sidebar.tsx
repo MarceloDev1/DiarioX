@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './Sidebar.css';
-import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe } from 'react-icons/fi';
 import { MdSchool, MdPeople, MdManageAccounts } from 'react-icons/md';
 
 function LogoIcon() {
@@ -18,7 +18,13 @@ const COLLAPSED_KEY = 'diariox_sidebar_collapsed';
 interface SidebarProps {
     onSelectPage: (page: string) => void;
     currentPage: string;
+    isGlobalAdmin?: boolean;
 }
+
+// Itens exclusivos do Administrador global.
+const globalAdminItems: typeof menuItems = [
+    { id: 'instituicoes', label: 'Instituições', icon: FiGlobe },
+];
 
 const menuItems = [
     { id: 'home', label: 'Home', icon: FiHome },
@@ -38,7 +44,8 @@ const menuItems = [
     { id: 'usuarios', label: 'Usuários', icon: FiUser },
 ];
 
-function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
+function Sidebar({ onSelectPage, currentPage, isGlobalAdmin = false }: SidebarProps) {
+    const visibleItems = isGlobalAdmin ? [...menuItems, ...globalAdminItems] : menuItems;
     const cadastroItem = menuItems.find(item => item.id === 'cadastro');
     const isCadastroActive = cadastroItem?.submenu?.some(item => item.id === currentPage);
     const [cadastroOpen, setCadastroOpen] = useState(isCadastroActive);
@@ -83,7 +90,7 @@ function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
                 </button>
             </div>
             <nav className="sidebar-nav">
-                {menuItems.map(item => {
+                {visibleItems.map(item => {
                     if (item.id === 'cadastro') {
                         const Icon = item.icon;
                         return (

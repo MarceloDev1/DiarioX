@@ -43,7 +43,7 @@ public class EtapaEnsinoConfiguration : IEntityTypeConfiguration<EtapaEnsino>
             .HasColumnName("idade_recomendada")
             .IsRequired(false);
 
-        builder.HasIndex(x => x.Sigla)
+        builder.HasIndex(x => new { x.TenantId, x.Sigla })
             .HasDatabaseName("IX_etapas_ensino_sigla")
             .IsUnique();
 

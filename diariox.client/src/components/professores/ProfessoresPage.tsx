@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
-import { readApiError } from '../../utils/api';
+import { apiFetch, readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import StatusPill from '../ui/StatusPill';
@@ -121,8 +121,8 @@ function ProfessoresPage() {
         async function loadOptions() {
             try {
                 const [escolasRes, disciplinasRes] = await Promise.all([
-                    fetch('/api/escolas'),
-                    fetch('/api/disciplinas'),
+                    apiFetch('/api/escolas'),
+                    apiFetch('/api/disciplinas'),
                 ]);
                 if (cancelled) return;
 
@@ -273,7 +273,7 @@ function ProfessoresPage() {
         setLocalError(null);
         setSituacaoUpdatingId(professor.id);
         try {
-            const response = await fetch(`/api/professores/${professor.id}/situacao`, {
+            const response = await apiFetch(`/api/professores/${professor.id}/situacao`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ situacao: inativar ? 'INATIVO' : 'ATIVO' }),

@@ -24,19 +24,19 @@ public class AlunoConfiguration : IEntityTypeConfiguration<Aluno>
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Índices
-        builder.HasIndex(x => x.Matricula)
+        // Índices (unicidade sempre dentro da instituição)
+        builder.HasIndex(x => new { x.TenantId, x.Matricula })
             .HasDatabaseName("IX_alunos_matricula")
             .IsUnique();
 
         // RN01: CPF único quando informado.
-        builder.HasIndex(x => x.CpfAluno)
+        builder.HasIndex(x => new { x.TenantId, x.CpfAluno })
             .HasDatabaseName("IX_alunos_cpf_aluno")
             .IsUnique()
             .HasFilter("cpf_aluno IS NOT NULL");
 
         // RN01: quando o aluno não possui CPF, a chave de unicidade é Nome + Data de Nascimento + Responsável 1.
-        builder.HasIndex(x => new { x.Nome, x.DataNascimento, x.ResponsavelNome1 })
+        builder.HasIndex(x => new { x.TenantId, x.Nome, x.DataNascimento, x.ResponsavelNome1 })
             .HasDatabaseName("IX_alunos_nome_nascimento_responsavel")
             .IsUnique()
             .HasFilter("cpf_aluno IS NULL");

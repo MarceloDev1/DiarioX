@@ -1,7 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
-import { readApiError } from '../../utils/api';
+import { apiFetch, readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import StatusPill from '../ui/StatusPill';
 import EmptyState from '../ui/EmptyState';
@@ -139,7 +139,7 @@ function ModalidadesEnsinoPage() {
         setListError(null);
         setStatusUpdatingId(modalidade.id);
         try {
-            const response = await fetch(`/api/modalidadesensino/${modalidade.id}/status`, {
+            const response = await apiFetch(`/api/modalidadesensino/${modalidade.id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: inativar ? 'INATIVO' : 'ATIVO' }),

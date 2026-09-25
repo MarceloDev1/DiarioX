@@ -138,25 +138,29 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasDefaultValue("ATIVO_AGUARDANDO_ENTURMACAO")
                         .HasColumnName("status");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CpfAluno")
+                    b.HasIndex("EscolaId")
+                        .HasDatabaseName("IX_alunos_escola_id");
+
+                    b.HasIndex("TenantId", "CpfAluno")
                         .IsUnique()
                         .HasDatabaseName("IX_alunos_cpf_aluno")
                         .HasFilter("cpf_aluno IS NOT NULL");
 
-                    b.HasIndex("EscolaId")
-                        .HasDatabaseName("IX_alunos_escola_id");
-
-                    b.HasIndex("Matricula")
+                    b.HasIndex("TenantId", "Matricula")
                         .IsUnique()
                         .HasDatabaseName("IX_alunos_matricula");
 
-                    b.HasIndex("Nome", "DataNascimento", "ResponsavelNome1")
+                    b.HasIndex("TenantId", "Nome", "DataNascimento", "ResponsavelNome1")
                         .IsUnique()
                         .HasDatabaseName("IX_alunos_nome_nascimento_responsavel")
                         .HasFilter("cpf_aluno IS NULL");
@@ -194,6 +198,10 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("date")
                         .HasColumnName("data_inicio");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
+
                     b.Property<int>("TurmaId")
                         .HasColumnType("integer")
                         .HasColumnName("turma_id");
@@ -204,6 +212,8 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_alunos_turmas_aluno_ativo")
                         .HasFilter("data_fim IS NULL");
+
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("AlunoId", "DataInicio")
                         .HasDatabaseName("IX_alunos_turmas_aluno_inicio");
@@ -238,6 +248,10 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("date")
                         .HasColumnName("data_termino");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
+
                     b.Property<string>("TipoPeriodo")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -246,7 +260,7 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AnoReferencia")
+                    b.HasIndex("TenantId", "AnoReferencia")
                         .IsUnique()
                         .HasDatabaseName("IX_anos_letivos_ano_referencia");
 
@@ -289,14 +303,18 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("nome");
 
-                    b.HasKey("Id");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
 
-                    b.HasIndex("Codigo")
-                        .IsUnique()
-                        .HasDatabaseName("IX_disciplinas_codigo");
+                    b.HasKey("Id");
 
                     b.HasIndex("Nome")
                         .HasDatabaseName("IX_disciplinas_nome");
+
+                    b.HasIndex("TenantId", "Codigo")
+                        .IsUnique()
+                        .HasDatabaseName("IX_disciplinas_codigo");
 
                     b.ToTable("disciplinas", (string)null);
                 });
@@ -318,9 +336,15 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("etapa_ensino_id");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EtapaEnsinoId");
+
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("DisciplinaId", "EtapaEnsinoId")
                         .IsUnique()
@@ -531,13 +555,17 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("telefone");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CodigoInep")
+                    b.HasIndex("DiretorId");
+
+                    b.HasIndex("TenantId", "CodigoInep")
                         .IsUnique()
                         .HasDatabaseName("IX_escolas_codigo_inep");
-
-                    b.HasIndex("DiretorId");
 
                     b.ToTable("escolas", null, t =>
                         {
@@ -578,11 +606,11 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("sigla");
 
-                    b.HasKey("Id");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
 
-                    b.HasIndex("Sigla")
-                        .IsUnique()
-                        .HasDatabaseName("IX_etapas_ensino_sigla");
+                    b.HasKey("Id");
 
                     b.HasIndex("ModalidadeEnsinoId", "Nome")
                         .IsUnique()
@@ -591,6 +619,10 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.HasIndex("ModalidadeEnsinoId", "OrdemCronologica")
                         .IsUnique()
                         .HasDatabaseName("IX_etapas_ensino_modalidade_ordem");
+
+                    b.HasIndex("TenantId", "Sigla")
+                        .IsUnique()
+                        .HasDatabaseName("IX_etapas_ensino_sigla");
 
                     b.ToTable("etapas_ensino", (string)null);
                 });
@@ -634,13 +666,17 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasDefaultValue("ATIVO")
                         .HasColumnName("status");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Nome")
+                    b.HasIndex("TenantId", "Nome")
                         .IsUnique()
                         .HasDatabaseName("IX_modalidades_ensino_nome");
 
-                    b.HasIndex("Sigla")
+                    b.HasIndex("TenantId", "Sigla")
                         .IsUnique()
                         .HasDatabaseName("IX_modalidades_ensino_sigla");
 
@@ -751,7 +787,13 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("numero");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("AnoLetivoId", "Numero")
                         .IsUnique()
@@ -824,6 +866,10 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("telefone");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -833,22 +879,22 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Cpf")
-                        .IsUnique()
-                        .HasDatabaseName("IX_professores_cpf");
-
-                    b.HasIndex("Email")
-                        .IsUnique()
-                        .HasDatabaseName("IX_professores_email");
-
                     b.HasIndex("EscolaId")
                         .HasDatabaseName("IX_professores_escola_id");
 
-                    b.HasIndex("Matricula")
+                    b.HasIndex("UsuarioId");
+
+                    b.HasIndex("TenantId", "Cpf")
+                        .IsUnique()
+                        .HasDatabaseName("IX_professores_cpf");
+
+                    b.HasIndex("TenantId", "Email")
+                        .IsUnique()
+                        .HasDatabaseName("IX_professores_email");
+
+                    b.HasIndex("TenantId", "Matricula")
                         .IsUnique()
                         .HasDatabaseName("IX_professores_matricula");
-
-                    b.HasIndex("UsuarioId");
 
                     b.ToTable("professores", null, t =>
                         {
@@ -885,6 +931,10 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("professor_id");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
+
                     b.Property<int>("TurmaId")
                         .HasColumnType("integer")
                         .HasColumnName("turma_id");
@@ -892,6 +942,8 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DisciplinaId");
+
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("TurmaId", "DisciplinaId")
                         .IsUnique()
@@ -926,6 +978,10 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.Property<int>("ProfessorId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DisciplinaId")
@@ -934,11 +990,60 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.HasIndex("ProfessorId")
                         .HasDatabaseName("IX_professor_disciplinas_professor_id");
 
+                    b.HasIndex("TenantId");
+
                     b.HasIndex("ProfessorId", "DisciplinaId")
                         .IsUnique()
                         .HasDatabaseName("IX_professor_disciplinas_unique");
 
                     b.ToTable("professor_disciplinas", (string)null);
+                });
+
+            modelBuilder.Entity("DiarioX.Server.Domain.Entities.Tenant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("nome");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(63)
+                        .HasColumnType("character varying(63)")
+                        .HasColumnName("slug");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("ATIVO")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique()
+                        .HasDatabaseName("IX_tenants_slug");
+
+                    b.ToTable("tenants", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_tenants_status", "status IN ('ATIVO', 'INATIVO')");
+                        });
                 });
 
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.Turma", b =>
@@ -986,6 +1091,10 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasDefaultValue("ATIVO")
                         .HasColumnName("status");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
+
                     b.Property<string>("Turno")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -1003,6 +1112,8 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.HasIndex("EtapaEnsinoId");
 
                     b.HasIndex("ModalidadeEnsinoId");
+
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("AnoLetivoId", "EscolaId", "EtapaEnsinoId", "NomeIdentificador", "Turno")
                         .IsUnique()
@@ -1073,6 +1184,10 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasDefaultValue("ATIVO")
                         .HasColumnName("status");
 
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenant_id");
+
                     b.Property<DateTime?>("UltimoAcesso")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("ultimo_acesso");
@@ -1081,11 +1196,23 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
 
                     b.HasIndex("Cpf")
                         .IsUnique()
-                        .HasDatabaseName("IX_users_cpf");
+                        .HasDatabaseName("IX_users_cpf_global")
+                        .HasFilter("tenant_id IS NULL");
 
                     b.HasIndex("Email")
                         .IsUnique()
-                        .HasDatabaseName("IX_users_email");
+                        .HasDatabaseName("IX_users_email_global")
+                        .HasFilter("tenant_id IS NULL");
+
+                    b.HasIndex("TenantId", "Cpf")
+                        .IsUnique()
+                        .HasDatabaseName("IX_users_tenant_cpf")
+                        .HasFilter("tenant_id IS NOT NULL");
+
+                    b.HasIndex("TenantId", "Email")
+                        .IsUnique()
+                        .HasDatabaseName("IX_users_tenant_email")
+                        .HasFilter("tenant_id IS NOT NULL");
 
                     b.ToTable("users", null, t =>
                         {
@@ -1142,6 +1269,12 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_alunos_escolas");
 
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Escola");
                 });
 
@@ -1150,6 +1283,12 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.HasOne("DiarioX.Server.Domain.Entities.Aluno", "Aluno")
                         .WithMany()
                         .HasForeignKey("AlunoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1164,6 +1303,24 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.Navigation("Turma");
                 });
 
+            modelBuilder.Entity("DiarioX.Server.Domain.Entities.AnoLetivo", b =>
+                {
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("DiarioX.Server.Domain.Entities.Disciplina", b =>
+                {
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.DisciplinaEtapaEnsino", b =>
                 {
                     b.HasOne("DiarioX.Server.Domain.Entities.Disciplina", "Disciplina")
@@ -1175,6 +1332,12 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.HasOne("DiarioX.Server.Domain.Entities.EtapaEnsino", "EtapaEnsino")
                         .WithMany()
                         .HasForeignKey("EtapaEnsinoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1200,6 +1363,12 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasForeignKey("DiretorId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Diretor");
                 });
 
@@ -1211,7 +1380,22 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("ModalidadeEnsino");
+                });
+
+            modelBuilder.Entity("DiarioX.Server.Domain.Entities.ModalidadeEnsino", b =>
+                {
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.PasswordResetToken", b =>
@@ -1233,6 +1417,12 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("AnoLetivo");
                 });
 
@@ -1244,6 +1434,12 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_professores_escolas");
+
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("DiarioX.Server.Domain.Entities.User", "Usuario")
                         .WithMany()
@@ -1268,6 +1464,12 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .WithMany()
                         .HasForeignKey("ProfessorId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("DiarioX.Server.Domain.Entities.Turma", "Turma")
@@ -1298,6 +1500,12 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_professor_disciplinas_professores");
+
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Disciplina");
 
@@ -1330,6 +1538,12 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("AnoLetivo");
 
                     b.Navigation("Escola");
@@ -1337,6 +1551,14 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.Navigation("EtapaEnsino");
 
                     b.Navigation("ModalidadeEnsino");
+                });
+
+            modelBuilder.Entity("DiarioX.Server.Domain.Entities.User", b =>
+                {
+                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.UsuarioPerfil", b =>

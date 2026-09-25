@@ -42,6 +42,9 @@ public class DisciplinaService : IDisciplinaService
         if (await _repository.ExistsByCodigoAsync(request.Codigo))
             return new(false, "Já existe uma disciplina com este código.", Error: DisciplinaResultError.Conflict);
 
+        if (!await EtapasExistemAsync(request.EtapasEnsinoIds))
+            return new(false, "Etapa de ensino não encontrada.", Error: DisciplinaResultError.Validation);
+
         var disciplina = new Disciplina
         {
             Nome = request.Nome.Trim(),
@@ -75,6 +78,9 @@ public class DisciplinaService : IDisciplinaService
         if (await _repository.ExistsByCodigoAsync(request.Codigo, id))
             return new(false, "Já existe uma disciplina com este código.", Error: DisciplinaResultError.Conflict);
 
+        if (!await EtapasExistemAsync(request.EtapasEnsinoIds))
+            return new(false, "Etapa de ensino não encontrada.", Error: DisciplinaResultError.Validation);
+
         var disciplina = new Disciplina
         {
             Id = id,
@@ -100,6 +106,19 @@ public class DisciplinaService : IDisciplinaService
 
         await _repository.DeleteAsync(id);
         return new(true, "Disciplina excluída com sucesso.");
+    }
+
+    // O repositório só enxerga etapas da instituição atual, o que impede vincular
+    // a disciplina a uma etapa de outra instituição pelo id.
+    private async Task<bool> EtapasExistemAsync(IEnumerable<int> etapaIds)
+    {
+        foreach (var etapaId in etapaIds.Distinct())
+        {
+            if (await _etapaRepository.GetByIdAsync(etapaId) is null)
+                return false;
+        }
+
+        return true;
     }
 
     private static DisciplinaResponse MapToResponse(Disciplina d) => new(

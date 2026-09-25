@@ -10,6 +10,10 @@ public class User
     public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
 
     public int Id { get; set; }
+
+    // Nulo para o Administrador global; preenchido para usuários de uma instituição.
+    public int? TenantId { get; set; }
+
     public string Email { get; set; } = string.Empty;
     public string Cpf { get; set; } = string.Empty;
     public DateTime? DataNascimento { get; set; }

@@ -96,8 +96,8 @@ public class AnoLetivoService : IAnoLetivoService
         if (existing is null)
             return new AnoLetivoCommandResult(false, "Ano letivo não encontrado.", Error: AnoLetivoResultError.NotFound);
 
-        var entity = new AnoLetivo { Id = id };
-        await _repository.DeleteAsync(entity);
+        // Exclui a entidade carregada (já filtrada pela instituição) em vez de um stub só com o Id.
+        await _repository.DeleteAsync(existing);
         return new AnoLetivoCommandResult(true, "Ano letivo excluído com sucesso.");
     }
 
