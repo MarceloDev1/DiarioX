@@ -115,6 +115,27 @@ public class ProfessoresController : ControllerBase
     }
 
     /// <summary>
+    /// Altera a situação de um professor (ex.: inativar ou reativar).
+    /// </summary>
+    /// <param name="id">ID do professor</param>
+    /// <param name="request">Nova situação (ATIVO, INATIVO, AFASTADO ou LICENCIADO)</param>
+    /// <response code="200">Situação atualizada com sucesso</response>
+    /// <response code="400">Situação inválida</response>
+    /// <response code="404">Professor não encontrado</response>
+    [HttpPatch("{id:int}/situacao")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateSituacao([FromRoute] int id, [FromBody] ProfessorSituacaoRequest request)
+    {
+        var result = await _professorService.UpdateSituacaoAsync(id, request);
+        if (!result.Success)
+            return MapError(result);
+
+        return Ok(new { message = result.Message, professor = result.Professor });
+    }
+
+    /// <summary>
     /// Deleta um professor do sistema.
     /// </summary>
     /// <param name="id">ID do professor a ser deletado</param>

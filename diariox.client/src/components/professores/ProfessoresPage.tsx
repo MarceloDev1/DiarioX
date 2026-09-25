@@ -1,5 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
+import { readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import StatusPill from '../ui/StatusPill';
@@ -109,35 +110,40 @@ function ProfessoresPage() {
     const [localError, setLocalError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [situacaoUpdatingId, setSituacaoUpdatingId] = useState<number | null>(null);
 
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
     const [disciplinas, setDisciplinas] = useState<DisciplinaOption[]>([]);
 
     useEffect(() => {
+        let cancelled = false;
+
+        async function loadOptions() {
+            try {
+                const [escolasRes, disciplinasRes] = await Promise.all([
+                    fetch('/api/escolas'),
+                    fetch('/api/disciplinas'),
+                ]);
+                if (cancelled) return;
+
+                if (escolasRes.ok) {
+                    const escolasData = (await escolasRes.json()) as EscolaOption[];
+                    setEscolas(escolasData.filter(escola => escola.status === 'ATIVO'));
+                }
+
+                if (disciplinasRes.ok) {
+                    const disciplinasData = (await disciplinasRes.json()) as DisciplinaOption[];
+                    setDisciplinas(disciplinasData);
+                }
+            } catch {
+                if (!cancelled) setLocalError('Falha ao carregar opções do formulário.');
+            }
+        }
+
         void load();
         void loadOptions();
+        return () => { cancelled = true; };
     }, []);
-
-    const loadOptions = async () => {
-        try {
-            const [escolasRes, disciplinasRes] = await Promise.all([
-                fetch('/api/escolas'),
-                fetch('/api/disciplinas'),
-            ]);
-
-            if (escolasRes.ok) {
-                const escolasData = (await escolasRes.json()) as EscolaOption[];
-                setEscolas(escolasData.filter(escola => escola.status === 'ATIVO'));
-            }
-
-            if (disciplinasRes.ok) {
-                const disciplinasData = (await disciplinasRes.json()) as DisciplinaOption[];
-                setDisciplinas(disciplinasData);
-            }
-        } catch {
-            setLocalError('Falha ao carregar opções do formulário.');
-        }
-    };
 
     const formatCpf = (cpf: string): string => {
         const numbers = cpf.replace(/\D/g, '');
@@ -256,6 +262,34 @@ function ProfessoresPage() {
         }
     };
 
+    const handleToggleSituacao = async (professor: Professor) => {
+        const inativar = professor.situacao !== 'INATIVO';
+        const confirmMessage = inativar
+            ? 'Tem certeza que deseja inativar este professor?'
+            : 'Tem certeza que deseja ativar este professor?';
+        if (!window.confirm(confirmMessage)) return;
+
+        setSuccessMessage(null);
+        setLocalError(null);
+        setSituacaoUpdatingId(professor.id);
+        try {
+            const response = await fetch(`/api/professores/${professor.id}/situacao`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ situacao: inativar ? 'INATIVO' : 'ATIVO' }),
+            });
+            if (!response.ok) throw new Error(await readApiError(response));
+
+            setSuccessMessage(inativar ? 'Professor inativado com sucesso!' : 'Professor ativado com sucesso!');
+            setTimeout(() => setSuccessMessage(null), 3000);
+            await load();
+        } catch (e) {
+            setLocalError(e instanceof Error ? e.message : 'Falha ao alterar a situação do professor.');
+        } finally {
+            setSituacaoUpdatingId(null);
+        }
+    };
+
     const handleNewProfessor = () => {
         setEditingId(null);
         setForm(emptyForm);
@@ -312,7 +346,7 @@ function ProfessoresPage() {
                                     {professores.map(professor => (
                                         <tr key={professor.id}>
                                             <td>{professor.nome}</td>
-                                            <td>{professor.cpf}</td>
+                                            <td className="nowrap-cell">{professor.cpf}</td>
                                             <td>{professor.matricula}</td>
                                             <td>{professor.email}</td>
                                             <td>
@@ -323,19 +357,19 @@ function ProfessoresPage() {
                                             <td>
                                                 <StatusPill status={professor.situacao as 'ATIVO' | 'INATIVO' | 'BLOQUEADO'} />
                                             </td>
-                                            <td className="actions-cell">
-                                                <button
-                                                    className="btn btn-sm btn-info"
-                                                    onClick={() => handleEditClick(professor)}
-                                                >
-                                                    ✏️ Editar
-                                                </button>
-                                                <button
-                                                    className="btn btn-sm btn-danger"
-                                                    onClick={() => handleDeleteClick(professor.id)}
-                                                >
-                                                    🗑️ Deletar
-                                                </button>
+                                            <td>
+                                                <div className="action-group">
+                                                    <button type="button" className="table-action-button" onClick={() => handleEditClick(professor)}>Editar</button>
+                                                    <button
+                                                        type="button"
+                                                        className="table-action-button"
+                                                        onClick={() => handleToggleSituacao(professor)}
+                                                        disabled={situacaoUpdatingId === professor.id}
+                                                    >
+                                                        {professor.situacao === 'INATIVO' ? 'Ativar' : 'Inativar'}
+                                                    </button>
+                                                    <button type="button" className="table-action-button danger" onClick={() => handleDeleteClick(professor.id)}>Excluir</button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

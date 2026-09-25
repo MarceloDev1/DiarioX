@@ -144,6 +144,63 @@ public class ProfessorServiceTests
     }
 
     [Fact]
+    public async Task UpdateSituacaoAsync_WhenInativando_UpdatesSituacao()
+    {
+        var profRepository = new Mock<IProfessorRepository>();
+        var professor = new Professor
+        {
+            Id = 1,
+            Nome = "João Silva",
+            Cpf = "11144477735",
+            Situacao = Professor.StatusAtivo,
+            EscolaId = 1,
+            Escola = new Escola { Id = 1, Nome = "Escola A", Cnpj = "123", Status = "ATIVO" },
+            ProfessorDisciplinas = new List<ProfessorDisciplina>()
+        };
+        profRepository.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(professor);
+        var service = BuildService(profRepository);
+
+        var result = await service.UpdateSituacaoAsync(1, new ProfessorSituacaoRequest { Situacao = " inativo " });
+
+        Assert.True(result.Success);
+        Assert.Equal("Professor inativado com sucesso!", result.Message);
+        Assert.Equal(Professor.StatusInativo, professor.Situacao);
+        Assert.Equal(Professor.StatusInativo, result.Professor!.Situacao);
+        profRepository.Verify(r => r.UpdateAsync(professor), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateSituacaoAsync_WhenSituacaoInvalida_ReturnsValidationError()
+    {
+        var profRepository = new Mock<IProfessorRepository>();
+        var service = BuildService(profRepository);
+
+        var result = await service.UpdateSituacaoAsync(1, new ProfessorSituacaoRequest { Situacao = "BLOQUEADO" });
+
+        Assert.False(result.Success);
+        Assert.Equal(ProfessorResultError.Validation, result.Error);
+        profRepository.Verify(r => r.UpdateAsync(It.IsAny<Professor>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateSituacaoAsync_WhenNotExists_ReturnsNotFound()
+    {
+        var profRepository = new Mock<IProfessorRepository>();
+        profRepository.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((Professor?)null);
+        var service = BuildService(profRepository);
+
+        var result = await service.UpdateSituacaoAsync(999, new ProfessorSituacaoRequest { Situacao = Professor.StatusInativo });
+
+        Assert.False(result.Success);
+        Assert.Equal(ProfessorResultError.NotFound, result.Error);
+    }
+
+    private static ProfessorService BuildService(Mock<IProfessorRepository> profRepository)
+        => new(profRepository.Object, new Mock<IDisciplinaRepository>().Object,
+            new Mock<IEscolaRepository>().Object, new Mock<IUserService>().Object,
+            new Mock<IEmailNotificationService>().Object, new Mock<ILogger<ProfessorService>>().Object);
+
+    [Fact]
     public async Task GetAllAsync_ReturnsAllProfessors()
     {
         // Arrange

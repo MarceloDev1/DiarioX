@@ -122,11 +122,6 @@ function TurmasPage() {
     const [filters, setFilters] = useState(emptyFilters);
     const [appliedFilters, setAppliedFilters] = useState(emptyFilters);
 
-    useEffect(() => {
-        void load();
-        void loadOptions();
-    }, []);
-
     const etapasFiltradas = useMemo(() => {
         if (!form.modalidadeEnsinoId) return [];
         const modalidadeId = parseInt(form.modalidadeEnsinoId);
@@ -139,49 +134,58 @@ function TurmasPage() {
         return etapas.filter(etapa => etapa.modalidadeEnsinoId === modalidadeId);
     }, [etapas, filters.modalidadeEnsinoId]);
 
-    const loadOptions = async () => {
-        try {
-            const [anosRes, escolasRes, modalidadesRes, etapasRes] = await Promise.all([
-                fetch('/api/anosletivos'),
-                fetch('/api/escolas'),
-                fetch('/api/modalidadesensino'),
-                fetch('/api/etapasensino'),
-            ]);
+    useEffect(() => {
+        let cancelled = false;
 
-            if (anosRes.ok) {
-                const anos = (await anosRes.json()) as AnoLetivoOption[];
-                setAnosLetivos(anos);
-                setForm(current => {
-                    if (current.anoLetivoId) return current;
+        async function loadOptions() {
+            try {
+                const [anosRes, escolasRes, modalidadesRes, etapasRes] = await Promise.all([
+                    fetch('/api/anosletivos'),
+                    fetch('/api/escolas'),
+                    fetch('/api/modalidadesensino'),
+                    fetch('/api/etapasensino'),
+                ]);
+                if (cancelled) return;
 
-                    const anoAtual = new Date().getFullYear();
-                    const defaultAno = anos.find(a => a.anoReferencia === anoAtual) ?? anos[0];
-                    if (!defaultAno) return current;
+                if (anosRes.ok) {
+                    const anos = (await anosRes.json()) as AnoLetivoOption[];
+                    setAnosLetivos(anos);
+                    setForm(current => {
+                        if (current.anoLetivoId) return current;
 
-                    return {
-                        ...current,
-                        anoLetivoId: String(defaultAno.id),
-                    };
-                });
+                        const anoAtual = new Date().getFullYear();
+                        const defaultAno = anos.find(a => a.anoReferencia === anoAtual) ?? anos[0];
+                        if (!defaultAno) return current;
+
+                        return {
+                            ...current,
+                            anoLetivoId: String(defaultAno.id),
+                        };
+                    });
+                }
+
+                if (escolasRes.ok) {
+                    const escolasData = (await escolasRes.json()) as EscolaOption[];
+                    setEscolas(escolasData.filter(escola => escola.status === 'ATIVO'));
+                }
+
+                if (modalidadesRes.ok) {
+                    const modalidadesData = (await modalidadesRes.json()) as ModalidadeOption[];
+                    setModalidades(modalidadesData.filter(modalidade => modalidade.status === 'ATIVO'));
+                }
+
+                if (etapasRes.ok) {
+                    setEtapas((await etapasRes.json()) as EtapaOption[]);
+                }
+            } catch {
+                if (!cancelled) setLocalError('Falha ao carregar opções do formulário.');
             }
-
-            if (escolasRes.ok) {
-                const escolasData = (await escolasRes.json()) as EscolaOption[];
-                setEscolas(escolasData.filter(escola => escola.status === 'ATIVO'));
-            }
-
-            if (modalidadesRes.ok) {
-                const modalidadesData = (await modalidadesRes.json()) as ModalidadeOption[];
-                setModalidades(modalidadesData.filter(modalidade => modalidade.status === 'ATIVO'));
-            }
-
-            if (etapasRes.ok) {
-                setEtapas((await etapasRes.json()) as EtapaOption[]);
-            }
-        } catch {
-            setLocalError('Falha ao carregar opções do formulário.');
         }
-    };
+
+        void load();
+        void loadOptions();
+        return () => { cancelled = true; };
+    }, []);
 
     const handleFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = event.target;

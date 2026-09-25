@@ -9,5 +9,6 @@ public interface IProfessorService
     Task<IEnumerable<ProfessorResponse>> GetByEscolaIdAsync(int escolaId);
     Task<ProfessorCommandResult> CreateAsync(ProfessorRequest request);
     Task<ProfessorCommandResult> UpdateAsync(int id, ProfessorRequest request);
+    Task<ProfessorCommandResult> UpdateSituacaoAsync(int id, ProfessorSituacaoRequest request);
     Task<ProfessorCommandResult> DeleteAsync(int id);
 }

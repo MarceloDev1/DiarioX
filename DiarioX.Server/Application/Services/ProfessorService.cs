@@ -214,6 +214,26 @@ public class ProfessorService : IProfessorService
         }
     }
 
+    public async Task<ProfessorCommandResult> UpdateSituacaoAsync(int id, ProfessorSituacaoRequest request)
+    {
+        var situacao = (request.Situacao ?? string.Empty).Trim().ToUpperInvariant();
+        if (!SituacoesValidas.ContainsKey(situacao))
+            return Invalid("Situação inválida. Opções válidas: Ativo, Inativo, Afastado e Licenciado.");
+
+        var professor = await _professorRepository.GetByIdAsync(id);
+        if (professor is null)
+            return NotFound("Professor não encontrado.");
+
+        professor.Situacao = situacao;
+        professor.UpdatedAt = DateTime.UtcNow;
+        await _professorRepository.UpdateAsync(professor);
+
+        var message = situacao == Professor.StatusInativo
+            ? "Professor inativado com sucesso!"
+            : "Situação do professor atualizada com sucesso!";
+        return new ProfessorCommandResult(true, message, MapToResponse(professor));
+    }
+
     public async Task<ProfessorCommandResult> DeleteAsync(int id)
     {
         var professor = await _professorRepository.GetByIdAsync(id);
