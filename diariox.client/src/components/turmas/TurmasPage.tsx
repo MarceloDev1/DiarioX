@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
+import { readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 
@@ -111,6 +112,7 @@ function TurmasPage() {
     const [localError, setLocalError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null);
 
     const [anosLetivos, setAnosLetivos] = useState<AnoLetivoOption[]>([]);
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
@@ -377,6 +379,33 @@ function TurmasPage() {
 
         setSuccessMessage(null);
         await remove(id);
+    };
+
+    const handleToggleStatus = async (turma: Turma) => {
+        const inativar = turma.status === 'ATIVO';
+        const confirmMessage = inativar
+            ? 'Tem certeza que deseja inativar esta turma? Turmas inativas não recebem novos alunos nem alocações de professores.'
+            : 'Tem certeza que deseja ativar esta turma?';
+        if (!window.confirm(confirmMessage)) return;
+
+        setSuccessMessage(null);
+        setLocalError(null);
+        setStatusUpdatingId(turma.id);
+        try {
+            const response = await fetch(`/api/turmas/${turma.id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: inativar ? 'INATIVO' : 'ATIVO' }),
+            });
+            if (!response.ok) throw new Error(await readApiError(response));
+
+            setSuccessMessage(inativar ? 'Turma inativada com sucesso!' : 'Turma ativada com sucesso!');
+            await load();
+        } catch (e) {
+            setLocalError(e instanceof Error ? e.message : 'Falha ao alterar o status da turma.');
+        } finally {
+            setStatusUpdatingId(null);
+        }
     };
 
     const mergedError = localError ?? error;
@@ -664,7 +693,7 @@ function TurmasPage() {
                 </form>
 
                 <FeedbackMessage message={successMessage} type="success" />
-                <FeedbackMessage message={error} />
+                <FeedbackMessage message={mergedError} />
 
                 {isLoading || filteredTurmas.length === 0 ? (
                     <EmptyState
@@ -707,6 +736,14 @@ function TurmasPage() {
                                         <td>
                                             <div className="action-group">
                                                 <button type="button" className="table-action-button" onClick={() => handleEdit(turma)}>Editar</button>
+                                                <button
+                                                    type="button"
+                                                    className="table-action-button"
+                                                    onClick={() => handleToggleStatus(turma)}
+                                                    disabled={statusUpdatingId === turma.id}
+                                                >
+                                                    {turma.status === 'ATIVO' ? 'Inativar' : 'Ativar'}
+                                                </button>
                                                 <button type="button" className="table-action-button danger" onClick={() => handleDelete(turma.id)}>Excluir</button>
                                             </div>
                                         </td>

@@ -111,6 +111,23 @@ public class TurmaService : ITurmaService
         return new TurmaCommandResult(true, "Turma atualizada com sucesso!", updated is null ? null : MapToResponse(updated));
     }
 
+    public async Task<TurmaCommandResult> UpdateStatusAsync(int id, TurmaStatusRequest request)
+    {
+        var status = (request.Status ?? string.Empty).Trim().ToUpperInvariant();
+        if (status != Turma.StatusAtivo && status != Turma.StatusInativo)
+            return Invalid("Status inválido. Valores permitidos: ATIVO ou INATIVO.");
+
+        var turma = await _turmaRepository.GetByIdAsync(id);
+        if (turma is null)
+            return NotFound("Turma não encontrada.");
+
+        turma.Status = status;
+        await _turmaRepository.UpdateAsync(turma);
+
+        var message = status == Turma.StatusAtivo ? "Turma ativada com sucesso!" : "Turma inativada com sucesso!";
+        return new TurmaCommandResult(true, message, MapToResponse(turma));
+    }
+
     public async Task<TurmaCommandResult> DeleteAsync(int id)
     {
         var turma = await _turmaRepository.GetByIdAsync(id);

@@ -189,6 +189,64 @@ public class TurmaServiceTests
     }
 
     [Fact]
+    public async Task UpdateStatusAsync_WhenStatusInvalid_ReturnsValidationError()
+    {
+        var (service, turmaRepo, _, _, _, _) = BuildService();
+
+        var result = await service.UpdateStatusAsync(10, new TurmaStatusRequest { Status = "BLOQUEADO" });
+
+        Assert.False(result.Success);
+        Assert.Equal(TurmaResultError.Validation, result.Error);
+        Assert.Equal("Status inválido. Valores permitidos: ATIVO ou INATIVO.", result.Message);
+        turmaRepo.Verify(r => r.UpdateAsync(It.IsAny<Turma>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_WhenTurmaNotFound_ReturnsNotFound()
+    {
+        var (service, turmaRepo, _, _, _, _) = BuildService();
+        turmaRepo.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((Turma?)null);
+
+        var result = await service.UpdateStatusAsync(99, new TurmaStatusRequest { Status = Turma.StatusInativo });
+
+        Assert.False(result.Success);
+        Assert.Equal(TurmaResultError.NotFound, result.Error);
+        Assert.Equal("Turma não encontrada.", result.Message);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_WhenInativando_UpdatesStatus()
+    {
+        var (service, turmaRepo, _, _, _, _) = BuildService();
+        var existing = BuildEntity(10);
+        turmaRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(existing);
+
+        var result = await service.UpdateStatusAsync(10, new TurmaStatusRequest { Status = " inativo " });
+
+        Assert.True(result.Success);
+        Assert.Equal("Turma inativada com sucesso!", result.Message);
+        Assert.Equal(Turma.StatusInativo, existing.Status);
+        Assert.Equal(Turma.StatusInativo, result.Turma!.Status);
+        turmaRepo.Verify(r => r.UpdateAsync(existing), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_WhenAtivando_UpdatesStatus()
+    {
+        var (service, turmaRepo, _, _, _, _) = BuildService();
+        var existing = BuildEntity(10);
+        existing.Status = Turma.StatusInativo;
+        turmaRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(existing);
+
+        var result = await service.UpdateStatusAsync(10, new TurmaStatusRequest { Status = Turma.StatusAtivo });
+
+        Assert.True(result.Success);
+        Assert.Equal("Turma ativada com sucesso!", result.Message);
+        Assert.Equal(Turma.StatusAtivo, existing.Status);
+        turmaRepo.Verify(r => r.UpdateAsync(existing), Times.Once);
+    }
+
+    [Fact]
     public async Task DeleteAsync_WhenTurmaNotFound_ReturnsNotFound()
     {
         var (service, turmaRepo, _, _, _, _) = BuildService();

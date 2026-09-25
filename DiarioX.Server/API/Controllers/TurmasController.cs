@@ -52,6 +52,16 @@ public class TurmasController : ControllerBase
         return Ok(result.Turma);
     }
 
+    [HttpPatch("{id:int}/status")]
+    public async Task<IActionResult> UpdateStatus([FromRoute] int id, [FromBody] TurmaStatusRequest request)
+    {
+        var result = await _service.UpdateStatusAsync(id, request);
+        if (!result.Success)
+            return MapError(result);
+
+        return Ok(new { message = result.Message, turma = result.Turma });
+    }
+
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete([FromRoute] int id)
     {
