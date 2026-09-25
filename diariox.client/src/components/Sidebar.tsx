@@ -48,7 +48,7 @@ function Sidebar({ onSelectPage, currentPage }: SidebarProps) {
             <div className="sidebar-header">
                 <div className="sidebar-logo">
                     <LogoIcon />
-                    <span>Diário de Classe</span>
+                    <span>Diário X</span>
                 </div>
             </div>
             <nav className="sidebar-nav">

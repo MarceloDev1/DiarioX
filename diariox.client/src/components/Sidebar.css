@@ -7,7 +7,7 @@
     height: 100vh;
     position: sticky;
     top: 0;
-    overflow-y: auto;
+    overflow: hidden;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
 }
 
@@ -43,6 +43,7 @@
 }
 
 .sidebar-header {
+    flex-shrink: 0;
     padding: 1.5rem 1rem;
     border-bottom: 1px solid #2a2a3e;
     text-align: center;
@@ -64,10 +65,42 @@
 
 .sidebar-nav {
     flex: 1;
+    min-height: 0;
     padding: 1rem 0.5rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.2s ease;
+}
+
+.sidebar-nav:hover {
+    scrollbar-color: rgba(138, 56, 245, 0.45) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 999px;
+}
+
+.sidebar-nav:hover::-webkit-scrollbar-thumb {
+    background: rgba(138, 56, 245, 0.45);
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(138, 56, 245, 0.75);
 }
 
 .sidebar-item {

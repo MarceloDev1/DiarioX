@@ -404,7 +404,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                             <td>{aluno.matricula}</td>
                                             <td className="nowrap-cell">{aluno.cpfAluno ? formatCpf(aluno.cpfAluno) : '—'}</td>
                                             <td>{aluno.responsavelNome1}</td>
-                                            <td>{formatTelefone(aluno.responsavelTelefone1)}</td>
+                                            <td className="nowrap-cell">{formatTelefone(aluno.responsavelTelefone1)}</td>
                                             <td>{aluno.escolaNome}</td>
                                             <td>
                                                 <StatusPill
