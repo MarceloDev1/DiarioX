@@ -313,6 +313,35 @@ public class AuthServiceTests
         fixture.PasswordResetTokenRepository.Verify(r => r.UpdateAsync(resetToken), Times.Once);
     }
 
+    [Fact]
+    public async Task ResetPasswordAsync_WhenUserLockedOut_ClearsLockoutAndAllowsLogin()
+    {
+        var fixture = BuildService();
+        var user = BuildActiveUser(email: "usuario@x.com", cpf: "52998224725", password: "Senha@123");
+        user.Id = 41;
+        user.FailedLoginAttempts = 3;
+        user.LockoutEnd = DateTime.UtcNow.AddMinutes(10);
+
+        var resetToken = PasswordResetToken.Create(user.Id, "hash");
+
+        fixture.PasswordResetTokenRepository
+            .Setup(r => r.GetByTokenHashAsync(It.IsAny<string>()))
+            .ReturnsAsync(resetToken);
+
+        fixture.UserRepository.Setup(r => r.GetByIdAsync(41)).ReturnsAsync(user);
+        fixture.UserRepository.Setup(r => r.GetByEmailOrCpfAsync("usuario@x.com")).ReturnsAsync(user);
+
+        var resetResult = await fixture.Service.ResetPasswordAsync(new ResetPasswordRequest("token-plain", "NovaSenha@123"));
+
+        Assert.True(resetResult.Success);
+        Assert.Null(user.LockoutEnd);
+        Assert.Equal(0, user.FailedLoginAttempts);
+
+        var loginResult = await fixture.Service.LoginAsync(new LoginRequest { Login = "usuario@x.com", Password = "NovaSenha@123" });
+
+        Assert.True(loginResult.Success);
+    }
+
     private static User BuildActiveUser(string email, string cpf, string password, DateTime? birthDate = null)
     {
         var user = new User

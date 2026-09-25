@@ -35,9 +35,14 @@ public class User
 
     public void RegisterSuccessfulLogin(DateTime nowUtc)
     {
+        ClearLockout();
+        UltimoAcesso = nowUtc;
+    }
+
+    public void ClearLockout()
+    {
         FailedLoginAttempts = 0;
         LockoutEnd = null;
-        UltimoAcesso = nowUtc;
     }
 
     public bool VerifyPassword(string password)

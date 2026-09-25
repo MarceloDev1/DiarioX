@@ -188,6 +188,7 @@ public class AuthService : IAuthService
             return new ForgotPasswordResponse(false, "Usuário não encontrado ou inativo.");
 
         user.SetPassword(request.Password);
+        user.ClearLockout();
         await _userRepository.UpdateAsync(user);
 
         resetToken.UsedAt = DateTime.UtcNow;
