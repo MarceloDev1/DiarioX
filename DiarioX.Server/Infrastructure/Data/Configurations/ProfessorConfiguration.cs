@@ -24,13 +24,6 @@ public class ProfessorConfiguration : IEntityTypeConfiguration<Professor>
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasOne(x => x.Escola)
-            .WithMany()
-            .HasForeignKey(x => x.EscolaId)
-            .HasConstraintName("FK_professores_escolas")
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
-
         // Índices (unicidade dentro da instituição: o mesmo professor pode atuar em outra rede)
         builder.HasIndex(x => new { x.TenantId, x.Cpf })
             .HasDatabaseName("IX_professores_cpf")
@@ -43,9 +36,6 @@ public class ProfessorConfiguration : IEntityTypeConfiguration<Professor>
         builder.HasIndex(x => new { x.TenantId, x.Email })
             .HasDatabaseName("IX_professores_email")
             .IsUnique();
-
-        builder.HasIndex(x => x.EscolaId)
-            .HasDatabaseName("IX_professores_escola_id");
 
         // Propriedades
         builder.Property(x => x.Nome)

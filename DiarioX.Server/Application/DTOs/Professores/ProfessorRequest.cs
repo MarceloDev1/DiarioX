@@ -15,6 +15,6 @@ public class ProfessorRequest
     public string Situacao { get; set; } = "ATIVO";
 
     // Relacionamentos
-    public int EscolaId { get; set; }
+    public List<int> EscolaIds { get; set; } = new();
     public List<int> DisciplinaIds { get; set; } = new();
 }

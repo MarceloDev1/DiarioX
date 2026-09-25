@@ -95,14 +95,18 @@ public class ProfessorService : IProfessorService
                 Matricula = normalized.Matricula,
                 DataAdmissao = normalized.DataAdmissao,
                 Situacao = normalized.Situacao,
-                EscolaId = normalized.EscolaId,
                 CreatedAt = DateTime.UtcNow,
             };
 
             // Salvar professor
             var created = await _professorRepository.AddAsync(professor);
 
-            // Adicionar relacionamentos com disciplinas
+            // Adicionar relacionamentos com escolas e disciplinas
+            foreach (var escolaId in normalized.EscolaIds)
+            {
+                await _professorRepository.AddEscolaAsync(created.Id, escolaId);
+            }
+
             foreach (var disciplinaId in normalized.DisciplinaIds)
             {
                 await _professorRepository.AddDisciplinaAsync(created.Id, disciplinaId);
@@ -188,8 +192,15 @@ public class ProfessorService : IProfessorService
             professor.Matricula = normalized.Matricula;
             professor.DataAdmissao = normalized.DataAdmissao;
             professor.Situacao = normalized.Situacao;
-            professor.EscolaId = normalized.EscolaId;
             professor.UpdatedAt = DateTime.UtcNow;
+
+            // Remover escolas antigas e adicionar novas
+            await _professorRepository.RemoveEscolasAsync(professor.Id);
+
+            foreach (var escolaId in normalized.EscolaIds)
+            {
+                await _professorRepository.AddEscolaAsync(professor.Id, escolaId);
+            }
 
             // Remover disciplinas antigas e adicionar novas
             await _professorRepository.RemoveDisciplinasAsync(professor.Id);
@@ -269,7 +280,7 @@ public class ProfessorService : IProfessorService
             Matricula = (request.Matricula ?? string.Empty).Trim(),
             DataAdmissao = request.DataAdmissao,
             Situacao = (request.Situacao ?? "ATIVO").Trim().ToUpperInvariant(),
-            EscolaId = request.EscolaId,
+            EscolaIds = (request.EscolaIds ?? new List<int>()).Distinct().ToList(),
             DisciplinaIds = request.DisciplinaIds ?? new List<int>(),
         };
     }
@@ -305,8 +316,8 @@ public class ProfessorService : IProfessorService
         if (request.DataAdmissao == default)
             return Invalid("Data de admissão é obrigatória.");
 
-        if (request.EscolaId <= 0)
-            return Invalid("Escola é obrigatória.");
+        if (request.EscolaIds is null || request.EscolaIds.Count == 0)
+            return Invalid("Por favor, selecione pelo menos uma escola.");
 
         // EX01 - Validar disciplinas
         if (request.DisciplinaIds is null || request.DisciplinaIds.Count == 0)
@@ -333,10 +344,10 @@ public class ProfessorService : IProfessorService
         if (await _professorRepository.ExistsByEmailAsync(request.Email))
             return Conflict("Este email já está vinculado a um professor cadastrado.");
 
-        // Validar escola
-        var escola = await _escolaRepository.GetByIdAsync(request.EscolaId);
-        if (escola is null)
-            return DependencyNotFound("Escola não encontrada.");
+        // Validar escolas
+        var escolasValidation = await ValidateEscolasAsync(request.EscolaIds);
+        if (!escolasValidation.Success)
+            return escolasValidation;
 
         // Validar disciplinas
         var disciplinas = new List<Disciplina>();
@@ -385,10 +396,10 @@ public class ProfessorService : IProfessorService
                 return Conflict("Este email já está vinculado a outro professor.");
         }
 
-        // Validar escola
-        var escola = await _escolaRepository.GetByIdAsync(request.EscolaId);
-        if (escola is null)
-            return DependencyNotFound("Escola não encontrada.");
+        // Validar escolas
+        var escolasValidation = await ValidateEscolasAsync(request.EscolaIds);
+        if (!escolasValidation.Success)
+            return escolasValidation;
 
         // Validar disciplinas
         foreach (var disciplinaId in request.DisciplinaIds)
@@ -401,6 +412,18 @@ public class ProfessorService : IProfessorService
         // Validar unicidade de disciplinas na lista
         if (request.DisciplinaIds.Count != request.DisciplinaIds.Distinct().Count())
             return Invalid("Existem disciplinas duplicadas na lista.");
+
+        return new ProfessorCommandResult(true, string.Empty);
+    }
+
+    private async Task<ProfessorCommandResult> ValidateEscolasAsync(IEnumerable<int> escolaIds)
+    {
+        foreach (var escolaId in escolaIds)
+        {
+            var escola = await _escolaRepository.GetByIdAsync(escolaId);
+            if (escola is null)
+                return DependencyNotFound($"Escola com ID {escolaId} não encontrada.");
+        }
 
         return new ProfessorCommandResult(true, string.Empty);
     }
@@ -461,6 +484,11 @@ public class ProfessorService : IProfessorService
             .Select(pd => new DisciplinaResponseForProfessor(pd.Disciplina.Id, pd.Disciplina.Nome))
             .ToList();
 
+        var escolas = professor.ProfessorEscolas
+            .Select(pe => new EscolaResponseForProfessor(pe.Escola.Id, pe.Escola.Nome))
+            .OrderBy(e => e.Nome)
+            .ToList();
+
         return new ProfessorResponse(
             professor.Id,
             professor.Nome,
@@ -471,8 +499,7 @@ public class ProfessorService : IProfessorService
             professor.Matricula,
             professor.DataAdmissao,
             professor.Situacao,
-            professor.EscolaId,
-            professor.Escola.Nome,
+            escolas,
             disciplinas,
             professor.UsuarioId,
             professor.Usuario?.Email,
@@ -500,7 +527,7 @@ public class ProfessorService : IProfessorService
             await _emailNotificationService.SendWelcomeProfessorAsync(
                 professor.Email,
                 professor.Nome,
-                professor.Escola.Nome,
+                string.Join(", ", professor.ProfessorEscolas.Select(pe => pe.Escola.Nome).OrderBy(n => n)),
                 professor.Email);
 
             _logger.LogInformation("Email de boas-vindas de professor enviado com sucesso para {Email}", professor.Email);

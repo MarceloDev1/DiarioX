@@ -33,8 +33,9 @@ public class ProfessorAlocacaoService : IProfessorAlocacaoService
         if (professor is null)
             return [];
 
+        var escolaIds = professor.ProfessorEscolas.Select(x => x.EscolaId).ToHashSet();
         var turmas = (await _turmaRepository.GetAllAsync())
-            .Where(t => t.EscolaId == professor.EscolaId && t.Status == Turma.StatusAtivo)
+            .Where(t => escolaIds.Contains(t.EscolaId) && t.Status == Turma.StatusAtivo)
             .ToList();
         var habilitacoes = professor.ProfessorDisciplinas.Select(x => x.DisciplinaId).ToHashSet();
         var disciplinas = (await _disciplinaRepository.GetAllAsync())
@@ -73,12 +74,13 @@ public class ProfessorAlocacaoService : IProfessorAlocacaoService
         var disciplinas = (await _disciplinaRepository.GetAllAsync()).ToDictionary(x => x.Id);
         var existentes = (await _alocacaoRepository.GetAtivasAsync()).ToList();
         var habilitacoes = professor.ProfessorDisciplinas.Select(x => x.DisciplinaId).ToHashSet();
+        var escolaIds = professor.ProfessorEscolas.Select(x => x.EscolaId).ToHashSet();
         var novos = new List<ProfessorAlocacao>();
         var removerIds = new List<int>();
 
         foreach (var item in request.Itens)
         {
-            if (!turmas.TryGetValue(item.TurmaId, out var turma) || turma.Status != Turma.StatusAtivo || turma.EscolaId != professor.EscolaId)
+            if (!turmas.TryGetValue(item.TurmaId, out var turma) || turma.Status != Turma.StatusAtivo || !escolaIds.Contains(turma.EscolaId))
                 return Invalid("A turma selecionada não está disponível para este professor.");
 
             if (!disciplinas.TryGetValue(item.DisciplinaId, out var disciplina) || !disciplina.Ativa || !habilitacoes.Contains(item.DisciplinaId))

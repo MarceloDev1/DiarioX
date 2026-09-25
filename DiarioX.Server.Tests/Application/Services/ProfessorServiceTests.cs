@@ -34,9 +34,8 @@ public class ProfessorServiceTests
             DataNascimento = new DateTime(1985, 5, 15),
             DataAdmissao = new DateTime(2020, 1, 15),
             Situacao = "ATIVO",
-            EscolaId = 1,
             CreatedAt = DateTime.UtcNow,
-            Escola = new Escola { Id = 1, Nome = "Escola A", Cnpj = "123", Status = "ATIVO" },
+            ProfessorEscolas = new List<ProfessorEscola> { new() { EscolaId = 1, Escola = new Escola { Id = 1, Nome = "Escola A", Cnpj = "123", Status = "ATIVO" } } },
             ProfessorDisciplinas = new List<ProfessorDisciplina>(),
             Usuario = null
         };
@@ -157,8 +156,7 @@ public class ProfessorServiceTests
             Nome = "João Silva",
             Cpf = "11144477735",
             Situacao = Professor.StatusAtivo,
-            EscolaId = 1,
-            Escola = new Escola { Id = 1, Nome = "Escola A", Cnpj = "123", Status = "ATIVO" },
+            ProfessorEscolas = new List<ProfessorEscola> { new() { EscolaId = 1, Escola = new Escola { Id = 1, Nome = "Escola A", Cnpj = "123", Status = "ATIVO" } } },
             ProfessorDisciplinas = new List<ProfessorDisciplina>()
         };
         profRepository.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(professor);
@@ -229,9 +227,8 @@ public class ProfessorServiceTests
                 DataNascimento = new DateTime(1985, 5, 15),
                 DataAdmissao = new DateTime(2020, 1, 15),
                 Situacao = "ATIVO",
-                EscolaId = 1,
                 CreatedAt = DateTime.UtcNow,
-                Escola = new Escola { Id = 1, Nome = "Escola A", Cnpj = "123", Status = "ATIVO" },
+                ProfessorEscolas = new List<ProfessorEscola> { new() { EscolaId = 1, Escola = new Escola { Id = 1, Nome = "Escola A", Cnpj = "123", Status = "ATIVO" } } },
                 ProfessorDisciplinas = new List<ProfessorDisciplina>(),
                 Usuario = null
             },
@@ -246,9 +243,8 @@ public class ProfessorServiceTests
                 DataNascimento = new DateTime(1990, 3, 20),
                 DataAdmissao = new DateTime(2021, 2, 10),
                 Situacao = "ATIVO",
-                EscolaId = 1,
                 CreatedAt = DateTime.UtcNow,
-                Escola = new Escola { Id = 1, Nome = "Escola A", Cnpj = "123", Status = "ATIVO" },
+                ProfessorEscolas = new List<ProfessorEscola> { new() { EscolaId = 1, Escola = new Escola { Id = 1, Nome = "Escola A", Cnpj = "123", Status = "ATIVO" } } },
                 ProfessorDisciplinas = new List<ProfessorDisciplina>(),
                 Usuario = null
             }
@@ -293,9 +289,8 @@ public class ProfessorServiceTests
                 DataNascimento = new DateTime(1985, 5, 15),
                 DataAdmissao = new DateTime(2020, 1, 15),
                 Situacao = "ATIVO",
-                EscolaId = 1,
                 CreatedAt = DateTime.UtcNow,
-                Escola = new Escola { Id = 1, Nome = "Escola A", Cnpj = "123", Status = "ATIVO" },
+                ProfessorEscolas = new List<ProfessorEscola> { new() { EscolaId = 1, Escola = new Escola { Id = 1, Nome = "Escola A", Cnpj = "123", Status = "ATIVO" } } },
                 ProfessorDisciplinas = new List<ProfessorDisciplina>(),
                 Usuario = null
             }

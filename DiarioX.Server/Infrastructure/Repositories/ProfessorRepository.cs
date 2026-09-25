@@ -16,7 +16,8 @@ public class ProfessorRepository : BaseRepository<Professor>, IProfessorReposito
         return await _dbSet
             .AsNoTracking()
             .Include(p => p.Usuario)
-            .Include(p => p.Escola)
+            .Include(p => p.ProfessorEscolas)
+            .ThenInclude(pe => pe.Escola)
             .Include(p => p.ProfessorDisciplinas)
             .ThenInclude(pd => pd.Disciplina)
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -43,7 +44,8 @@ public class ProfessorRepository : BaseRepository<Professor>, IProfessorReposito
         return await _dbSet
             .AsNoTracking()
             .Include(p => p.Usuario)
-            .Include(p => p.Escola)
+            .Include(p => p.ProfessorEscolas)
+            .ThenInclude(pe => pe.Escola)
             .Include(p => p.ProfessorDisciplinas)
             .ThenInclude(pd => pd.Disciplina)
             .OrderBy(p => p.Nome)
@@ -73,15 +75,39 @@ public class ProfessorRepository : BaseRepository<Professor>, IProfessorReposito
         await _context.SaveChangesAsync();
     }
 
+    public async Task AddEscolaAsync(int professorId, int escolaId)
+    {
+        var profEscola = new ProfessorEscola
+        {
+            ProfessorId = professorId,
+            EscolaId = escolaId,
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        await _context.ProfessorEscolas.AddAsync(profEscola);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RemoveEscolasAsync(int professorId)
+    {
+        var escolas = await _context.ProfessorEscolas
+            .Where(pe => pe.ProfessorId == professorId)
+            .ToListAsync();
+
+        _context.ProfessorEscolas.RemoveRange(escolas);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<IEnumerable<Professor>> GetByEscolaIdAsync(int escolaId)
     {
         return await _dbSet
             .AsNoTracking()
             .Include(p => p.Usuario)
-            .Include(p => p.Escola)
+            .Include(p => p.ProfessorEscolas)
+            .ThenInclude(pe => pe.Escola)
             .Include(p => p.ProfessorDisciplinas)
             .ThenInclude(pd => pd.Disciplina)
-            .Where(p => p.EscolaId == escolaId)
+            .Where(p => p.ProfessorEscolas.Any(pe => pe.EscolaId == escolaId))
             .OrderBy(p => p.Nome)
             .ToListAsync();
     }
@@ -115,6 +141,12 @@ public class ProfessorRepository : BaseRepository<Professor>, IProfessorReposito
             .ToListAsync();
 
         _context.ProfessorDisciplinas.RemoveRange(disciplinas);
+
+        var escolas = await _context.ProfessorEscolas
+            .Where(pe => pe.ProfessorId == entity.Id)
+            .ToListAsync();
+
+        _context.ProfessorEscolas.RemoveRange(escolas);
         await _context.SaveChangesAsync();
 
         // Then remove professor

@@ -17,4 +17,6 @@ public interface IProfessorRepository
     Task DeleteAsync(Professor professor);
     Task AddDisciplinaAsync(int professorId, int disciplinaId);
     Task RemoveDisciplinasAsync(int professorId);
+    Task AddEscolaAsync(int professorId, int escolaId);
+    Task RemoveEscolasAsync(int professorId);
 }

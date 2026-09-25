@@ -5,6 +5,11 @@ public record DisciplinaResponseForProfessor(
     string Nome
 );
 
+public record EscolaResponseForProfessor(
+    int Id,
+    string Nome
+);
+
 public record ProfessorResponse(
     int Id,
     string Nome,
@@ -15,8 +20,7 @@ public record ProfessorResponse(
     string Matricula,
     DateTime DataAdmissao,
     string Situacao,
-    int EscolaId,
-    string EscolaNome,
+    List<EscolaResponseForProfessor> Escolas,
     List<DisciplinaResponseForProfessor> Disciplinas,
     int? UsuarioId,
     string? UsuarioEmail,

@@ -7,7 +7,6 @@ import '../MainContent.css';
 interface Professor {
     id: number;
     nome: string;
-    escolaId: number;
     disciplinas: { id: number; nome: string }[];
 }
 

@@ -10,7 +10,6 @@ public class Professor : ITenantEntity
     public int Id { get; set; }
     public int TenantId { get; set; }
     public int? UsuarioId { get; set; }
-    public int EscolaId { get; set; }
 
     // Dados Pessoais
     public string Nome { get; set; } = string.Empty;
@@ -26,7 +25,7 @@ public class Professor : ITenantEntity
 
     // Relacionamentos
     public User? Usuario { get; set; }
-    public Escola Escola { get; set; } = null!;
+    public ICollection<ProfessorEscola> ProfessorEscolas { get; set; } = new List<ProfessorEscola>();
     public ICollection<ProfessorDisciplina> ProfessorDisciplinas { get; set; } = new List<ProfessorDisciplina>();
 
     // Auditoria

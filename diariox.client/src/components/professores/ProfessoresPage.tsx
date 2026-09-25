@@ -12,6 +12,11 @@ interface Disciplina {
     nome: string;
 }
 
+interface EscolaVinculada {
+    id: number;
+    nome: string;
+}
+
 interface Professor {
     id: number;
     nome: string;
@@ -22,8 +27,7 @@ interface Professor {
     matricula: string;
     dataAdmissao: string;
     situacao: string;
-    escolaId: number;
-    escolaNome: string;
+    escolas: EscolaVinculada[];
     disciplinas: Disciplina[];
     usuarioId: number | null;
     usuarioEmail: string | null;
@@ -51,7 +55,7 @@ interface ProfessorFormState {
     matricula: string;
     dataAdmissao: string;
     situacao: string;
-    escolaId: string;
+    escolaIds: string[];
     disciplinaIds: string[];
 }
 
@@ -64,7 +68,7 @@ interface ProfessorFieldErrors {
     matricula: boolean;
     dataAdmissao: boolean;
     situacao: boolean;
-    escolaId: boolean;
+    escolaIds: boolean;
     disciplinaIds: boolean;
 }
 
@@ -84,7 +88,7 @@ const emptyForm: ProfessorFormState = {
     matricula: '',
     dataAdmissao: '',
     situacao: 'ATIVO',
-    escolaId: '',
+    escolaIds: [],
     disciplinaIds: [],
 };
 
@@ -97,7 +101,7 @@ const emptyFieldErrors: ProfessorFieldErrors = {
     matricula: false,
     dataAdmissao: false,
     situacao: false,
-    escolaId: false,
+    escolaIds: false,
     disciplinaIds: false,
 };
 
@@ -162,12 +166,12 @@ function ProfessoresPage() {
 
         if (type === 'checkbox') {
             const checkbox = event.currentTarget as HTMLInputElement;
-            const disciplinaId = checkbox.value;
+            const field = name as 'escolaIds' | 'disciplinaIds';
             setForm(current => {
-                const disciplinaIds = checkbox.checked
-                    ? [...current.disciplinaIds, disciplinaId]
-                    : current.disciplinaIds.filter(id => id !== disciplinaId);
-                return { ...current, disciplinaIds };
+                const ids = checkbox.checked
+                    ? [...current[field], value]
+                    : current[field].filter(id => id !== value);
+                return { ...current, [field]: ids };
             });
         } else {
             setForm(current => ({ ...current, [name]: value }));
@@ -190,7 +194,7 @@ function ProfessoresPage() {
             matricula: !form.matricula.trim(),
             dataAdmissao: !form.dataAdmissao,
             situacao: !form.situacao,
-            escolaId: !form.escolaId,
+            escolaIds: form.escolaIds.length === 0,
             disciplinaIds: form.disciplinaIds.length === 0,
         };
 
@@ -219,7 +223,7 @@ function ProfessoresPage() {
             matricula: form.matricula,
             dataAdmissao: form.dataAdmissao,
             situacao: form.situacao,
-            escolaId: parseInt(form.escolaId),
+            escolaIds: form.escolaIds.map(id => parseInt(id)),
             disciplinaIds: form.disciplinaIds.map(id => parseInt(id)),
         };
 
@@ -244,7 +248,7 @@ function ProfessoresPage() {
             matricula: professor.matricula,
             dataAdmissao: professor.dataAdmissao,
             situacao: professor.situacao,
-            escolaId: professor.escolaId.toString(),
+            escolaIds: professor.escolas.map(e => e.id.toString()),
             disciplinaIds: professor.disciplinas.map(d => d.id.toString()),
         });
         setView('form');
@@ -544,25 +548,31 @@ function ProfessoresPage() {
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="escolaId">
-                                    Escola <span className="required">*</span>
+                                <label>
+                                    Escolas <span className="required">*</span>
                                 </label>
-                                <select
-                                    id="escolaId"
-                                    name="escolaId"
-                                    value={form.escolaId}
-                                    onChange={handleFieldChange}
-                                    className={fieldErrors.escolaId ? 'input-error' : ''}
-                                    disabled={isSaving}
-                                >
-                                    <option value="">Selecione...</option>
-                                    {escolas.map(escola => (
-                                        <option key={escola.id} value={escola.id}>
-                                            {escola.nome}
-                                        </option>
-                                    ))}
-                                </select>
-                                {fieldErrors.escolaId && <span className="field-error">Escola é obrigatória</span>}
+                                <div className="checkbox-group">
+                                    {escolas.length === 0 ? (
+                                        <p className="no-options">Nenhuma escola disponível</p>
+                                    ) : (
+                                        escolas.map(escola => (
+                                            <label key={escola.id} className="checkbox-label">
+                                                <input
+                                                    type="checkbox"
+                                                    name="escolaIds"
+                                                    value={escola.id.toString()}
+                                                    checked={form.escolaIds.includes(escola.id.toString())}
+                                                    onChange={handleFieldChange}
+                                                    disabled={isSaving}
+                                                />
+                                                <span>{escola.nome}</span>
+                                            </label>
+                                        ))
+                                    )}
+                                </div>
+                                {fieldErrors.escolaIds && (
+                                    <span className="field-error">Selecione pelo menos uma escola</span>
+                                )}
                             </div>
                         </fieldset>
 
