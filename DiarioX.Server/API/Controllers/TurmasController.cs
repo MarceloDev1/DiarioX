@@ -1,3 +1,5 @@
+using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Application.DTOs.Turmas;
 using DiarioX.Server.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -32,6 +34,7 @@ public class TurmasController : ControllerBase
         return Ok(turma);
     }
 
+    [Permissao(Permissoes.Turmas.Criar)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] TurmaRequest request)
     {
@@ -42,6 +45,7 @@ public class TurmasController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Turma!.Id }, result.Turma);
     }
 
+    [Permissao(Permissoes.Turmas.Editar)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] TurmaRequest request)
     {
@@ -52,6 +56,7 @@ public class TurmasController : ControllerBase
         return Ok(result.Turma);
     }
 
+    [Permissao(Permissoes.Turmas.Editar)]
     [HttpPatch("{id:int}/status")]
     public async Task<IActionResult> UpdateStatus([FromRoute] int id, [FromBody] TurmaStatusRequest request)
     {
@@ -62,6 +67,7 @@ public class TurmasController : ControllerBase
         return Ok(new { message = result.Message, turma = result.Turma });
     }
 
+    [Permissao(Permissoes.Turmas.Excluir)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete([FromRoute] int id)
     {

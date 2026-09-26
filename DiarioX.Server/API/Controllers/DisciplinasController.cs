@@ -1,3 +1,5 @@
+using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Application.DTOs.Disciplinas;
 using DiarioX.Server.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -32,6 +34,7 @@ public class DisciplinasController : ControllerBase
         return Ok(disciplina);
     }
 
+    [Permissao(Permissoes.Disciplinas.Criar)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] DisciplinaRequest request)
     {
@@ -42,6 +45,7 @@ public class DisciplinasController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Disciplina!.Id }, result.Disciplina);
     }
 
+    [Permissao(Permissoes.Disciplinas.Editar)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] DisciplinaRequest request)
     {
@@ -52,6 +56,7 @@ public class DisciplinasController : ControllerBase
         return Ok(result.Disciplina);
     }
 
+    [Permissao(Permissoes.Disciplinas.Excluir)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete([FromRoute] int id)
     {

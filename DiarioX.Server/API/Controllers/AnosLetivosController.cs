@@ -1,3 +1,5 @@
+using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Application.DTOs.AnosLetivos;
 using DiarioX.Server.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -31,6 +33,7 @@ public class AnosLetivosController : ControllerBase
         return Ok(ano);
     }
 
+    [Permissao(Permissoes.AnosLetivos.Criar)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] AnoLetivoRequest request)
     {
@@ -40,6 +43,7 @@ public class AnosLetivosController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.AnoLetivo!.Id }, result.AnoLetivo);
     }
 
+    [Permissao(Permissoes.AnosLetivos.Editar)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] AnoLetivoRequest request)
     {
@@ -49,6 +53,7 @@ public class AnosLetivosController : ControllerBase
         return Ok(result.AnoLetivo);
     }
 
+    [Permissao(Permissoes.AnosLetivos.Excluir)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete([FromRoute] int id)
     {

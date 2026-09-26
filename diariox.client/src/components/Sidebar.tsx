@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import './Sidebar.css';
-import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe } from 'react-icons/fi';
+import type { IconType } from 'react-icons';
+import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield } from 'react-icons/fi';
 import { MdSchool, MdPeople, MdManageAccounts } from 'react-icons/md';
+import { usePermissoes } from '../hooks/usePermissoes';
+import { permissaoDaPagina } from '../utils/permissoes';
 
 function LogoIcon() {
     return (
@@ -21,12 +24,19 @@ interface SidebarProps {
     isGlobalAdmin?: boolean;
 }
 
+interface MenuItem {
+    id: string;
+    label: string;
+    icon: IconType;
+    submenu?: MenuItem[];
+}
+
 // Itens exclusivos do Administrador global.
-const globalAdminItems: typeof menuItems = [
+const globalAdminItems: MenuItem[] = [
     { id: 'instituicoes', label: 'Instituições', icon: FiGlobe },
 ];
 
-const menuItems = [
+const menuItems: MenuItem[] = [
     { id: 'home', label: 'Home', icon: FiHome },
     { id: 'cadastro', label: 'Cadastro', icon: FiBriefcase, submenu: [
         { id: 'escolas', label: 'Escolas', icon: MdSchool },
@@ -42,13 +52,24 @@ const menuItems = [
     { id: 'enturmar-aluno', label: 'Enturmar Aluno', icon: FiUserCheck },
     { id: 'remanejar-aluno', label: 'Remanejar Aluno', icon: FiRotateCcw },
     { id: 'usuarios', label: 'Usuários', icon: FiUser },
+    { id: 'configuracoes', label: 'Configurações', icon: FiSettings, submenu: [
+        { id: 'permissoes', label: 'Permissões', icon: FiShield },
+    ] },
 ];
 
 function Sidebar({ onSelectPage, currentPage, isGlobalAdmin = false }: SidebarProps) {
-    const visibleItems = isGlobalAdmin ? [...menuItems, ...globalAdminItems] : menuItems;
-    const cadastroItem = menuItems.find(item => item.id === 'cadastro');
-    const isCadastroActive = cadastroItem?.submenu?.some(item => item.id === currentPage);
-    const [cadastroOpen, setCadastroOpen] = useState(isCadastroActive);
+    const { can } = usePermissoes();
+
+    // Mostra só as páginas permitidas; grupos sem nenhuma página permitida somem.
+    const podeAbrir = (id: string) => !permissaoDaPagina[id] || can(permissaoDaPagina[id]);
+    const visibleItems = (isGlobalAdmin ? [...menuItems, ...globalAdminItems] : menuItems)
+        .map(item => item.submenu ? { ...item, submenu: item.submenu.filter(sub => podeAbrir(sub.id)) } : item)
+        .filter(item => item.submenu ? item.submenu.length > 0 : podeAbrir(item.id));
+
+    const isGroupActive = (item: MenuItem) => item.submenu?.some(sub => sub.id === currentPage) ?? false;
+    const [openGroups, setOpenGroups] = useState<Set<string>>(
+        () => new Set(menuItems.filter(isGroupActive).map(item => item.id))
+    );
 
     const [collapsed, setCollapsed] = useState(() => {
         try {
@@ -58,7 +79,12 @@ function Sidebar({ onSelectPage, currentPage, isGlobalAdmin = false }: SidebarPr
         }
     });
 
-    const toggleCadastro = () => setCadastroOpen(open => !open);
+    const toggleGroup = (id: string) => setOpenGroups(current => {
+        const next = new Set(current);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+    });
 
     const toggleCollapsed = () => {
         setCollapsed(current => {
@@ -91,24 +117,25 @@ function Sidebar({ onSelectPage, currentPage, isGlobalAdmin = false }: SidebarPr
             </div>
             <nav className="sidebar-nav">
                 {visibleItems.map(item => {
-                    if (item.id === 'cadastro') {
+                    if (item.submenu) {
                         const Icon = item.icon;
+                        const isOpen = openGroups.has(item.id);
                         return (
                             <div key={item.id}>
                                 <button
-                                    className={`sidebar-item sidebar-group ${isCadastroActive ? 'active' : ''}`}
-                                    onClick={toggleCadastro}
-                                    aria-expanded={cadastroOpen}
+                                    className={`sidebar-item sidebar-group ${isGroupActive(item) ? 'active' : ''}`}
+                                    onClick={() => toggleGroup(item.id)}
+                                    aria-expanded={isOpen}
                                     title={collapsed ? item.label : undefined}
                                 >
                                     <span className="sidebar-item-content">
                                         <Icon className="sidebar-icon" />
                                         <span className="sidebar-label">{item.label}</span>
                                     </span>
-                                    <span className={`sidebar-chevron ${cadastroOpen ? 'open' : ''}`}>›</span>
+                                    <span className={`sidebar-chevron ${isOpen ? 'open' : ''}`}>›</span>
                                 </button>
 
-                                {cadastroOpen && item.submenu && (
+                                {isOpen && (
                                     <div className="sidebar-submenu">
                                         {item.submenu.map(subitem => {
                                             const SubIcon = subitem.icon;

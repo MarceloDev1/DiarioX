@@ -3,6 +3,7 @@ import { useConfirm } from '../../hooks/useConfirm';
 import { apiFetch } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
+import { usePermissoes } from '../../hooks/usePermissoes';
 
 type View = 'list' | 'form';
 
@@ -49,6 +50,7 @@ async function readApiError(res: Response): Promise<string> {
 }
 
 function DisciplinasPage() {
+    const { can } = usePermissoes();
     const { confirm, confirmDialog } = useConfirm();
     const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
     const [etapasEnsino, setEtapasEnsino] = useState<EtapaEnsino[]>([]);
@@ -333,9 +335,11 @@ function DisciplinasPage() {
                         <h2>Disciplinas</h2>
                         <p>Consulte, edite e remova disciplinas/componentes curriculares.</p>
                     </div>
-                    <button type="button" className="primary-button" onClick={handleNovo}>
-                        + Nova Disciplina
-                    </button>
+                    {can('disciplinas.criar') && (
+                        <button type="button" className="primary-button" onClick={handleNovo}>
+                            + Nova Disciplina
+                        </button>
+                    )}
                 </div>
 
                 <form className="filter-bar" onSubmit={handleConsultar}>
@@ -392,8 +396,8 @@ function DisciplinasPage() {
                                         <td className="description-cell">{d.descricao || '—'}</td>
                                         <td>
                                             <div className="action-group">
-                                                <button type="button" className="table-action-button" onClick={() => handleEdit(d)}>Editar</button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(d.id, d.nome)}>Excluir</button>
+                                                {can('disciplinas.editar') && <button type="button" className="table-action-button" onClick={() => handleEdit(d)}>Editar</button>}
+                                                {can('disciplinas.excluir') && <button type="button" className="table-action-button danger" onClick={() => handleDelete(d.id, d.nome)}>Excluir</button>}
                                             </div>
                                         </td>
                                     </tr>

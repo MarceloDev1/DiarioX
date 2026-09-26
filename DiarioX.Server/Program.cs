@@ -4,6 +4,7 @@ using DiarioX.Server.Application.Interfaces;
 using DiarioX.Server.Application.Services;
 using DiarioX.Server.Domain.Entities;
 using DiarioX.Server.Domain.Interfaces;
+using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Infrastructure.Data;
 using DiarioX.Server.Infrastructure.Repositories;
 using DiarioX.Server.Infrastructure.Services;
@@ -60,6 +61,7 @@ builder.Services.AddScoped<IProfessorRepository, ProfessorRepository>();
 builder.Services.AddScoped<IProfessorAlocacaoRepository, ProfessorAlocacaoRepository>();
 builder.Services.AddScoped<IAlunoRepository, AlunoRepository>();
 builder.Services.AddScoped<IAlunoTurmaRepository, AlunoTurmaRepository>();
+builder.Services.AddScoped<IPerfilPermissaoRepository, PerfilPermissaoRepository>();
 
 // Dependency Injection - Services
 builder.Services.AddScoped<ITenantService, TenantService>();
@@ -77,6 +79,11 @@ builder.Services.AddScoped<IProfessorService, ProfessorService>();
 builder.Services.AddScoped<IProfessorAlocacaoService, ProfessorAlocacaoService>();
 builder.Services.AddScoped<IAlunoService, AlunoService>();
 builder.Services.AddScoped<IRemanejamentoAlunoService, RemanejamentoAlunoService>();
+builder.Services.AddScoped<IPermissaoService, PermissaoService>();
+
+// Permissões por perfil: políticas "permissao:..." geradas pelo [Permissao(...)]
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissaoPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissaoHandler>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -153,6 +160,11 @@ using (var scope = app.Services.CreateScope())
         });
         db.SaveChanges();
     }
+
+    // Instituições sem nenhuma permissão configurada recebem a matriz padrão por perfil.
+    var permissaoService = scope.ServiceProvider.GetRequiredService<IPermissaoService>();
+    foreach (var tenantId in db.Tenants.Select(t => t.Id).ToList())
+        permissaoService.GarantirPadraoAsync(tenantId).GetAwaiter().GetResult();
 }
 
 app.UseDefaultFiles();

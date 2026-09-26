@@ -3,6 +3,7 @@ import { useConfirm } from '../../hooks/useConfirm';
 import { apiFetch } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
+import { usePermissoes } from '../../hooks/usePermissoes';
 
 type View = 'list' | 'form';
 
@@ -74,6 +75,7 @@ async function readApiError(res: Response): Promise<string> {
 }
 
 function AnosLetivosPage() {
+    const { can } = usePermissoes();
     const { confirm, confirmDialog } = useConfirm();
     const [anos, setAnos] = useState<AnoLetivo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -395,9 +397,11 @@ function AnosLetivosPage() {
                         <h2>Anos Letivos</h2>
                         <p>Consulte, edite e remova anos letivos cadastrados.</p>
                     </div>
-                    <button type="button" className="primary-button" onClick={handleNovo}>
-                        + Novo Ano Letivo
-                    </button>
+                    {can('anos-letivos.criar') && (
+                        <button type="button" className="primary-button" onClick={handleNovo}>
+                            + Novo Ano Letivo
+                        </button>
+                    )}
                 </div>
 
                 <form className="filter-bar" onSubmit={handleConsultar}>
@@ -456,8 +460,8 @@ function AnosLetivosPage() {
                                         </td>
                                         <td>
                                             <div className="action-group">
-                                                <button type="button" className="table-action-button" onClick={() => handleEdit(a)}>Editar</button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(a.id, a.anoReferencia)}>Excluir</button>
+                                                {can('anos-letivos.editar') && <button type="button" className="table-action-button" onClick={() => handleEdit(a)}>Editar</button>}
+                                                {can('anos-letivos.excluir') && <button type="button" className="table-action-button danger" onClick={() => handleDelete(a.id, a.anoReferencia)}>Excluir</button>}
                                             </div>
                                         </td>
                                     </tr>

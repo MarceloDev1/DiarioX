@@ -5,6 +5,7 @@ import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
+import { usePermissoes } from '../../hooks/usePermissoes';
 
 type View = 'list' | 'form';
 
@@ -41,6 +42,7 @@ const emptyForm: EtapaEnsinoFormState = {
 };
 
 function EtapasEnsinoPage() {
+    const { can } = usePermissoes();
     const { confirm, confirmDialog } = useConfirm();
     const { items: etapas, isLoading, isSaving, error, load, save, remove } =
         useCrudData<EtapaEnsino>('/api/etapasensino');
@@ -282,9 +284,11 @@ function EtapasEnsinoPage() {
                         <h2>Etapas de Ensino</h2>
                         <p>Consulte, edite e remova etapas cadastradas.</p>
                     </div>
-                    <button type="button" className="primary-button" onClick={handleNova}>
-                        + Nova Etapa
-                    </button>
+                    {can('etapas-ensino.criar') && (
+                        <button type="button" className="primary-button" onClick={handleNova}>
+                            + Nova Etapa
+                        </button>
+                    )}
                 </div>
 
                 <form className="filter-bar" onSubmit={handleConsultar}>
@@ -348,8 +352,8 @@ function EtapasEnsinoPage() {
                                         <td>{e.idadeRecomendada != null ? `${e.idadeRecomendada} anos` : '—'}</td>
                                         <td>
                                             <div className="action-group">
-                                                <button type="button" className="table-action-button" onClick={() => handleEdit(e)}>Editar</button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(e.id, e.nome)}>Excluir</button>
+                                                {can('etapas-ensino.editar') && <button type="button" className="table-action-button" onClick={() => handleEdit(e)}>Editar</button>}
+                                                {can('etapas-ensino.excluir') && <button type="button" className="table-action-button danger" onClick={() => handleDelete(e.id, e.nome)}>Excluir</button>}
                                             </div>
                                         </td>
                                     </tr>

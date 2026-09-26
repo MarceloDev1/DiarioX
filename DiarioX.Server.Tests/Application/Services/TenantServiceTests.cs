@@ -125,6 +125,6 @@ public class TenantServiceTests
         var tenantContext = new Mock<ITenantContext>();
         tenantContext.Setup(c => c.TenantId).Returns(currentTenantId);
 
-        return (new TenantService(tenantRepository.Object, tenantContext.Object), tenantRepository);
+        return (new TenantService(tenantRepository.Object, tenantContext.Object, new Mock<IPermissaoService>().Object), tenantRepository);
     }
 }

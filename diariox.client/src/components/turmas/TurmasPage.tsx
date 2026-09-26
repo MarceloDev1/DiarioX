@@ -4,6 +4,7 @@ import { useCrudData } from '../../hooks/useCrudData';
 import { apiFetch, readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
+import { usePermissoes } from '../../hooks/usePermissoes';
 
 type View = 'list' | 'form';
 
@@ -105,6 +106,7 @@ const emptyFilters = {
 };
 
 function TurmasPage() {
+    const { can } = usePermissoes();
     const { confirm, confirmDialog } = useConfirm();
     const { items: turmas, isLoading, isSaving, error, load, save, remove } = useCrudData<Turma>('/api/turmas');
 
@@ -620,9 +622,11 @@ function TurmasPage() {
                         <h2>Turmas</h2>
                         <p>Consulte as turmas cadastradas e adicione novas turmas.</p>
                     </div>
-                    <button type="button" className="primary-button" onClick={handleNova}>
-                        + Nova Turma
-                    </button>
+                    {can('turmas.criar') && (
+                        <button type="button" className="primary-button" onClick={handleNova}>
+                            + Nova Turma
+                        </button>
+                    )}
                 </div>
 
                 <form className="filter-bar" onSubmit={handleConsultar}>
@@ -772,16 +776,18 @@ function TurmasPage() {
                                         </td>
                                         <td>
                                             <div className="action-group vertical">
-                                                <button type="button" className="table-action-button" onClick={() => handleEdit(turma)}>Editar</button>
-                                                <button
-                                                    type="button"
-                                                    className="table-action-button"
-                                                    onClick={() => handleToggleStatus(turma)}
-                                                    disabled={statusUpdatingId === turma.id}
-                                                >
-                                                    {turma.status === 'ATIVO' ? 'Inativar' : 'Ativar'}
-                                                </button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(turma.id, turma.nomeCompleto)}>Excluir</button>
+                                                {can('turmas.editar') && <button type="button" className="table-action-button" onClick={() => handleEdit(turma)}>Editar</button>}
+                                                {can('turmas.editar') && (
+                                                    <button
+                                                        type="button"
+                                                        className="table-action-button"
+                                                        onClick={() => handleToggleStatus(turma)}
+                                                        disabled={statusUpdatingId === turma.id}
+                                                    >
+                                                        {turma.status === 'ATIVO' ? 'Inativar' : 'Ativar'}
+                                                    </button>
+                                                )}
+                                                {can('turmas.excluir') && <button type="button" className="table-action-button danger" onClick={() => handleDelete(turma.id, turma.nomeCompleto)}>Excluir</button>}
                                             </div>
                                         </td>
                                     </tr>

@@ -1,3 +1,5 @@
+using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Application.DTOs.Professores;
 using DiarioX.Server.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -21,6 +23,7 @@ public class ProfessoresController : ControllerBase
     /// </summary>
     /// <returns>Lista de professores</returns>
     /// <response code="200">Professores listados com sucesso</response>
+    [Permissao(Permissoes.Professores.Visualizar, Permissoes.AlocacaoProfessor.Visualizar)]
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll()
@@ -36,6 +39,7 @@ public class ProfessoresController : ControllerBase
     /// <returns>Dados do professor</returns>
     /// <response code="200">Professor encontrado</response>
     /// <response code="404">Professor não encontrado</response>
+    [Permissao(Permissoes.Professores.Visualizar, Permissoes.AlocacaoProfessor.Visualizar)]
     [HttpGet("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -54,6 +58,7 @@ public class ProfessoresController : ControllerBase
     /// <param name="escolaId">ID da escola</param>
     /// <returns>Lista de professores da escola</returns>
     /// <response code="200">Professores listados com sucesso</response>
+    [Permissao(Permissoes.Professores.Visualizar, Permissoes.AlocacaoProfessor.Visualizar)]
     [HttpGet("escola/{escolaId:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetByEscolaId([FromRoute] int escolaId)
@@ -77,6 +82,7 @@ public class ProfessoresController : ControllerBase
     /// <response code="201">Professor criado com sucesso</response>
     /// <response code="400">Dados inválidos</response>
     /// <response code="409">CPF ou Matrícula já existe</response>
+    [Permissao(Permissoes.Professores.Criar)]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -100,6 +106,7 @@ public class ProfessoresController : ControllerBase
     /// <response code="400">Dados inválidos</response>
     /// <response code="404">Professor não encontrado</response>
     /// <response code="409">CPF ou Matrícula já existe</response>
+    [Permissao(Permissoes.Professores.Editar)]
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -122,6 +129,7 @@ public class ProfessoresController : ControllerBase
     /// <response code="200">Situação atualizada com sucesso</response>
     /// <response code="400">Situação inválida</response>
     /// <response code="404">Professor não encontrado</response>
+    [Permissao(Permissoes.Professores.Editar)]
     [HttpPatch("{id:int}/situacao")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -142,6 +150,7 @@ public class ProfessoresController : ControllerBase
     /// <returns>Mensagem de sucesso</returns>
     /// <response code="200">Professor deletado com sucesso</response>
     /// <response code="404">Professor não encontrado</response>
+    [Permissao(Permissoes.Professores.Excluir)]
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

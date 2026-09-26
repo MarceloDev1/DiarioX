@@ -8,6 +8,7 @@ import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import StatusPill from '../ui/StatusPill';
 import ConfirmDialog from '../ui/ConfirmDialog';
+import { usePermissoes } from '../../hooks/usePermissoes';
 
 type View = 'list' | 'form';
 
@@ -146,6 +147,7 @@ interface AlunosPageProps {
 }
 
 function AlunosPage({ onEnturmar }: AlunosPageProps) {
+    const { can } = usePermissoes();
     const { items: alunos, isLoading, isSaving, error, load, save, remove } = useCrudData<Aluno>('/api/alunos');
 
     const [view, setView] = useState<View>('list');
@@ -447,9 +449,11 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
             {view === 'list' ? (
                 <div className="list-view">
                     <div className="list-header">
-                        <button className="btn btn-primary" onClick={handleNewAluno}>
-                            ➕ Novo Aluno
-                        </button>
+                        {can('alunos.criar') && (
+                            <button className="btn btn-primary" onClick={handleNewAluno}>
+                                ➕ Novo Aluno
+                            </button>
+                        )}
                     </div>
 
                     {isLoading ? (
@@ -488,16 +492,18 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                             </td>
                                             <td>
                                                 <div className="action-group vertical">
-                                                    <button type="button" className="table-action-button" onClick={() => handleEditClick(aluno)}>Editar</button>
-                                                    <button
-                                                        type="button"
-                                                        className="table-action-button"
-                                                        onClick={() => setAlunoToToggle(aluno)}
-                                                        disabled={statusUpdatingId === aluno.id}
-                                                    >
-                                                        {aluno.status === 'INATIVO' ? 'Ativar' : 'Inativar'}
-                                                    </button>
-                                                    <button type="button" className="table-action-button danger" onClick={() => setAlunoToDelete(aluno)}>Excluir</button>
+                                                    {can('alunos.editar') && <button type="button" className="table-action-button" onClick={() => handleEditClick(aluno)}>Editar</button>}
+                                                    {can('alunos.editar') && (
+                                                        <button
+                                                            type="button"
+                                                            className="table-action-button"
+                                                            onClick={() => setAlunoToToggle(aluno)}
+                                                            disabled={statusUpdatingId === aluno.id}
+                                                        >
+                                                            {aluno.status === 'INATIVO' ? 'Ativar' : 'Inativar'}
+                                                        </button>
+                                                    )}
+                                                    {can('alunos.excluir') && <button type="button" className="table-action-button danger" onClick={() => setAlunoToDelete(aluno)}>Excluir</button>}
                                                 </div>
                                             </td>
                                         </tr>
@@ -831,7 +837,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                             <button type="submit" className="btn btn-primary" disabled={isSaving}>
                                 {isSaving ? 'Salvando...' : 'Salvar'}
                             </button>
-                            {!editingId && (
+                            {!editingId && can('alunos.editar') && (
                                 <button
                                     type="button"
                                     className="btn btn-primary"

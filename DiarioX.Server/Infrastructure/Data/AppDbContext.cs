@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<EtapaEnsino> EtapasEnsino => Set<EtapaEnsino>();
     public DbSet<Perfil> Perfis => Set<Perfil>();
     public DbSet<UsuarioPerfil> UsuariosPerfis => Set<UsuarioPerfil>();
+    public DbSet<PerfilPermissao> PerfisPermissoes => Set<PerfilPermissao>();
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
     public DbSet<EmailLog> EmailLogs => Set<EmailLog>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
@@ -54,6 +55,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new EtapaEnsinoConfiguration());
         modelBuilder.ApplyConfiguration(new PerfilConfiguration());
         modelBuilder.ApplyConfiguration(new UsuarioPerfilConfiguration());
+        modelBuilder.ApplyConfiguration(new PerfilPermissaoConfiguration());
         modelBuilder.ApplyConfiguration(new EmailTemplateConfiguration());
         modelBuilder.ApplyConfiguration(new EmailLogConfiguration());
         modelBuilder.ApplyConfiguration(new PasswordResetTokenConfiguration());

@@ -7,6 +7,7 @@ import { validateCpf, validatePassword } from '../../utils/validators';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import StatusPill from '../ui/StatusPill';
 import EmptyState from '../ui/EmptyState';
+import { usePermissoes } from '../../hooks/usePermissoes';
 
 type UsuarioStatus = 'ATIVO' | 'INATIVO' | 'BLOQUEADO';
 type View = 'list' | 'form';
@@ -47,6 +48,7 @@ const emptyUsuarioForm: UsuarioFormState = {
 };
 
 function UsuariosPage() {
+    const { can } = usePermissoes();
     const { confirm, confirmDialog } = useConfirm();
     const { items: usuarios, isLoading, isSaving, error, load, save, remove } = useCrudData<Usuario>('/api/users');
     const { form, setForm, editingId, startEdit, clear } = useCrudForm<UsuarioFormState & Record<string, unknown>>(
@@ -271,9 +273,11 @@ function UsuariosPage() {
                         <h2>Usuários</h2>
                         <p>Consulte, edite e remova usuários cadastrados.</p>
                     </div>
-                    <button type="button" className="primary-button" onClick={handleNovoUsuario}>
-                        + Novo Usuário
-                    </button>
+                    {can('usuarios.criar') && (
+                        <button type="button" className="primary-button" onClick={handleNovoUsuario}>
+                            + Novo Usuário
+                        </button>
+                    )}
                 </div>
 
                 <form className="filter-bar" onSubmit={handleConsultar}>
@@ -367,8 +371,8 @@ function UsuariosPage() {
                                         <td><StatusPill status={usuario.status} /></td>
                                         <td>
                                             <div className="action-group">
-                                                <button type="button" className="table-action-button" onClick={() => handleEdit(usuario)}>Editar</button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(usuario.id, usuario.email)}>Excluir</button>
+                                                {can('usuarios.editar') && <button type="button" className="table-action-button" onClick={() => handleEdit(usuario)}>Editar</button>}
+                                                {can('usuarios.excluir') && <button type="button" className="table-action-button danger" onClick={() => handleDelete(usuario.id, usuario.email)}>Excluir</button>}
                                             </div>
                                         </td>
                                     </tr>

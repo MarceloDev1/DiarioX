@@ -7,6 +7,7 @@ import { validateCnpj, validateCpf } from '../../utils/validators';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import StatusPill from '../ui/StatusPill';
 import EmptyState from '../ui/EmptyState';
+import { usePermissoes } from '../../hooks/usePermissoes';
 
 type EscolaStatus = 'ATIVO' | 'INATIVO';
 type View = 'list' | 'form';
@@ -40,6 +41,7 @@ const emptyEscolaForm: EscolaFormState = {
 };
 
 function EscolasPage() {
+    const { can } = usePermissoes();
     const { confirm, confirmDialog } = useConfirm();
     const { items: escolas, isLoading, isSaving, error, load, save, remove } = useCrudData<Escola>('/api/escolas');
     const { form, setForm, editingId, handleFieldChange, startEdit, clear } = useCrudForm<EscolaFormState & Record<string, unknown>>(
@@ -256,9 +258,11 @@ function EscolasPage() {
                         <h2>Escolas</h2>
                         <p>Consulte, edite e remova escolas cadastradas.</p>
                     </div>
-                    <button type="button" className="primary-button" onClick={handleNovaEscola}>
-                        + Nova Escola
-                    </button>
+                    {can('escolas.criar') && (
+                        <button type="button" className="primary-button" onClick={handleNovaEscola}>
+                            + Nova Escola
+                        </button>
+                    )}
                 </div>
 
                 <form className="filter-bar" onSubmit={handleConsultar}>
@@ -328,8 +332,8 @@ function EscolasPage() {
                                         <td><StatusPill status={escola.status} /></td>
                                         <td>
                                             <div className="action-group">
-                                                <button type="button" className="table-action-button" onClick={() => handleEdit(escola)}>Editar</button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(escola.id, escola.nome)}>Excluir</button>
+                                                {can('escolas.editar') && <button type="button" className="table-action-button" onClick={() => handleEdit(escola)}>Editar</button>}
+                                                {can('escolas.excluir') && <button type="button" className="table-action-button danger" onClick={() => handleDelete(escola.id, escola.nome)}>Excluir</button>}
                                             </div>
                                         </td>
                                     </tr>

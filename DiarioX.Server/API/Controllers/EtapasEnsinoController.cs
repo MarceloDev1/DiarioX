@@ -1,3 +1,5 @@
+using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Application.DTOs.EtapasEnsino;
 using DiarioX.Server.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -32,6 +34,7 @@ public class EtapasEnsinoController : ControllerBase
         return Ok(etapa);
     }
 
+    [Permissao(Permissoes.EtapasEnsino.Criar)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] EtapaEnsinoRequest request)
     {
@@ -42,6 +45,7 @@ public class EtapasEnsinoController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.EtapaEnsino!.Id }, result.EtapaEnsino);
     }
 
+    [Permissao(Permissoes.EtapasEnsino.Editar)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] EtapaEnsinoRequest request)
     {
@@ -52,6 +56,7 @@ public class EtapasEnsinoController : ControllerBase
         return Ok(result.EtapaEnsino);
     }
 
+    [Permissao(Permissoes.EtapasEnsino.Excluir)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete([FromRoute] int id)
     {

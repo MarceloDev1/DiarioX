@@ -1,3 +1,5 @@
+using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Application.DTOs.Alunos;
 using DiarioX.Server.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +30,7 @@ public class AlunosController : ControllerBase
     /// <summary>
     /// Lista todos os alunos cadastrados.
     /// </summary>
+    [Permissao(Permissoes.Alunos.Visualizar)]
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll()
@@ -39,6 +42,7 @@ public class AlunosController : ControllerBase
     /// <summary>
     /// Obtém um aluno específico pelo ID.
     /// </summary>
+    [Permissao(Permissoes.Alunos.Visualizar)]
     [HttpGet("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -51,6 +55,7 @@ public class AlunosController : ControllerBase
         return Ok(result.Aluno);
     }
 
+    [Permissao(Permissoes.Alunos.Visualizar)]
     [HttpGet("{id:int}/enturmacao-ativa")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -71,6 +76,7 @@ public class AlunosController : ControllerBase
     /// - RN02: a matrícula é gerada automaticamente (ano + sequencial) e nunca pode ser alterada.
     /// - RN03: alunos com 18 anos ou mais precisam de CPF próprio.
     /// </remarks>
+    [Permissao(Permissoes.Alunos.Criar)]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -87,6 +93,7 @@ public class AlunosController : ControllerBase
     /// <summary>
     /// Atualiza os dados de um aluno.
     /// </summary>
+    [Permissao(Permissoes.Alunos.Editar)]
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -108,6 +115,7 @@ public class AlunosController : ControllerBase
     /// Ao reativar, o status volta para ATIVO se houver enturmação ativa,
     /// ou ATIVO_AGUARDANDO_ENTURMACAO caso contrário.
     /// </remarks>
+    [Permissao(Permissoes.Alunos.Editar)]
     [HttpPatch("{id:int}/status")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -124,6 +132,7 @@ public class AlunosController : ControllerBase
     /// <summary>
     /// Remove um aluno do sistema.
     /// </summary>
+    [Permissao(Permissoes.Alunos.Excluir)]
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -136,6 +145,7 @@ public class AlunosController : ControllerBase
         return Ok(new { message = result.Message });
     }
 
+    [Permissao(Permissoes.Alunos.Editar)]
     [HttpPost("{id:int}/remanejamentos")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -155,6 +165,7 @@ public class AlunosController : ControllerBase
         return Ok(new { message = result.Message });
     }
 
+    [Permissao(Permissoes.Alunos.Editar)]
     [HttpPost("{id:int}/enturmacoes")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

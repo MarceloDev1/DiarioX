@@ -6,6 +6,7 @@ import { apiFetch, readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import StatusPill from '../ui/StatusPill';
 import EmptyState from '../ui/EmptyState';
+import { usePermissoes } from '../../hooks/usePermissoes';
 
 type ModalidadeEnsinoStatus = 'ATIVO' | 'INATIVO';
 type View = 'list' | 'form';
@@ -31,6 +32,7 @@ const emptyForm: ModalidadeEnsinoFormState = {
 };
 
 function ModalidadesEnsinoPage() {
+    const { can } = usePermissoes();
     const { confirm, confirmDialog } = useConfirm();
     const { items: modalidades, isLoading, isSaving, error, load, save, remove } =
         useCrudData<ModalidadeEnsino>('/api/modalidadesensino');
@@ -288,9 +290,11 @@ function ModalidadesEnsinoPage() {
                         <h2>Modalidades de Ensino</h2>
                         <p>Consulte, edite e remova modalidades cadastradas.</p>
                     </div>
-                    <button type="button" className="primary-button" onClick={handleNova}>
-                        + Nova Modalidade
-                    </button>
+                    {can('modalidades-ensino.criar') && (
+                        <button type="button" className="primary-button" onClick={handleNova}>
+                            + Nova Modalidade
+                        </button>
+                    )}
                 </div>
 
                 <form className="filter-bar" onSubmit={handleConsultar}>
@@ -351,16 +355,18 @@ function ModalidadesEnsinoPage() {
                                         <td><StatusPill status={m.status} /></td>
                                         <td>
                                             <div className="action-group vertical">
-                                                <button type="button" className="table-action-button" onClick={() => handleEdit(m)}>Editar</button>
-                                                <button
-                                                    type="button"
-                                                    className="table-action-button"
-                                                    onClick={() => handleToggleStatus(m)}
-                                                    disabled={statusUpdatingId === m.id}
-                                                >
-                                                    {m.status === 'ATIVO' ? 'Inativar' : 'Ativar'}
-                                                </button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(m.id, m.nome)}>Excluir</button>
+                                                {can('modalidades-ensino.editar') && <button type="button" className="table-action-button" onClick={() => handleEdit(m)}>Editar</button>}
+                                                {can('modalidades-ensino.editar') && (
+                                                    <button
+                                                        type="button"
+                                                        className="table-action-button"
+                                                        onClick={() => handleToggleStatus(m)}
+                                                        disabled={statusUpdatingId === m.id}
+                                                    >
+                                                        {m.status === 'ATIVO' ? 'Inativar' : 'Ativar'}
+                                                    </button>
+                                                )}
+                                                {can('modalidades-ensino.excluir') && <button type="button" className="table-action-button danger" onClick={() => handleDelete(m.id, m.nome)}>Excluir</button>}
                                             </div>
                                         </td>
                                     </tr>

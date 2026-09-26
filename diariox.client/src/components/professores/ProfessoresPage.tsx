@@ -6,6 +6,7 @@ import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import StatusPill from '../ui/StatusPill';
 import ConfirmDialog from '../ui/ConfirmDialog';
+import { usePermissoes } from '../../hooks/usePermissoes';
 
 type View = 'list' | 'form';
 type FormTab = 'pessoais' | 'contratuais' | 'habilitacao';
@@ -105,6 +106,7 @@ const emptyFieldErrors: ProfessorFieldErrors = {
 };
 
 function ProfessoresPage() {
+    const { can } = usePermissoes();
     const { confirm, confirmDialog } = useConfirm();
     const { items: professores, isLoading, isSaving, error, load, save, remove } = useCrudData<Professor>('/api/professores');
 
@@ -353,9 +355,11 @@ function ProfessoresPage() {
             {view === 'list' ? (
                 <div className="list-view">
                     <div className="list-header">
-                        <button className="btn btn-primary" onClick={handleNewProfessor}>
-                            ➕ Novo Professor
-                        </button>
+                        {can('professores.criar') && (
+                            <button className="btn btn-primary" onClick={handleNewProfessor}>
+                                ➕ Novo Professor
+                            </button>
+                        )}
                     </div>
 
                     {isLoading ? (
@@ -393,16 +397,18 @@ function ProfessoresPage() {
                                             </td>
                                             <td>
                                                 <div className="action-group vertical">
-                                                    <button type="button" className="table-action-button" onClick={() => handleEditClick(professor)}>Editar</button>
-                                                    <button
-                                                        type="button"
-                                                        className="table-action-button"
-                                                        onClick={() => handleToggleSituacao(professor)}
-                                                        disabled={situacaoUpdatingId === professor.id}
-                                                    >
-                                                        {professor.situacao === 'INATIVO' ? 'Ativar' : 'Inativar'}
-                                                    </button>
-                                                    <button type="button" className="table-action-button danger" onClick={() => setProfessorToDelete(professor)}>Excluir</button>
+                                                    {can('professores.editar') && <button type="button" className="table-action-button" onClick={() => handleEditClick(professor)}>Editar</button>}
+                                                    {can('professores.editar') && (
+                                                        <button
+                                                            type="button"
+                                                            className="table-action-button"
+                                                            onClick={() => handleToggleSituacao(professor)}
+                                                            disabled={situacaoUpdatingId === professor.id}
+                                                        >
+                                                            {professor.situacao === 'INATIVO' ? 'Ativar' : 'Inativar'}
+                                                        </button>
+                                                    )}
+                                                    {can('professores.excluir') && <button type="button" className="table-action-button danger" onClick={() => setProfessorToDelete(professor)}>Excluir</button>}
                                                 </div>
                                             </td>
                                         </tr>

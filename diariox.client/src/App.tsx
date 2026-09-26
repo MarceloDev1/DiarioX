@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar';
 import MainContent from './components/MainContent';
 import TenantPicker from './components/tenants/TenantPicker';
 import InstituicoesPage from './components/tenants/InstituicoesPage';
+import PermissoesProvider from './components/PermissoesProvider';
 import { clearSession, restoreSession, saveSession, UNAUTHORIZED_EVENT, type Session } from './utils/api';
 
 function App() {
@@ -95,27 +96,29 @@ function App() {
     }
 
     return (
-        <div className="app-layout">
-            <Sidebar onSelectPage={page => handleNavigate(page)} currentPage={currentPage} isGlobalAdmin={session.isGlobalAdmin} />
-            <main className="main-area">
-                <header className="main-header">
-                    <h1>Diário de Classe</h1>
-                    <div className="main-header-user">
-                        {session.tenantNome && <span className="main-header-tenant">{session.tenantNome}</span>}
-                        <p>Olá, <strong>{session.email}</strong>!</p>
-                        {session.isGlobalAdmin && (
-                            <button type="button" className="logout-button" onClick={handleChangeTenant}>
-                                Trocar instituição
+        <PermissoesProvider key={session.tenantId}>
+            <div className="app-layout">
+                <Sidebar onSelectPage={page => handleNavigate(page)} currentPage={currentPage} isGlobalAdmin={session.isGlobalAdmin} />
+                <main className="main-area">
+                    <header className="main-header">
+                        <h1>Diário de Classe</h1>
+                        <div className="main-header-user">
+                            {session.tenantNome && <span className="main-header-tenant">{session.tenantNome}</span>}
+                            <p>Olá, <strong>{session.email}</strong>!</p>
+                            {session.isGlobalAdmin && (
+                                <button type="button" className="logout-button" onClick={handleChangeTenant}>
+                                    Trocar instituição
+                                </button>
+                            )}
+                            <button type="button" className="logout-button" onClick={handleLogout}>
+                                Sair
                             </button>
-                        )}
-                        <button type="button" className="logout-button" onClick={handleLogout}>
-                            Sair
-                        </button>
-                    </div>
-                </header>
-                <MainContent page={currentPage} onNavigate={handleNavigate} initialAlunoId={initialAlunoId} />
-            </main>
-        </div>
+                        </div>
+                    </header>
+                    <MainContent page={currentPage} onNavigate={handleNavigate} initialAlunoId={initialAlunoId} />
+                </main>
+            </div>
+        </PermissoesProvider>
     );
 }
 

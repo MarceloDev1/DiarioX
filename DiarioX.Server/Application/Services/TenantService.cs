@@ -16,11 +16,13 @@ public class TenantService : ITenantService
 
     private readonly ITenantRepository _tenantRepository;
     private readonly ITenantContext _tenantContext;
+    private readonly IPermissaoService _permissaoService;
 
-    public TenantService(ITenantRepository tenantRepository, ITenantContext tenantContext)
+    public TenantService(ITenantRepository tenantRepository, ITenantContext tenantContext, IPermissaoService permissaoService)
     {
         _tenantRepository = tenantRepository;
         _tenantContext = tenantContext;
+        _permissaoService = permissaoService;
     }
 
     public async Task<IEnumerable<TenantResponse>> GetAllAsync()
@@ -57,6 +59,8 @@ public class TenantService : ITenantService
             Slug = normalized.Slug,
             Status = normalized.Status,
         });
+
+        await _permissaoService.GarantirPadraoAsync(created.Id);
 
         return new TenantCommandResult(true, "Instituição cadastrada com sucesso.", MapToResponse(created));
     }

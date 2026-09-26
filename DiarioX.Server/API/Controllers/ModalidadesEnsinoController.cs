@@ -1,3 +1,5 @@
+using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Application.DTOs.ModalidadesEnsino;
 using DiarioX.Server.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -32,6 +34,7 @@ public class ModalidadesEnsinoController : ControllerBase
         return Ok(modalidade);
     }
 
+    [Permissao(Permissoes.ModalidadesEnsino.Criar)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] ModalidadeEnsinoRequest request)
     {
@@ -42,6 +45,7 @@ public class ModalidadesEnsinoController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.ModalidadeEnsino!.Id }, result.ModalidadeEnsino);
     }
 
+    [Permissao(Permissoes.ModalidadesEnsino.Editar)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] ModalidadeEnsinoRequest request)
     {
@@ -52,6 +56,7 @@ public class ModalidadesEnsinoController : ControllerBase
         return Ok(result.ModalidadeEnsino);
     }
 
+    [Permissao(Permissoes.ModalidadesEnsino.Editar)]
     [HttpPatch("{id:int}/status")]
     public async Task<IActionResult> UpdateStatus([FromRoute] int id, [FromBody] ModalidadeEnsinoStatusRequest request)
     {
@@ -62,6 +67,7 @@ public class ModalidadesEnsinoController : ControllerBase
         return Ok(new { message = result.Message, modalidadeEnsino = result.ModalidadeEnsino });
     }
 
+    [Permissao(Permissoes.ModalidadesEnsino.Excluir)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete([FromRoute] int id)
     {

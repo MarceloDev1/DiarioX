@@ -1,3 +1,5 @@
+using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Application.DTOs.Escolas;
 using DiarioX.Server.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -32,6 +34,7 @@ public class EscolasController : ControllerBase
         return Ok(escola);
     }
 
+    [Permissao(Permissoes.Escolas.Criar)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] EscolaRequest request)
     {
@@ -42,6 +45,7 @@ public class EscolasController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Escola!.Id }, result.Escola);
     }
 
+    [Permissao(Permissoes.Escolas.Editar)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] EscolaRequest request)
     {
@@ -52,6 +56,7 @@ public class EscolasController : ControllerBase
         return Ok(result.Escola);
     }
 
+    [Permissao(Permissoes.Escolas.Excluir)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete([FromRoute] int id)
     {

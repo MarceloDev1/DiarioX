@@ -87,10 +87,15 @@ export async function apiFetch(input: string, init: RequestInit = {}): Promise<R
 }
 
 export async function readApiError(response: Response): Promise<string> {
+    // A checagem de permissões responde 403 sem corpo.
+    const fallback = response.status === 403
+        ? 'Você não tem permissão para realizar esta ação.'
+        : `Erro ${response.status}`;
+
     try {
         const payload = (await response.json()) as { message?: string };
-        return payload.message ?? `Erro ${response.status}`;
+        return payload.message ?? fallback;
     } catch {
-        return `Erro ${response.status}`;
+        return fallback;
     }
 }

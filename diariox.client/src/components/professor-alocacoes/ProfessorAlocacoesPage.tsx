@@ -4,6 +4,7 @@ import { apiFetch } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import '../MainContent.css';
+import { usePermissoes } from '../../hooks/usePermissoes';
 
 interface Professor {
     id: number;
@@ -34,6 +35,7 @@ interface GradeItem {
 const turnoLabels: Record<string, string> = { MANHA: 'Manhã', TARDE: 'Tarde', NOITE: 'Noite', INTEGRAL: 'Integral' };
 
 function ProfessorAlocacoesPage() {
+    const { can } = usePermissoes();
     const { confirm, confirmDialog } = useConfirm();
     const [professores, setProfessores] = useState<Professor[]>([]);
     const [disponiveis, setDisponiveis] = useState<Disponibilidade[]>([]);
@@ -184,7 +186,7 @@ function ProfessorAlocacoesPage() {
                             <h2>Turmas e Disciplinas disponíveis</h2>
                             <p>Somente disciplinas habilitadas para o professor são exibidas.</p>
                         </div>
-                        <button className="btn btn-primary" type="button" onClick={addToGrade} disabled={loading || Object.values(selecoes).every(items => items.length === 0)}>Adicionar à Grade do Professor</button>
+                        {can('alocacao-professor.criar') && <button className="btn btn-primary" type="button" onClick={addToGrade} disabled={loading || Object.values(selecoes).every(items => items.length === 0)}>Adicionar à Grade do Professor</button>}
                     </div>
                     {loading ? <div className="loading">Carregando turmas...</div> : disponiveis.length === 0 ? (
                         <EmptyState emptyMessage="Nenhuma turma disponível para as habilitações cadastradas deste professor." />
@@ -213,7 +215,7 @@ function ProfessorAlocacoesPage() {
                         <h2>Tabela de conferência</h2>
                         <p>Revise os vínculos antes de confirmar a alocação.</p>
                     </div>
-                    <button className="btn btn-primary" type="button" onClick={() => void confirmAllocation()} disabled={saving || !professorId || grade.length === 0}>Confirmar Alocação</button>
+                    {can('alocacao-professor.criar') && <button className="btn btn-primary" type="button" onClick={() => void confirmAllocation()} disabled={saving || !professorId || grade.length === 0}>Confirmar Alocação</button>}
                 </div>
                 {grade.length === 0 ? <EmptyState emptyMessage="Nenhuma alocação adicionada à grade." /> : (
                     <div className="table-responsive">

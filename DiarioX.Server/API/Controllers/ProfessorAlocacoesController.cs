@@ -1,3 +1,5 @@
+using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Application.DTOs.Alocacoes;
 using DiarioX.Server.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -17,14 +19,17 @@ public class ProfessorAlocacoesController : ControllerBase
         _service = service;
     }
 
+    [Permissao(Permissoes.AlocacaoProfessor.Visualizar)]
     [HttpGet("professor/{professorId:int}")]
     public async Task<IActionResult> GetByProfessor(int professorId)
         => Ok(await _service.GetByProfessorAsync(professorId));
 
+    [Permissao(Permissoes.AlocacaoProfessor.Visualizar)]
     [HttpGet("professor/{professorId:int}/disponiveis")]
     public async Task<IActionResult> GetDisponiveis(int professorId)
         => Ok(await _service.GetDisponiveisAsync(professorId));
 
+    [Permissao(Permissoes.AlocacaoProfessor.Criar)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] ProfessorAlocacaoRequest request)
     {
@@ -35,6 +40,7 @@ public class ProfessorAlocacoesController : ControllerBase
         return Ok(new { message = result.Message, alocacoes = result.Alocacoes });
     }
 
+    [Permissao(Permissoes.AlocacaoProfessor.Excluir)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

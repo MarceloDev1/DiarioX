@@ -7,6 +7,13 @@
       "runtimeArgs": ["run", "dev", "--prefix", "diariox.client"],
       "port": 63784,
       "url": "https://localhost:63784"
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "DiarioX.Server", "--no-launch-profile", "--", "--environment", "Development", "--urls", "https://localhost:7129"],
+      "port": 7129,
+      "url": "https://localhost:7129"
     }
   ]
 }

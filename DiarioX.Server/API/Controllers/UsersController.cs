@@ -1,3 +1,5 @@
+using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Application.DTOs.Users;
 using DiarioX.Server.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +17,7 @@ public class UsersController : ControllerBase
         _userService = userService;
     }
 
+    [Permissao(Permissoes.Usuarios.Visualizar)]
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -22,6 +25,7 @@ public class UsersController : ControllerBase
         return Ok(users);
     }
 
+    [Permissao(Permissoes.Usuarios.Visualizar)]
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById([FromRoute] int id)
     {
@@ -32,6 +36,7 @@ public class UsersController : ControllerBase
         return Ok(user);
     }
 
+    [Permissao(Permissoes.Usuarios.Criar)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] UserRequest request)
     {
@@ -42,6 +47,7 @@ public class UsersController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.User!.Id }, result.User);
     }
 
+    [Permissao(Permissoes.Usuarios.Editar)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UserRequest request)
     {
@@ -52,6 +58,7 @@ public class UsersController : ControllerBase
         return Ok(result.User);
     }
 
+    [Permissao(Permissoes.Usuarios.Excluir)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete([FromRoute] int id)
     {
