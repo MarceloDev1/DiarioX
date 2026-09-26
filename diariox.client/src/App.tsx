@@ -7,13 +7,15 @@ import MainContent from './components/MainContent';
 import TenantPicker from './components/tenants/TenantPicker';
 import InstituicoesPage from './components/tenants/InstituicoesPage';
 import PermissoesProvider from './components/PermissoesProvider';
+import FinanceiroPlataformaPage from './components/faturamento/FinanceiroPlataformaPage';
+import AvisoFinanceiro from './components/faturamento/AvisoFinanceiro';
 import { clearSession, restoreSession, saveSession, UNAUTHORIZED_EVENT, type Session } from './utils/api';
 
 function App() {
     // Recarregar a página mantém o usuário logado enquanto o token salvo for válido.
     const [session, setSession] = useState<Session | null>(restoreSession);
-    // Administrador global sem instituição selecionada pode abrir a gestão de instituições.
-    const [managingTenants, setManagingTenants] = useState(false);
+    // Administrador global sem instituição selecionada pode abrir a gestão de instituições ou o financeiro.
+    const [adminView, setAdminView] = useState<'instituicoes' | 'financeiro' | null>(null);
     const [currentPage, setCurrentPage] = useState('home');
     const [initialAlunoId, setInitialAlunoId] = useState<number | null>(null);
     // O link do e-mail de redefinição abre /redefinir-senha?token=...; lido uma vez ao carregar.
@@ -51,14 +53,14 @@ function App() {
     }
 
     function handleLogout() {
-        setManagingTenants(false);
+        setAdminView(null);
         clearSession();
         setSession(null);
         setCurrentPage('home');
     }
 
     function handleChangeTenant() {
-        setManagingTenants(false);
+        setAdminView(null);
         setSession(current => current && { ...current, tenantId: null, tenantNome: null });
         setCurrentPage('home');
     }
@@ -73,26 +75,40 @@ function App() {
 
     // Administrador global precisa escolher uma instituição antes de acessar os cadastros.
     if (session.isGlobalAdmin && session.tenantId === null) {
-        if (managingTenants) {
+        if (adminView) {
             return (
                 <main className="main-area">
                     <header className="main-header">
                         <h1>Diário de Classe</h1>
                         <div className="main-header-user">
-                            <button type="button" className="logout-button" onClick={() => setManagingTenants(false)}>
+                            <button type="button" className="logout-button" onClick={() => setAdminView(null)}>
                                 Escolher instituição
+                            </button>
+                            <button
+                                type="button"
+                                className="logout-button"
+                                onClick={() => setAdminView(adminView === 'financeiro' ? 'instituicoes' : 'financeiro')}
+                            >
+                                {adminView === 'financeiro' ? 'Instituições' : 'Financeiro'}
                             </button>
                             <button type="button" className="logout-button" onClick={handleLogout}>
                                 Sair
                             </button>
                         </div>
                     </header>
-                    <InstituicoesPage />
+                    {adminView === 'financeiro' ? <FinanceiroPlataformaPage /> : <InstituicoesPage />}
                 </main>
             );
         }
 
-        return <TenantPicker onSelect={setSession} onManage={() => setManagingTenants(true)} onLogout={handleLogout} />;
+        return (
+            <TenantPicker
+                onSelect={setSession}
+                onManage={() => setAdminView('instituicoes')}
+                onFinanceiro={() => setAdminView('financeiro')}
+                onLogout={handleLogout}
+            />
+        );
     }
 
     return (
@@ -115,6 +131,7 @@ function App() {
                             </button>
                         </div>
                     </header>
+                    <AvisoFinanceiro onVerFaturas={() => handleNavigate('assinatura')} />
                     <MainContent page={currentPage} onNavigate={handleNavigate} initialAlunoId={initialAlunoId} />
                 </main>
             </div>

@@ -36,7 +36,21 @@ public class TenantResolutionMiddleware
             var tenantSlugClaim = context.User.FindFirst(AppClaimTypes.TenantSlug)?.Value;
 
             if (int.TryParse(tenantIdClaim, out var tenantId) && tenantSlugClaim is not null)
+            {
                 tenantContext.SetTenant(tenantId, tenantSlugClaim);
+
+                if (await BloqueadaParaGravacaoAsync(context, tenantId, tenantRepository))
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    await context.Response.WriteAsJsonAsync(new
+                    {
+                        message = "A instituição está em modo somente leitura por pendência financeira com o Diário X. " +
+                                  "Consultas e chamadas continuam liberadas; as alterações voltam assim que o pagamento for confirmado.",
+                        codigo = Tenant.SituacaoFinanceiraSomenteLeitura,
+                    });
+                    return;
+                }
+            }
 
             await _next(context);
             return;
@@ -64,5 +78,25 @@ public class TenantResolutionMiddleware
         }
 
         await _next(context);
+    }
+
+    // Em somente leitura, a instituição só consulta, com exceção da chamada (para não prejudicar as
+    // aulas) e da autenticação. O Administrador global não é bloqueado.
+    private static readonly string[] RotasLiberadasEmSomenteLeitura = ["/api/auth", "/api/chamadas"];
+
+    private static async Task<bool> BloqueadaParaGravacaoAsync(HttpContext context, int tenantId, ITenantRepository tenantRepository)
+    {
+        var request = context.Request;
+        if (HttpMethods.IsGet(request.Method) || HttpMethods.IsHead(request.Method) || HttpMethods.IsOptions(request.Method))
+            return false;
+
+        if (context.User.HasClaim(AppClaimTypes.GlobalAdmin, "true"))
+            return false;
+
+        if (RotasLiberadasEmSomenteLeitura.Any(rota => request.Path.StartsWithSegments(rota)))
+            return false;
+
+        var tenant = await tenantRepository.GetByIdAsync(tenantId);
+        return tenant?.SituacaoFinanceira == Tenant.SituacaoFinanceiraSomenteLeitura;
     }
 }

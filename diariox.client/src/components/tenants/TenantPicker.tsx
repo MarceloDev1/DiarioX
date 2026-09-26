@@ -13,11 +13,12 @@ interface Tenant {
 interface TenantPickerProps {
     onSelect: (session: Session) => void;
     onManage: () => void;
+    onFinanceiro: () => void;
     onLogout: () => void;
 }
 
 /** Tela do Administrador global para escolher em qual instituição vai atuar. */
-function TenantPicker({ onSelect, onManage, onLogout }: TenantPickerProps) {
+function TenantPicker({ onSelect, onManage, onFinanceiro, onLogout }: TenantPickerProps) {
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectingId, setSelectingId] = useState<number | null>(null);
@@ -94,6 +95,10 @@ function TenantPicker({ onSelect, onManage, onLogout }: TenantPickerProps) {
                 <div className="first-access">
                     <button type="button" className="first-access-link" onClick={onManage}>
                         Gerenciar instituições
+                    </button>
+                    {' · '}
+                    <button type="button" className="first-access-link" onClick={onFinanceiro}>
+                        Financeiro
                     </button>
                     {' · '}
                     <button type="button" className="first-access-link" onClick={onLogout}>

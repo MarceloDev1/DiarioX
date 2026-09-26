@@ -10,9 +10,9 @@ import { hojeIso, type ChamadaTurma } from './tipos';
 type Aba = 'lancar' | 'historico' | 'frequencia';
 
 const abas: { id: Aba; label: string }[] = [
-    { id: 'lancar', label: '✅ Lançar chamada' },
-    { id: 'historico', label: '🗓️ Histórico' },
-    { id: 'frequencia', label: '📊 Frequência' },
+    { id: 'lancar', label: 'Lançar chamada' },
+    { id: 'historico', label: 'Histórico' },
+    { id: 'frequencia', label: 'Frequência' },
 ];
 
 function ChamadaPage() {

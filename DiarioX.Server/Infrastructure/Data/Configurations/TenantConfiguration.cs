@@ -37,11 +37,21 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
             .HasDefaultValue(Tenant.StatusAtivo)
             .IsRequired();
 
+        builder.Property(x => x.SituacaoFinanceira)
+            .HasColumnName("situacao_financeira")
+            .HasMaxLength(20)
+            .HasDefaultValue(Tenant.SituacaoFinanceiraRegular)
+            .IsRequired();
+
         builder.Property(x => x.CreatedAt)
             .HasColumnName("created_at")
             .HasDefaultValueSql("NOW()");
 
         builder.ToTable(t =>
-            t.HasCheckConstraint("CK_tenants_status", "status IN ('ATIVO', 'INATIVO')"));
+        {
+            t.HasCheckConstraint("CK_tenants_status", "status IN ('ATIVO', 'INATIVO')");
+            t.HasCheckConstraint("CK_tenants_situacao_financeira",
+                "situacao_financeira IN ('REGULAR', 'EM_ATRASO', 'SOMENTE_LEITURA')");
+        });
     }
 }

@@ -1041,3 +1041,131 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Financeiro */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1rem;
+}
+
+.kpi-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid #e0e8f0;
+    border-radius: 10px;
+    background: #f9fbfd;
+}
+
+.kpi-alerta {
+    border-color: #f0c2cb;
+    background: #fff7f8;
+}
+
+.kpi-label {
+    color: #5b6475;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.kpi-valor {
+    color: #0f3460;
+    font-size: 1.35rem;
+}
+
+.kpi-alerta .kpi-valor {
+    color: #b4233a;
+}
+
+.kpi-detalhe {
+    color: #5b6475;
+    font-size: 0.8rem;
+}
+
+.secao-titulo {
+    margin: 0.5rem 0 0;
+    color: #0f3460;
+    font-size: 1.1rem;
+}
+
+.secao-subtitulo {
+    margin: 0.75rem 0 0;
+    color: #2f3c53;
+    font-size: 0.95rem;
+    border-bottom: 1px solid #e5ecf5;
+    padding-bottom: 0.4rem;
+}
+
+.aviso-financeiro {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0 0 1rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: 10px;
+    border: 1px solid;
+    font-size: 0.92rem;
+}
+
+.aviso-atencao {
+    background: #fff7e6;
+    border-color: #f5d9a8;
+    color: #7a4a06;
+}
+
+.aviso-info {
+    background: #eef4fb;
+    border-color: #c7d6ea;
+    color: #26405f;
+}
+
+.aviso-bloqueio {
+    background: #fff1f3;
+    border-color: #f0c2cb;
+    color: #8f1c2f;
+}
+
+.aviso-financeiro code {
+    font-size: 0.85em;
+}
+
+.plano-simulacao,
+.pagamento-manual {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1rem;
+    border: 1px dashed #c7d6ea;
+    border-radius: 10px;
+    background: #f7fafc;
+}
+
+.plano-simulacao-linha {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.plano-simulacao-linha input {
+    width: 6.5rem;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.texto-alerta {
+    color: #b4233a;
+}
+
+/* Link com aparência de botão ("Pagar" na assinatura da instituição) */
+a.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}

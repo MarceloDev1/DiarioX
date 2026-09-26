@@ -15,6 +15,8 @@ namespace DiarioX.Server.Tests.API;
 /// </summary>
 public class TenancyApiFactory : WebApplicationFactory<Program>
 {
+    public const string TokenWebhookAsaas = "token-webhook-teste";
+
     private readonly string _databaseName = $"diariox-api-tests-{Guid.NewGuid()}";
     private readonly object _seedLock = new();
     private bool _seeded;
@@ -32,6 +34,10 @@ public class TenancyApiFactory : WebApplicationFactory<Program>
     {
         // Development traz as configurações de Jwt e Tenancy:BaseDomains = dev.localhost.
         builder.UseEnvironment("Development");
+
+        // Sem rotina de faturamento em segundo plano nos testes; token fixo para o webhook do Asaas.
+        builder.UseSetting("Faturamento:RotinaHabilitada", "false");
+        builder.UseSetting("Asaas:WebhookToken", TokenWebhookAsaas);
 
         builder.ConfigureServices(services =>
         {

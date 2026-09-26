@@ -45,6 +45,9 @@ public class AppDbContext : DbContext
     public DbSet<AlunoTurma> AlunosTurmas => Set<AlunoTurma>();
     public DbSet<Chamada> Chamadas => Set<Chamada>();
     public DbSet<ChamadaAluno> ChamadasAlunos => Set<ChamadaAluno>();
+    public DbSet<PlanoAssinatura> PlanosAssinatura => Set<PlanoAssinatura>();
+    public DbSet<Assinatura> Assinaturas => Set<Assinatura>();
+    public DbSet<FaturaAssinatura> FaturasAssinatura => Set<FaturaAssinatura>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -74,6 +77,9 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AlunoTurmaConfiguration());
         modelBuilder.ApplyConfiguration(new ChamadaConfiguration());
         modelBuilder.ApplyConfiguration(new ChamadaAlunoConfiguration());
+        modelBuilder.ApplyConfiguration(new PlanoAssinaturaConfiguration());
+        modelBuilder.ApplyConfiguration(new AssinaturaConfiguration());
+        modelBuilder.ApplyConfiguration(new FaturaAssinaturaConfiguration());
 
         ConfigureTenantFilters(modelBuilder);
     }

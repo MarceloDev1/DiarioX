@@ -9,6 +9,10 @@ public class Tenant
     public const string StatusAtivo = "ATIVO";
     public const string StatusInativo = "INATIVO";
 
+    public const string SituacaoFinanceiraRegular = "REGULAR";
+    public const string SituacaoFinanceiraEmAtraso = "EM_ATRASO";
+    public const string SituacaoFinanceiraSomenteLeitura = "SOMENTE_LEITURA";
+
     public int Id { get; set; }
     public string Nome { get; set; } = string.Empty;
 
@@ -16,5 +20,12 @@ public class Tenant
     public string Slug { get; set; } = string.Empty;
 
     public string Status { get; set; } = StatusAtivo;
+
+    /// <summary>
+    /// Situação das faturas do Diário X, mantida pela rotina de faturamento. Em SOMENTE_LEITURA a
+    /// instituição consulta tudo, mas só grava chamadas.
+    /// </summary>
+    public string SituacaoFinanceira { get; set; } = SituacaoFinanceiraRegular;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

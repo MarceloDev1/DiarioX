@@ -14,6 +14,8 @@ import RemanejarAlunoPage from './alunos/RemanejarAlunoPage';
 import InstituicoesPage from './tenants/InstituicoesPage';
 import PermissoesPage from './configuracoes/PermissoesPage';
 import ChamadaPage from './chamada/ChamadaPage';
+import AssinaturaPage from './configuracoes/AssinaturaPage';
+import FinanceiroPlataformaPage from './faturamento/FinanceiroPlataformaPage';
 import { usePermissoes } from '../hooks/usePermissoes';
 import { permissaoDaPagina } from '../utils/permissoes';
 
@@ -71,6 +73,10 @@ function MainContent({ page, onNavigate, initialAlunoId }: MainContentProps) {
             return <InstituicoesPage />;
         case 'permissoes':
             return <PermissoesPage />;
+        case 'assinatura':
+            return <AssinaturaPage />;
+        case 'financeiro-plataforma':
+            return <FinanceiroPlataformaPage />;
         default:
             return (
                 <div className="content-card">

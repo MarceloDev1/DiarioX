@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './Sidebar.css';
 import type { IconType } from 'react-icons';
-import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare, FiDollarSign, FiCreditCard } from 'react-icons/fi';
 import { MdSchool, MdPeople, MdManageAccounts } from 'react-icons/md';
 import { usePermissoes } from '../hooks/usePermissoes';
 import { permissaoDaPagina } from '../utils/permissoes';
@@ -34,6 +34,7 @@ interface MenuItem {
 // Itens exclusivos do Administrador global.
 const globalAdminItems: MenuItem[] = [
     { id: 'instituicoes', label: 'Instituições', icon: FiGlobe },
+    { id: 'financeiro-plataforma', label: 'Financeiro', icon: FiDollarSign },
 ];
 
 const menuItems: MenuItem[] = [
@@ -55,6 +56,7 @@ const menuItems: MenuItem[] = [
     { id: 'usuarios', label: 'Usuários', icon: FiUser },
     { id: 'configuracoes', label: 'Configurações', icon: FiSettings, submenu: [
         { id: 'permissoes', label: 'Permissões', icon: FiShield },
+        { id: 'assinatura', label: 'Assinatura', icon: FiCreditCard },
     ] },
 ];
 

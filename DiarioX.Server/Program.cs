@@ -1,5 +1,6 @@
 using System.Text;
 using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Application.Faturamento;
 using DiarioX.Server.Application.Interfaces;
 using DiarioX.Server.Application.Services;
 using DiarioX.Server.Domain.Entities;
@@ -63,6 +64,7 @@ builder.Services.AddScoped<IAlunoRepository, AlunoRepository>();
 builder.Services.AddScoped<IAlunoTurmaRepository, AlunoTurmaRepository>();
 builder.Services.AddScoped<IPerfilPermissaoRepository, PerfilPermissaoRepository>();
 builder.Services.AddScoped<IChamadaRepository, ChamadaRepository>();
+builder.Services.AddScoped<IFaturamentoRepository, FaturamentoRepository>();
 
 // Dependency Injection - Services
 builder.Services.AddScoped<ITenantService, TenantService>();
@@ -82,6 +84,13 @@ builder.Services.AddScoped<IAlunoService, AlunoService>();
 builder.Services.AddScoped<IRemanejamentoAlunoService, RemanejamentoAlunoService>();
 builder.Services.AddScoped<IPermissaoService, PermissaoService>();
 builder.Services.AddScoped<IChamadaService, ChamadaService>();
+
+// Faturamento da plataforma (Asaas): a chave de API e o token do webhook ficam em user-secrets/variáveis de ambiente.
+builder.Services.Configure<AsaasOptions>(builder.Configuration.GetSection(AsaasOptions.Secao));
+builder.Services.Configure<FaturamentoOptions>(builder.Configuration.GetSection(FaturamentoOptions.Secao));
+builder.Services.AddHttpClient<IAsaasClient, AsaasClient>();
+builder.Services.AddScoped<IFaturamentoService, FaturamentoService>();
+builder.Services.AddHostedService<FaturamentoBackgroundService>();
 
 // Permissões por perfil: políticas "permissao:..." geradas pelo [Permissao(...)]
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissaoPolicyProvider>();

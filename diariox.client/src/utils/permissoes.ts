@@ -15,4 +15,5 @@ export const permissaoDaPagina: Record<string, string> = {
     'chamada': 'chamada.visualizar',
     'usuarios': 'usuarios.visualizar',
     'permissoes': 'configuracoes.visualizar',
+    'assinatura': 'configuracoes.visualizar',
 };
