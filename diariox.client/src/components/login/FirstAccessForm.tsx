@@ -25,11 +25,11 @@ function FirstAccessForm({ onBack }: FirstAccessFormProps) {
         setError('');
 
         if (!validateCpf(cpf)) {
-            setError('Informe um CPF valido.');
+            setError('Informe um CPF válido.');
             return;
         }
         if (!validateBirthDate(birthDate)) {
-            setError('Informe uma data de nascimento valida.');
+            setError('Informe uma data de nascimento válida.');
             return;
         }
 
@@ -44,10 +44,10 @@ function FirstAccessForm({ onBack }: FirstAccessFormProps) {
             if (response.ok) {
                 setStep('activate');
             } else {
-                setError('Nao foi possivel validar seus dados institucionais.');
+                setError('Não foi possível validar seus dados institucionais.');
             }
         } catch {
-            setError('Erro ao conectar ao servidor para validacao.');
+            setError('Erro ao conectar ao servidor para validação.');
         } finally {
             setLoading(false);
         }
@@ -69,11 +69,11 @@ function FirstAccessForm({ onBack }: FirstAccessFormProps) {
             return;
         }
         if (!validatePassword(newPassword)) {
-            setError('A senha deve ter no minimo 8 caracteres, com letra maiuscula, minuscula, numero e simbolo.');
+            setError('A senha deve ter no mínimo 8 caracteres, com letra maiúscula, minúscula, número e símbolo.');
             return;
         }
         if (newPassword !== newPasswordConfirm) {
-            setError('As senhas informadas nao coincidem.');
+            setError('As senhas informadas não coincidem.');
             return;
         }
 
@@ -90,10 +90,10 @@ function FirstAccessForm({ onBack }: FirstAccessFormProps) {
                 setSuccess('Conta ativada com sucesso! Agora faca seu primeiro login.');
                 setTimeout(onBack, 1600);
             } else {
-                setError('Nao foi possivel ativar sua conta. Verifique os dados e tente novamente.');
+                setError('Não foi possível ativar sua conta. Verifique os dados e tente novamente.');
             }
         } catch {
-            setError('Erro ao conectar ao servidor durante a ativacao.');
+            setError('Erro ao conectar ao servidor durante a ativação.');
         } finally {
             setLoading(false);
         }
