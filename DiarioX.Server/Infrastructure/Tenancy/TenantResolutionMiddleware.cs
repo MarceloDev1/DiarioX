@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using DiarioX.Server.Application.Auth;
 using DiarioX.Server.Domain.Entities;
 using DiarioX.Server.Domain.Interfaces;
@@ -8,6 +9,7 @@ namespace DiarioX.Server.Infrastructure.Tenancy;
 /// Define a instituição de cada requisição da API. Deve rodar depois de UseAuthentication.
 /// - Autenticada: a instituição vem exclusivamente do token (claims tenant_id/tenant_slug).
 /// - Anônima (login, primeiro acesso, senha): vem do subdomínio do host.
+/// Nas autenticadas também define as escolas que o usuário pode acessar (EscopoEscolaResolver).
 /// </summary>
 public class TenantResolutionMiddleware
 {
@@ -22,7 +24,8 @@ public class TenantResolutionMiddleware
         HttpContext context,
         TenantContext tenantContext,
         TenantHostResolver hostResolver,
-        ITenantRepository tenantRepository)
+        ITenantRepository tenantRepository,
+        EscopoEscolaResolver escopoEscolaResolver)
     {
         if (!context.Request.Path.StartsWithSegments("/api"))
         {
@@ -50,6 +53,11 @@ public class TenantResolutionMiddleware
                     });
                     return;
                 }
+
+                // O Administrador global acessa todas as escolas da instituição selecionada.
+                var usuarioIdClaim = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (!context.User.HasClaim(AppClaimTypes.GlobalAdmin, "true") && int.TryParse(usuarioIdClaim, out var usuarioId))
+                    tenantContext.SetEscolas(await escopoEscolaResolver.ResolverAsync(usuarioId));
             }
 
             await _next(context);

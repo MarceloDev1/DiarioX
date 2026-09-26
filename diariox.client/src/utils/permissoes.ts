@@ -13,6 +13,7 @@ export const permissaoDaPagina: Record<string, string> = {
     'enturmar-aluno': 'alunos.editar',
     'remanejar-aluno': 'alunos.editar',
     'chamada': 'chamada.visualizar',
+    'relatorios': 'relatorios.visualizar',
     'usuarios': 'usuarios.visualizar',
     'permissoes': 'configuracoes.visualizar',
     'assinatura': 'configuracoes.visualizar',

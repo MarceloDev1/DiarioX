@@ -86,6 +86,29 @@ export async function apiFetch(input: string, init: RequestInit = {}): Promise<R
     return response;
 }
 
+/**
+ * Baixa um arquivo gerado pela API (ex.: relatório em Excel/PDF). Um link direto não serviria: a
+ * requisição precisa levar o token. O nome vem do Content-Disposition da resposta.
+ */
+export async function baixarArquivo(url: string, nomePadrao: string): Promise<void> {
+    const response = await apiFetch(url);
+    if (!response.ok) throw new Error(await readApiError(response));
+
+    const disposition = response.headers.get('Content-Disposition') ?? '';
+    const nome = /filename\*=UTF-8''([^;]+)/i.exec(disposition)?.[1]
+        ?? /filename="?([^";]+)"?/i.exec(disposition)?.[1]
+        ?? nomePadrao;
+
+    const objectUrl = URL.createObjectURL(await response.blob());
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = decodeURIComponent(nome);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+}
+
 export async function readApiError(response: Response): Promise<string> {
     // A checagem de permissões responde 403 sem corpo.
     const fallback = response.status === 403

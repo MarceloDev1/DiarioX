@@ -10,10 +10,17 @@ public class TenantContext : ITenantContext
 {
     public int? TenantId { get; private set; }
     public string? TenantSlug { get; private set; }
+    public IReadOnlyList<int>? EscolaIds { get; private set; }
 
     public void SetTenant(int tenantId, string slug)
     {
         TenantId = tenantId;
         TenantSlug = slug;
+    }
+
+    /// <summary>Restringe a requisição às escolas informadas; nulo libera todas as escolas da instituição.</summary>
+    public void SetEscolas(IReadOnlyList<int>? escolaIds)
+    {
+        EscolaIds = escolaIds;
     }
 }

@@ -10,4 +10,10 @@ public interface ITenantContext
 {
     int? TenantId { get; }
     string? TenantSlug { get; }
+
+    /// <summary>
+    /// Escolas da instituição que o usuário da requisição pode acessar. Nulo = todas (sem restrição),
+    /// que é o caso do Administrador global, da gerência da rede e dos processos internos.
+    /// </summary>
+    IReadOnlyList<int>? EscolaIds => null;
 }

@@ -13,16 +13,13 @@ public class EscolaService : IEscolaService
 
     private readonly IEscolaRepository _escolaRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IUsuarioPerfilRepository _usuarioPerfilRepository;
 
     public EscolaService(
         IEscolaRepository escolaRepository,
-        IUserRepository userRepository,
-        IUsuarioPerfilRepository usuarioPerfilRepository)
+        IUserRepository userRepository)
     {
         _escolaRepository = escolaRepository;
         _userRepository = userRepository;
-        _usuarioPerfilRepository = usuarioPerfilRepository;
     }
 
     public async Task<IEnumerable<EscolaResponse>> GetAllAsync()
@@ -68,9 +65,6 @@ public class EscolaService : IEscolaService
 
         var created = await _escolaRepository.AddAsync(escola);
 
-        if (diretorId.HasValue)
-            await AtualizarEscolaNoPerfilAsync(diretorId.Value, created.Id);
-
         var reloaded = await _escolaRepository.GetByIdAsync(created.Id);
         return new EscolaCommandResult(true, "Escola cadastrada com sucesso.", MapToResponse(reloaded!));
     }
@@ -105,10 +99,8 @@ public class EscolaService : IEscolaService
         escola.Status = normalized.Status;
         escola.DiretorId = diretorId;
 
+        // As escolas de atuação do diretor são definidas no cadastro de usuários.
         await _escolaRepository.UpdateAsync(escola);
-
-        if (diretorId.HasValue)
-            await AtualizarEscolaNoPerfilAsync(diretorId.Value, id);
 
         var updated = await _escolaRepository.GetByIdAsync(id);
         return new EscolaCommandResult(true, "Escola atualizada com sucesso.", MapToResponse(updated!));
@@ -122,16 +114,6 @@ public class EscolaService : IEscolaService
 
         await _escolaRepository.DeleteAsync(id);
         return new EscolaCommandResult(true, "Escola removida com sucesso.");
-    }
-
-    private async Task AtualizarEscolaNoPerfilAsync(int usuarioId, int escolaId)
-    {
-        var perfil = await _usuarioPerfilRepository.GetGlobalByUsuarioIdAsync(usuarioId);
-        if (perfil is not null)
-        {
-            perfil.EscolaId = escolaId;
-            await _usuarioPerfilRepository.UpdateAsync(perfil);
-        }
     }
 
     private async Task<EscolaCommandResult> ValidateRequestAsync(EscolaRequest request, int? excludeId)

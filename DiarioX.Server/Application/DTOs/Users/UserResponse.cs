@@ -9,5 +9,6 @@ public record UserResponse(
     DateTime? UltimoAcesso,
     DateTime CreatedAt,
     int? PerfilId,
-    string? PerfilNome
+    string? PerfilNome,
+    IReadOnlyList<int> EscolaIds
 );

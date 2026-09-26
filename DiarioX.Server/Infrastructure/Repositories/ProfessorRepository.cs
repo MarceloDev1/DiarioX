@@ -23,25 +23,25 @@ public class ProfessorRepository : BaseRepository<Professor>, IProfessorReposito
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
+    // Vínculo com o usuário e unicidade valem para a instituição inteira, não só para as escolas do usuário.
+    private IQueryable<Professor> DaInstituicao => _dbSet.IgnoreQueryFilters([AppDbContext.FiltroEscola]).AsNoTracking();
+
     public async Task<Professor?> GetByUsuarioIdAsync(int usuarioId)
     {
-        return await _dbSet
-            .AsNoTracking()
+        return await DaInstituicao
             .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId);
     }
 
     public async Task<Professor?> GetByCpfAsync(string cpf)
     {
-        return await _dbSet
-            .AsNoTracking()
+        return await DaInstituicao
             .FirstOrDefaultAsync(p =>
                 EF.Functions.ILike(p.Cpf, cpf));
     }
 
     public async Task<Professor?> GetByMatriculaAsync(string matricula)
     {
-        return await _dbSet
-            .AsNoTracking()
+        return await DaInstituicao
             .FirstOrDefaultAsync(p =>
                 p.Matricula != null && EF.Functions.ILike(p.Matricula, matricula));
     }
@@ -121,22 +121,19 @@ public class ProfessorRepository : BaseRepository<Professor>, IProfessorReposito
 
     public async Task<bool> ExistsByCpfAsync(string cpf)
     {
-        return await _dbSet
-            .AsNoTracking()
+        return await DaInstituicao
             .AnyAsync(p => EF.Functions.ILike(p.Cpf, cpf));
     }
 
     public async Task<bool> ExistsByMatriculaAsync(string matricula)
     {
-        return await _dbSet
-            .AsNoTracking()
+        return await DaInstituicao
             .AnyAsync(p => p.Matricula != null && EF.Functions.ILike(p.Matricula, matricula));
     }
 
     public async Task<bool> ExistsByEmailAsync(string email)
     {
-        return await _dbSet
-            .AsNoTracking()
+        return await DaInstituicao
             .AnyAsync(p => EF.Functions.ILike(p.Email, email));
     }
 
@@ -149,7 +146,9 @@ public class ProfessorRepository : BaseRepository<Professor>, IProfessorReposito
 
         _context.ProfessorDisciplinas.RemoveRange(disciplinas);
 
+        // Inclui os vínculos com escolas fora do escopo do usuário, senão a exclusão esbarraria neles.
         var escolas = await _context.ProfessorEscolas
+            .IgnoreQueryFilters([AppDbContext.FiltroEscola])
             .Where(pe => pe.ProfessorId == entity.Id)
             .ToListAsync();
 

@@ -17,6 +17,11 @@ interface Perfil {
     nome: string;
 }
 
+interface Escola {
+    id: number;
+    nome: string;
+}
+
 interface UsuarioFormState {
     email: string;
     cpf: string;
@@ -24,6 +29,8 @@ interface UsuarioFormState {
     senha: string;
     status: UsuarioStatus;
     perfilId: number | null;
+    /** Vazio = todas as escolas da instituição. */
+    escolaIds: number[];
 }
 
 interface Usuario {
@@ -36,6 +43,7 @@ interface Usuario {
     createdAt: string;
     perfilId: number | null;
     perfilNome: string | null;
+    escolaIds: number[];
 }
 
 const emptyUsuarioForm: UsuarioFormState = {
@@ -45,6 +53,7 @@ const emptyUsuarioForm: UsuarioFormState = {
     senha: '',
     status: 'ATIVO',
     perfilId: null,
+    escolaIds: [],
 };
 
 function UsuariosPage() {
@@ -55,8 +64,11 @@ function UsuariosPage() {
         emptyUsuarioForm as UsuarioFormState & Record<string, unknown>
     );
     const { items: perfis, load: loadPerfis } = useCrudData<Perfil>('/api/perfis');
+    const { items: escolas, load: loadEscolas } = useCrudData<Escola>('/api/escolas');
     const [view, setView] = useState<View>('list');
     const [formError, setFormError] = useState<string | null>(null);
+    // Explícito: desmarcar a última escola não pode virar "todas as escolas" sem o usuário escolher isso.
+    const [restritoAEscolas, setRestritoAEscolas] = useState(false);
 
     const [filterEmail, setFilterEmail] = useState('');
     const [filterCpf, setFilterCpf] = useState('');
@@ -71,7 +83,23 @@ function UsuariosPage() {
     useEffect(() => {
         void load();
         void loadPerfis();
+        void loadEscolas();
     }, []);
+
+    const nomeDaEscola = (id: number) => escolas.find(e => e.id === id)?.nome ?? 'Outra escola';
+    const perfilSelecionado = perfis.find(p => p.id === form.perfilId);
+
+    const handleEscopo = (restrito: boolean) => {
+        setRestritoAEscolas(restrito);
+        if (!restrito) setForm(current => ({ ...current, escolaIds: [] }));
+    };
+
+    const handleEscolaToggle = (escolaId: number, marcada: boolean) => {
+        setForm(current => ({
+            ...current,
+            escolaIds: marcada ? [...current.escolaIds, escolaId] : current.escolaIds.filter(id => id !== escolaId),
+        }));
+    };
 
     const handleFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = event.target;
@@ -93,12 +121,15 @@ function UsuariosPage() {
             senha: '',
             status: usuario.status,
             perfilId: usuario.perfilId,
+            escolaIds: usuario.escolaIds,
         });
+        setRestritoAEscolas(usuario.escolaIds.length > 0);
         setView('form');
     };
 
     const handleNovoUsuario = () => {
         setFormError(null);
+        setRestritoAEscolas(false);
         clear();
         setView('form');
     };
@@ -137,6 +168,11 @@ function UsuariosPage() {
             return;
         }
 
+        if (restritoAEscolas && form.escolaIds.length === 0) {
+            setFormError('Selecione ao menos uma escola de atuação.');
+            return;
+        }
+
         if (form.senha.trim() && !validatePassword(form.senha)) {
             setFormError('A senha deve ter no minimo 8 caracteres, com letra maiuscula, minuscula, numero e simbolo.');
             return;
@@ -149,6 +185,7 @@ function UsuariosPage() {
             senha: form.senha || null,
             status: form.status,
             perfilId: form.perfilId,
+            escolaIds: form.escolaIds,
         };
         const saved = await save(editingId, body);
         if (saved) {
@@ -243,6 +280,46 @@ function UsuariosPage() {
                                     ))}
                                 </select>
                             </div>
+                            <fieldset className="form-field form-field-full usuario-escopo">
+                                <legend>Escolas de atuação</legend>
+                                <div className="usuario-escopo-opcoes">
+                                    <label className="checkbox-label">
+                                        <input type="radio" name="escopo" checked={!restritoAEscolas} onChange={() => handleEscopo(false)} />
+                                        <span>
+                                            {perfilSelecionado?.nome === 'Professor'
+                                                ? 'Escolas em que leciona'
+                                                : 'Todas as escolas da instituição'}
+                                        </span>
+                                    </label>
+                                    <label className="checkbox-label">
+                                        <input
+                                            type="radio"
+                                            name="escopo"
+                                            checked={restritoAEscolas}
+                                            onChange={() => handleEscopo(true)}
+                                            disabled={escolas.length === 0}
+                                        />
+                                        <span>Somente as escolas selecionadas</span>
+                                    </label>
+                                </div>
+                                {restritoAEscolas && (
+                                    <div className="checkbox-group">
+                                        {escolas.map(escola => (
+                                            <label key={escola.id} className="checkbox-label">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={form.escolaIds.includes(escola.id)}
+                                                    onChange={e => handleEscolaToggle(escola.id, e.target.checked)}
+                                                />
+                                                <span>{escola.nome}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                                <p className="field-hint">
+                                    O usuário só vê e altera escolas, turmas, alunos, professores e chamadas das escolas em que atua.
+                                </p>
+                            </fieldset>
                         </div>
                         <div className="form-actions">
                             <button type="submit" disabled={isSaving}>
@@ -353,6 +430,7 @@ function UsuariosPage() {
                                     <th>CPF</th>
                                     <th>Data de Nascimento</th>
                                     <th>Perfil</th>
+                                    <th>Escolas</th>
                                     <th>Status</th>
                                     <th>Ações</th>
                                 </tr>
@@ -368,6 +446,13 @@ function UsuariosPage() {
                                                 : '—'}
                                         </td>
                                         <td>{usuario.perfilNome ?? '—'}</td>
+                                        <td>
+                                            {usuario.perfilId === null
+                                                ? '—'
+                                                : usuario.escolaIds.length === 0
+                                                    ? (usuario.perfilNome === 'Professor' ? 'Onde leciona' : 'Todas')
+                                                    : usuario.escolaIds.map(nomeDaEscola).join(', ')}
+                                        </td>
                                         <td><StatusPill status={usuario.status} /></td>
                                         <td>
                                             <div className="action-group">

@@ -8,6 +8,16 @@ namespace DiarioX.Server.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {
+    /// <summary>Filtro global que isola os dados de cada instituição.</summary>
+    public const string FiltroInstituicao = "Instituicao";
+
+    /// <summary>
+    /// Filtro global que restringe os dados de escola (escolas, turmas, alunos, professores, chamadas...)
+    /// às escolas de atuação do usuário. Ignore-o com IgnoreQueryFilters([FiltroEscola]) em checagens que
+    /// valem para a instituição inteira, como unicidade de CPF e sequência de matrícula.
+    /// </summary>
+    public const string FiltroEscola = "Escola";
+
     private static readonly MethodInfo ConfigureTenantEntityMethod = typeof(AppDbContext)
         .GetMethod(nameof(ConfigureTenantEntity), BindingFlags.NonPublic | BindingFlags.Instance)!;
 
@@ -20,6 +30,10 @@ public class AppDbContext : DbContext
 
     // Avaliado a cada consulta pelos filtros globais. Nulo = área global (sem instituição).
     public int? CurrentTenantId => _tenantContext.TenantId;
+
+    // Avaliados a cada consulta pelo filtro de escola. Sem escopo = todas as escolas da instituição.
+    public bool EscopoPorEscola => _tenantContext.EscolaIds is not null;
+    public int[] EscolasPermitidas => _tenantContext.EscolaIds?.ToArray() ?? [];
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<User> Users => Set<User>();
@@ -106,6 +120,8 @@ public class AppDbContext : DbContext
         foreach (var clrType in tenantEntityTypes)
             ConfigureTenantEntityMethod.MakeGenericMethod(clrType).Invoke(this, [modelBuilder]);
 
+        ConfigureEscolaFilters(modelBuilder);
+
         // Usuário com TenantId nulo é Administrador global: só aparece fora de uma instituição
         // (login no host de administração, seed). Os demais só aparecem na própria instituição.
         modelBuilder.Entity<User>().HasQueryFilter(u => u.TenantId == CurrentTenantId);
@@ -129,7 +145,34 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         // Sem instituição resolvida (CurrentTenantId nulo) a consulta não retorna nada.
-        builder.HasQueryFilter(e => e.TenantId == CurrentTenantId);
+        builder.HasQueryFilter(FiltroInstituicao, e => e.TenantId == CurrentTenantId);
+    }
+
+    /// <summary>
+    /// Dados que pertencem a uma escola seguem o escopo do usuário. Cadastros da rede (modalidades,
+    /// etapas, anos letivos e disciplinas) continuam visíveis para todas as escolas.
+    /// </summary>
+    private void ConfigureEscolaFilters(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Escola>().HasQueryFilter(FiltroEscola,
+            e => !EscopoPorEscola || EscolasPermitidas.Contains(e.Id));
+        modelBuilder.Entity<Turma>().HasQueryFilter(FiltroEscola,
+            t => !EscopoPorEscola || EscolasPermitidas.Contains(t.EscolaId));
+        modelBuilder.Entity<Aluno>().HasQueryFilter(FiltroEscola,
+            a => !EscopoPorEscola || EscolasPermitidas.Contains(a.EscolaId));
+        modelBuilder.Entity<AlunoTurma>().HasQueryFilter(FiltroEscola,
+            at => !EscopoPorEscola || EscolasPermitidas.Contains(at.Turma.EscolaId));
+        modelBuilder.Entity<Chamada>().HasQueryFilter(FiltroEscola,
+            c => !EscopoPorEscola || EscolasPermitidas.Contains(c.Turma.EscolaId));
+        modelBuilder.Entity<ChamadaAluno>().HasQueryFilter(FiltroEscola,
+            r => !EscopoPorEscola || EscolasPermitidas.Contains(r.Chamada.Turma.EscolaId));
+        modelBuilder.Entity<ProfessorAlocacao>().HasQueryFilter(FiltroEscola,
+            pa => !EscopoPorEscola || EscolasPermitidas.Contains(pa.Turma.EscolaId));
+        modelBuilder.Entity<ProfessorEscola>().HasQueryFilter(FiltroEscola,
+            pe => !EscopoPorEscola || EscolasPermitidas.Contains(pe.EscolaId));
+        // Professor que atua em várias escolas aparece para quem acessa qualquer uma delas.
+        modelBuilder.Entity<Professor>().HasQueryFilter(FiltroEscola,
+            p => !EscopoPorEscola || p.ProfessorEscolas.Any(pe => EscolasPermitidas.Contains(pe.EscolaId)));
     }
 
     /// <summary>

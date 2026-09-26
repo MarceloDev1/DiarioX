@@ -2,11 +2,14 @@ using System.Text;
 using DiarioX.Server.Application.Auth;
 using DiarioX.Server.Application.Faturamento;
 using DiarioX.Server.Application.Interfaces;
+using DiarioX.Server.Application.Relatorios;
+using DiarioX.Server.Application.Relatorios.Definicoes;
 using DiarioX.Server.Application.Services;
 using DiarioX.Server.Domain.Entities;
 using DiarioX.Server.Domain.Interfaces;
 using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Infrastructure.Data;
+using DiarioX.Server.Infrastructure.Relatorios;
 using DiarioX.Server.Infrastructure.Repositories;
 using DiarioX.Server.Infrastructure.Services;
 using DiarioX.Server.Infrastructure.Tenancy;
@@ -41,6 +44,7 @@ builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 builder.Services.AddSingleton<TenantHostResolver>();
 builder.Services.AddScoped<IAppUrlProvider, AppUrlProvider>();
+builder.Services.AddScoped<EscopoEscolaResolver>();
 
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -84,6 +88,17 @@ builder.Services.AddScoped<IAlunoService, AlunoService>();
 builder.Services.AddScoped<IRemanejamentoAlunoService, RemanejamentoAlunoService>();
 builder.Services.AddScoped<IPermissaoService, PermissaoService>();
 builder.Services.AddScoped<IChamadaService, ChamadaService>();
+
+// Relatórios: cada IRelatorio registrado aparece no catálogo; exportação em Excel (ClosedXML) e PDF (QuestPDF).
+// QuestPDF: licença Community, gratuita para empresas com receita bruta anual abaixo de US$ 1 milhão.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+builder.Services.AddScoped<IRelatorioConsultas, RelatorioConsultas>();
+builder.Services.AddScoped<IRelatorio, OcupacaoVagasRelatorio>();
+builder.Services.AddScoped<IRelatorio, RelacaoAlunosTurmaRelatorio>();
+builder.Services.AddScoped<IRelatorio, AlunosAguardandoEnturmacaoRelatorio>();
+builder.Services.AddSingleton<IExportadorRelatorio, ExcelExportador>();
+builder.Services.AddSingleton<IExportadorRelatorio, PdfExportador>();
+builder.Services.AddScoped<IRelatorioService, RelatorioService>();
 
 // Faturamento da plataforma (Asaas): a chave de API e o token do webhook ficam em user-secrets/variáveis de ambiente.
 builder.Services.Configure<AsaasOptions>(builder.Configuration.GetSection(AsaasOptions.Secao));

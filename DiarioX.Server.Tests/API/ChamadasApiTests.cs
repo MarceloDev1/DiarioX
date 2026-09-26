@@ -216,6 +216,8 @@ public class ChamadasApiTests : IClassFixture<TenancyApiFactory>
                 db.SaveChanges();
 
                 var professor = new Professor { TenantId = tenantId, Nome = "Prof. Carlos", UsuarioId = usuarioProfessor.Id, Cpf = "86288366757" };
+                // O professor só acessa as escolas em que leciona.
+                professor.ProfessorEscolas.Add(new ProfessorEscola { TenantId = tenantId, EscolaId = escola.Id });
                 db.Add(professor);
                 db.AddRange(
                     new DisciplinaEtapaEnsino { TenantId = tenantId, DisciplinaId = matematica.Id, EtapaEnsinoId = etapa.Id },

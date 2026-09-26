@@ -28,17 +28,18 @@ public class AlunoRepository : BaseRepository<Aluno>, IAlunoRepository
             .ToListAsync();
     }
 
+    // Unicidade e matrícula valem para a instituição inteira, não só para as escolas do usuário.
+    private IQueryable<Aluno> DaInstituicao => _dbSet.IgnoreQueryFilters([AppDbContext.FiltroEscola]).AsNoTracking();
+
     public async Task<bool> ExistsByCpfAsync(string cpf, int? excludeId = null)
     {
-        return await _dbSet
-            .AsNoTracking()
+        return await DaInstituicao
             .AnyAsync(a => a.CpfAluno != null && a.CpfAluno == cpf && (excludeId == null || a.Id != excludeId));
     }
 
     public async Task<bool> ExistsByNomeDataNascimentoResponsavelAsync(string nome, DateTime dataNascimento, string responsavelNome1, int? excludeId = null)
     {
-        return await _dbSet
-            .AsNoTracking()
+        return await DaInstituicao
             .AnyAsync(a =>
                 EF.Functions.ILike(a.Nome, nome) &&
                 a.DataNascimento == dataNascimento &&
@@ -48,14 +49,13 @@ public class AlunoRepository : BaseRepository<Aluno>, IAlunoRepository
 
     public async Task<bool> ExistsByMatriculaAsync(string matricula)
     {
-        return await _dbSet.AsNoTracking().AnyAsync(a => a.Matricula == matricula);
+        return await DaInstituicao.AnyAsync(a => a.Matricula == matricula);
     }
 
     public async Task<int> GetMaxSequencialMatriculaAsync(int ano)
     {
         var prefixo = ano.ToString();
-        var matriculas = await _dbSet
-            .AsNoTracking()
+        var matriculas = await DaInstituicao
             .Where(a => a.Matricula.StartsWith(prefixo))
             .Select(a => a.Matricula)
             .ToListAsync();
