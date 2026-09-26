@@ -62,6 +62,7 @@ builder.Services.AddScoped<IProfessorAlocacaoRepository, ProfessorAlocacaoReposi
 builder.Services.AddScoped<IAlunoRepository, AlunoRepository>();
 builder.Services.AddScoped<IAlunoTurmaRepository, AlunoTurmaRepository>();
 builder.Services.AddScoped<IPerfilPermissaoRepository, PerfilPermissaoRepository>();
+builder.Services.AddScoped<IChamadaRepository, ChamadaRepository>();
 
 // Dependency Injection - Services
 builder.Services.AddScoped<ITenantService, TenantService>();
@@ -80,6 +81,7 @@ builder.Services.AddScoped<IProfessorAlocacaoService, ProfessorAlocacaoService>(
 builder.Services.AddScoped<IAlunoService, AlunoService>();
 builder.Services.AddScoped<IRemanejamentoAlunoService, RemanejamentoAlunoService>();
 builder.Services.AddScoped<IPermissaoService, PermissaoService>();
+builder.Services.AddScoped<IChamadaService, ChamadaService>();
 
 // Permissões por perfil: políticas "permissao:..." geradas pelo [Permissao(...)]
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissaoPolicyProvider>();

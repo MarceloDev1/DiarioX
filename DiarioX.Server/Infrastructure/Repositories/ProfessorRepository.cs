@@ -23,6 +23,13 @@ public class ProfessorRepository : BaseRepository<Professor>, IProfessorReposito
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
+    public async Task<Professor?> GetByUsuarioIdAsync(int usuarioId)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId);
+    }
+
     public async Task<Professor?> GetByCpfAsync(string cpf)
     {
         return await _dbSet

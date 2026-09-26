@@ -13,6 +13,7 @@ import ProfessorAlocacoesPage from './professor-alocacoes/ProfessorAlocacoesPage
 import RemanejarAlunoPage from './alunos/RemanejarAlunoPage';
 import InstituicoesPage from './tenants/InstituicoesPage';
 import PermissoesPage from './configuracoes/PermissoesPage';
+import ChamadaPage from './chamada/ChamadaPage';
 import { usePermissoes } from '../hooks/usePermissoes';
 import { permissaoDaPagina } from '../utils/permissoes';
 
@@ -62,6 +63,8 @@ function MainContent({ page, onNavigate, initialAlunoId }: MainContentProps) {
             return <EnturmarAlunoPage initialAlunoId={initialAlunoId} />;
         case 'remanejar-aluno':
             return <RemanejarAlunoPage />;
+        case 'chamada':
+            return <ChamadaPage />;
         case 'usuarios':
             return <UsuariosPage />;
         case 'instituicoes':

@@ -43,6 +43,8 @@ public class AppDbContext : DbContext
     public DbSet<ProfessorAlocacao> ProfessorAlocacoes => Set<ProfessorAlocacao>();
     public DbSet<Aluno> Alunos => Set<Aluno>();
     public DbSet<AlunoTurma> AlunosTurmas => Set<AlunoTurma>();
+    public DbSet<Chamada> Chamadas => Set<Chamada>();
+    public DbSet<ChamadaAluno> ChamadasAlunos => Set<ChamadaAluno>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -70,6 +72,8 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new ProfessorAlocacaoConfiguration());
         modelBuilder.ApplyConfiguration(new AlunoConfiguration());
         modelBuilder.ApplyConfiguration(new AlunoTurmaConfiguration());
+        modelBuilder.ApplyConfiguration(new ChamadaConfiguration());
+        modelBuilder.ApplyConfiguration(new ChamadaAlunoConfiguration());
 
         ConfigureTenantFilters(modelBuilder);
     }

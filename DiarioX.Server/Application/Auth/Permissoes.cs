@@ -40,6 +40,7 @@ public static class Permissoes
         new("alocacao-professor", "Alocação de Professor", [Visualizar, Criar, Excluir]),
         // Enturmar e remanejar alteram a situação do aluno: exigem "alunos.editar".
         new("alunos", "Alunos", Crud),
+        new("chamada", "Chamada", Crud),
         new("usuarios", "Usuários", Crud),
         new("configuracoes", "Configurações (permissões)", [Visualizar, Editar]),
     ];
@@ -116,6 +117,14 @@ public static class Permissoes
         public const string Excluir = "alunos.excluir";
     }
 
+    public static class Chamada
+    {
+        public const string Visualizar = "chamada.visualizar";
+        public const string Criar = "chamada.criar";
+        public const string Editar = "chamada.editar";
+        public const string Excluir = "chamada.excluir";
+    }
+
     public static class Usuarios
     {
         public const string Visualizar = "usuarios.visualizar";
@@ -151,6 +160,7 @@ public static class Permissoes
                     Turmas.Criar, Turmas.Editar,
                     Professores.Criar, Professores.Editar,
                     AlocacaoProfessor.Criar, AlocacaoProfessor.Excluir,
+                    Chamada.Criar, Chamada.Editar,
                 ])
                 .ToList();
         }
@@ -159,7 +169,8 @@ public static class Permissoes
             return [Alunos.Visualizar];
 
         if (Is(perfilNome, Perfil.Professor))
-            return ["turmas.visualizar", "disciplinas.visualizar", Alunos.Visualizar];
+            return ["turmas.visualizar", "disciplinas.visualizar", Alunos.Visualizar,
+                Chamada.Visualizar, Chamada.Criar, Chamada.Editar];
 
         return [];
     }

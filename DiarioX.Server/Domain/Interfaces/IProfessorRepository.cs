@@ -5,6 +5,7 @@ namespace DiarioX.Server.Domain.Interfaces;
 public interface IProfessorRepository
 {
     Task<Professor?> GetByIdAsync(int id);
+    Task<Professor?> GetByUsuarioIdAsync(int usuarioId);
     Task<Professor?> GetByCpfAsync(string cpf);
     Task<Professor?> GetByMatriculaAsync(string matricula);
     Task<IEnumerable<Professor>> GetAllAsync();

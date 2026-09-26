@@ -881,3 +881,163 @@
 .form-tab-dirty {
     color: #d97706;
 }
+
+/* Chamada */
+.chamada-filtros {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.chamada-painel,
+.chamada-lancamento {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.chamada-cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    align-items: flex-start;
+}
+
+.chamada-cabecalho .form-group {
+    min-width: 200px;
+}
+
+.form-group textarea {
+    padding: 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 1rem;
+    resize: vertical;
+    background: white;
+}
+
+.form-group textarea:disabled {
+    background: #f0f0f0;
+    color: #999;
+}
+
+.chamada-status {
+    margin: 0;
+    color: #44536b;
+    font-size: 0.9rem;
+}
+
+.chamada-barra {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.chamada-contagem {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.situacao-pill-presente {
+    background: #eaf7ef;
+    color: #17663b;
+}
+
+.situacao-pill-falta {
+    background: #fff1f3;
+    color: #b4233a;
+}
+
+.situacao-pill-falta_justificada {
+    background: #fff7e6;
+    color: #92580b;
+}
+
+.chamada-table td {
+    vertical-align: middle;
+}
+
+.chamada-linha-falta {
+    background: #fffafb;
+}
+
+.chamada-linha-falta_justificada {
+    background: #fffcf5;
+}
+
+.situacao-toggle {
+    display: inline-flex;
+    border: 1px solid #cfd8e3;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.situacao-btn {
+    min-width: 2.75rem;
+    padding: 0.45rem 0.6rem;
+    border: none;
+    border-right: 1px solid #cfd8e3;
+    background: white;
+    color: #5b6475;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.situacao-btn:last-child {
+    border-right: none;
+}
+
+.situacao-btn:hover:not(:disabled):not(.active) {
+    background: #f4f7fb;
+}
+
+.situacao-btn:disabled {
+    cursor: not-allowed;
+}
+
+.situacao-btn.active.situacao-presente {
+    background: #17663b;
+    color: white;
+}
+
+.situacao-btn.active.situacao-falta {
+    background: #b4233a;
+    color: white;
+}
+
+.situacao-btn.active.situacao-falta_justificada {
+    background: #b7791f;
+    color: white;
+}
+
+.chamada-justificativa {
+    width: 100%;
+    min-width: 180px;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.chamada-conteudo-cell {
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.frequencia-baixa {
+    background: #fff5f6;
+}
+
+@media (max-width: 820px) {
+    .chamada-filtros {
+        grid-template-columns: 1fr;
+    }
+}

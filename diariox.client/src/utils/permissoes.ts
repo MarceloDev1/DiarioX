@@ -12,6 +12,7 @@ export const permissaoDaPagina: Record<string, string> = {
     // Enturmar e remanejar alteram o aluno.
     'enturmar-aluno': 'alunos.editar',
     'remanejar-aluno': 'alunos.editar',
+    'chamada': 'chamada.visualizar',
     'usuarios': 'usuarios.visualizar',
     'permissoes': 'configuracoes.visualizar',
 };

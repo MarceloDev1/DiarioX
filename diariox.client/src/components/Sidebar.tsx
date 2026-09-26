@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './Sidebar.css';
 import type { IconType } from 'react-icons';
-import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare } from 'react-icons/fi';
 import { MdSchool, MdPeople, MdManageAccounts } from 'react-icons/md';
 import { usePermissoes } from '../hooks/usePermissoes';
 import { permissaoDaPagina } from '../utils/permissoes';
@@ -51,6 +51,7 @@ const menuItems: MenuItem[] = [
     { id: 'alunos', label: 'Alunos', icon: MdPeople },
     { id: 'enturmar-aluno', label: 'Enturmar Aluno', icon: FiUserCheck },
     { id: 'remanejar-aluno', label: 'Remanejar Aluno', icon: FiRotateCcw },
+    { id: 'chamada', label: 'Chamada', icon: FiCheckSquare },
     { id: 'usuarios', label: 'Usuários', icon: FiUser },
     { id: 'configuracoes', label: 'Configurações', icon: FiSettings, submenu: [
         { id: 'permissoes', label: 'Permissões', icon: FiShield },
