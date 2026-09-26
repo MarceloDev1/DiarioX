@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useConfirm } from '../../hooks/useConfirm';
 import { useCrudData } from '../../hooks/useCrudData';
 import { apiFetch, readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
@@ -104,6 +105,7 @@ const emptyFilters = {
 };
 
 function TurmasPage() {
+    const { confirm, confirmDialog } = useConfirm();
     const { items: turmas, isLoading, isSaving, error, load, save, remove } = useCrudData<Turma>('/api/turmas');
 
     const [view, setView] = useState<View>('list');
@@ -378,8 +380,19 @@ function TurmasPage() {
         }));
     };
 
-    const handleDelete = async (id: number) => {
-        if (!window.confirm('Tem certeza que deseja excluir esta turma?')) return;
+    const handleDelete = async (id: number, nome: string) => {
+        const confirmed = await confirm({
+            title: 'Excluir turma',
+            variant: 'danger',
+            confirmLabel: 'Excluir',
+            message: (
+                <>
+                    <p>Tem certeza que deseja excluir a turma <strong>{nome}</strong>?</p>
+                    <p>Esta ação não pode ser desfeita. Se a turma apenas deixou de ser usada, prefira <strong>Inativar</strong>.</p>
+                </>
+            ),
+        });
+        if (!confirmed) return;
 
         setSuccessMessage(null);
         await remove(id);
@@ -387,10 +400,30 @@ function TurmasPage() {
 
     const handleToggleStatus = async (turma: Turma) => {
         const inativar = turma.status === 'ATIVO';
-        const confirmMessage = inativar
-            ? 'Tem certeza que deseja inativar esta turma? Turmas inativas não recebem novos alunos nem alocações de professores.'
-            : 'Tem certeza que deseja ativar esta turma?';
-        if (!window.confirm(confirmMessage)) return;
+        const confirmed = await confirm(inativar
+            ? {
+                title: 'Inativar turma',
+                variant: 'warning',
+                confirmLabel: 'Inativar',
+                message: (
+                    <>
+                        <p>Deseja inativar a turma <strong>{turma.nomeCompleto}</strong>?</p>
+                        <p>Turmas inativas não recebem novos alunos nem alocações de professores. Você pode reativá-la a qualquer momento.</p>
+                    </>
+                ),
+            }
+            : {
+                title: 'Ativar turma',
+                variant: 'success',
+                confirmLabel: 'Ativar',
+                message: (
+                    <>
+                        <p>Deseja ativar a turma <strong>{turma.nomeCompleto}</strong>?</p>
+                        <p>Ela voltará a receber alunos e alocações de professores.</p>
+                    </>
+                ),
+            });
+        if (!confirmed) return;
 
         setSuccessMessage(null);
         setLocalError(null);
@@ -748,7 +781,7 @@ function TurmasPage() {
                                                 >
                                                     {turma.status === 'ATIVO' ? 'Inativar' : 'Ativar'}
                                                 </button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(turma.id)}>Excluir</button>
+                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(turma.id, turma.nomeCompleto)}>Excluir</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -758,6 +791,7 @@ function TurmasPage() {
                     </div>
                 )}
             </div>
+            {confirmDialog}
         </div>
     );
 }

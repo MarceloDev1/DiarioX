@@ -260,6 +260,21 @@ public class AlunoServiceTests
     }
 
     [Fact]
+    public async Task DeleteAsync_WhenPossuiEnturmacao_ReturnsConflictAndDoesNotDelete()
+    {
+        var fixture = BuildService();
+        var aluno = BuildAluno(5, "20260005");
+        fixture.AlunoRepository.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(aluno);
+        fixture.AlunoTurmaRepository.Setup(r => r.ExistsByAlunoIdAsync(5)).ReturnsAsync(true);
+
+        var result = await fixture.Service.DeleteAsync(5);
+
+        Assert.False(result.Success);
+        Assert.Equal(AlunoResultError.Conflict, result.Error);
+        fixture.AlunoRepository.Verify(r => r.DeleteAsync(It.IsAny<Aluno>()), Times.Never);
+    }
+
+    [Fact]
     public async Task UpdateStatusAsync_WhenInativando_SetsStatusInativo()
     {
         var fixture = BuildService();

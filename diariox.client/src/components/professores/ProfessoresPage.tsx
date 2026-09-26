@@ -1,9 +1,11 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useConfirm } from '../../hooks/useConfirm';
 import { useCrudData } from '../../hooks/useCrudData';
 import { apiFetch, readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import StatusPill from '../ui/StatusPill';
+import ConfirmDialog from '../ui/ConfirmDialog';
 
 type View = 'list' | 'form';
 
@@ -106,6 +108,7 @@ const emptyFieldErrors: ProfessorFieldErrors = {
 };
 
 function ProfessoresPage() {
+    const { confirm, confirmDialog } = useConfirm();
     const { items: professores, isLoading, isSaving, error, load, save, remove } = useCrudData<Professor>('/api/professores');
 
     const [view, setView] = useState<View>('list');
@@ -115,6 +118,8 @@ function ProfessoresPage() {
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [situacaoUpdatingId, setSituacaoUpdatingId] = useState<number | null>(null);
+    const [professorToDelete, setProfessorToDelete] = useState<Professor | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
     const [disciplinas, setDisciplinas] = useState<DisciplinaOption[]>([]);
@@ -256,22 +261,51 @@ function ProfessoresPage() {
         setFieldErrors(emptyFieldErrors);
     };
 
-    const handleDeleteClick = async (id: number) => {
-        if (window.confirm('Tem certeza que deseja remover este professor?')) {
-            const success = await remove(id);
-            if (success) {
-                setSuccessMessage('Professor removido com sucesso!');
-                setTimeout(() => setSuccessMessage(null), 3000);
-            }
+    const handleConfirmDelete = async () => {
+        if (!professorToDelete) return;
+
+        setIsDeleting(true);
+        const success = await remove(professorToDelete.id);
+        setIsDeleting(false);
+        setProfessorToDelete(null);
+
+        if (success) {
+            setSuccessMessage('Professor removido com sucesso!');
+            setTimeout(() => setSuccessMessage(null), 3000);
         }
     };
 
+    const handleCancelDelete = useCallback(() => setProfessorToDelete(null), []);
+
     const handleToggleSituacao = async (professor: Professor) => {
         const inativar = professor.situacao !== 'INATIVO';
-        const confirmMessage = inativar
-            ? 'Tem certeza que deseja inativar este professor?'
-            : 'Tem certeza que deseja ativar este professor?';
-        if (!window.confirm(confirmMessage)) return;
+        const confirmed = await confirm(inativar
+            ? {
+                title: 'Inativar professor',
+                variant: 'warning',
+                confirmLabel: 'Inativar',
+                message: (
+                    <>
+                        <p>
+                            Deseja inativar <strong>{professor.nome}</strong>
+                            {professor.matricula && <> (matrícula {professor.matricula})</>}?
+                        </p>
+                        <p>O cadastro, as habilitações e as escolas vinculadas são mantidos, e você pode reativá-lo a qualquer momento.</p>
+                    </>
+                ),
+            }
+            : {
+                title: 'Ativar professor',
+                variant: 'success',
+                confirmLabel: 'Ativar',
+                message: (
+                    <p>
+                        Deseja ativar <strong>{professor.nome}</strong>
+                        {professor.matricula && <> (matrícula {professor.matricula})</>}?
+                    </p>
+                ),
+            });
+        if (!confirmed) return;
 
         setSuccessMessage(null);
         setLocalError(null);
@@ -372,7 +406,7 @@ function ProfessoresPage() {
                                                     >
                                                         {professor.situacao === 'INATIVO' ? 'Ativar' : 'Inativar'}
                                                     </button>
-                                                    <button type="button" className="table-action-button danger" onClick={() => handleDeleteClick(professor.id)}>Excluir</button>
+                                                    <button type="button" className="table-action-button danger" onClick={() => setProfessorToDelete(professor)}>Excluir</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -620,6 +654,23 @@ function ProfessoresPage() {
                     </form>
                 </div>
             )}
+
+            <ConfirmDialog
+                open={professorToDelete !== null}
+                title="Excluir professor"
+                variant="danger"
+                confirmLabel="Excluir"
+                isLoading={isDeleting}
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+            >
+                <p>
+                    Tem certeza que deseja excluir <strong>{professorToDelete?.nome}</strong>
+                    {professorToDelete?.matricula && <> (matrícula {professorToDelete.matricula})</>}?
+                </p>
+                <p>As habilitações e escolas vinculadas também serão removidas. Esta ação não pode ser desfeita.</p>
+            </ConfirmDialog>
+            {confirmDialog}
         </div>
     );
 }

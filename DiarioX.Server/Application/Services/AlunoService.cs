@@ -143,6 +143,10 @@ public class AlunoService : IAlunoService
         if (aluno is null)
             return NotFound("Aluno não encontrado.");
 
+        // O histórico de enturmação (atual ou passado) precisa ser preservado
+        if (await _alunoTurmaRepository.ExistsByAlunoIdAsync(id))
+            return Conflict("Este aluno possui histórico de enturmação e não pode ser excluído. Utilize a opção Inativar.");
+
         await _alunoRepository.DeleteAsync(aluno);
         return new AlunoCommandResult(true, "Aluno removido com sucesso!");
     }

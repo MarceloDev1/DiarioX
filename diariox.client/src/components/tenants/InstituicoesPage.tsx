@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useConfirm } from '../../hooks/useConfirm';
 import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
 import FeedbackMessage from '../ui/FeedbackMessage';
@@ -39,6 +40,7 @@ function toSlug(value: string) {
 
 /** Gestão das instituições (tenants), disponível apenas para o Administrador global. */
 function InstituicoesPage() {
+    const { confirm, confirmDialog } = useConfirm();
     const { items: instituicoes, isLoading, isSaving, error, load, save } =
         useCrudData<Instituicao>('/api/tenants');
     const { form, setForm, editingId, handleFieldChange, startEdit, clear } =
@@ -126,10 +128,30 @@ function InstituicoesPage() {
 
     const handleToggleStatus = async (instituicao: Instituicao) => {
         const inativar = instituicao.status === 'ATIVO';
-        const confirmMessage = inativar
-            ? `Inativar "${instituicao.nome}"? Os usuários dela não conseguirão mais entrar no sistema.`
-            : `Ativar "${instituicao.nome}"?`;
-        if (!window.confirm(confirmMessage)) return;
+        const confirmed = await confirm(inativar
+            ? {
+                title: 'Inativar instituição',
+                variant: 'warning',
+                confirmLabel: 'Inativar',
+                message: (
+                    <>
+                        <p>Deseja inativar <strong>{instituicao.nome}</strong>?</p>
+                        <p>Os usuários desta instituição não conseguirão mais entrar no sistema até que ela seja reativada. Os dados são mantidos.</p>
+                    </>
+                ),
+            }
+            : {
+                title: 'Ativar instituição',
+                variant: 'success',
+                confirmLabel: 'Ativar',
+                message: (
+                    <>
+                        <p>Deseja ativar <strong>{instituicao.nome}</strong>?</p>
+                        <p>Os usuários desta instituição voltarão a conseguir entrar no sistema.</p>
+                    </>
+                ),
+            });
+        if (!confirmed) return;
 
         setSuccessMessage(null);
         setStatusUpdatingId(instituicao.id);
@@ -296,6 +318,7 @@ function InstituicoesPage() {
                     </div>
                 )}
             </div>
+            {confirmDialog}
         </div>
     );
 }

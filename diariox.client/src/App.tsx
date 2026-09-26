@@ -6,10 +6,11 @@ import Sidebar from './components/Sidebar';
 import MainContent from './components/MainContent';
 import TenantPicker from './components/tenants/TenantPicker';
 import InstituicoesPage from './components/tenants/InstituicoesPage';
-import { clearSession, UNAUTHORIZED_EVENT, type Session } from './utils/api';
+import { clearSession, restoreSession, saveSession, UNAUTHORIZED_EVENT, type Session } from './utils/api';
 
 function App() {
-    const [session, setSession] = useState<Session | null>(null);
+    // Recarregar a página mantém o usuário logado enquanto o token salvo for válido.
+    const [session, setSession] = useState<Session | null>(restoreSession);
     // Administrador global sem instituição selecionada pode abrir a gestão de instituições.
     const [managingTenants, setManagingTenants] = useState(false);
     const [currentPage, setCurrentPage] = useState('home');
@@ -21,6 +22,11 @@ function App() {
             : null
     );
     const isFirstAccessRoute = window.location.pathname === '/primeiro-acesso';
+
+    // Mantém salvas as mudanças feitas na sessão (ex.: "Trocar instituição").
+    useEffect(() => {
+        if (session) saveSession(session);
+    }, [session]);
 
     // Token expirado ou inválido em qualquer chamada da API: volta para o login.
     useEffect(() => {

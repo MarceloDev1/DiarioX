@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useConfirm } from '../../hooks/useConfirm';
 import { apiFetch } from '../../utils/api';
 import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
@@ -40,6 +41,7 @@ const emptyForm: EtapaEnsinoFormState = {
 };
 
 function EtapasEnsinoPage() {
+    const { confirm, confirmDialog } = useConfirm();
     const { items: etapas, isLoading, isSaving, error, load, save, remove } =
         useCrudData<EtapaEnsino>('/api/etapasensino');
     const { form, setForm, editingId, handleFieldChange, startEdit, clear } =
@@ -147,7 +149,20 @@ function EtapasEnsinoPage() {
         setView('list');
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: number, nome: string) => {
+        const confirmed = await confirm({
+            title: 'Excluir etapa de ensino',
+            variant: 'danger',
+            confirmLabel: 'Excluir',
+            message: (
+                <>
+                    <p>Tem certeza que deseja excluir a etapa <strong>{nome}</strong>?</p>
+                    <p>Esta ação não pode ser desfeita.</p>
+                </>
+            ),
+        });
+        if (!confirmed) return;
+
         await remove(id);
     };
 
@@ -334,7 +349,7 @@ function EtapasEnsinoPage() {
                                         <td>
                                             <div className="action-group">
                                                 <button type="button" className="table-action-button" onClick={() => handleEdit(e)}>Editar</button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(e.id)}>Excluir</button>
+                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(e.id, e.nome)}>Excluir</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -344,6 +359,7 @@ function EtapasEnsinoPage() {
                     </div>
                 )}
             </div>
+            {confirmDialog}
         </div>
     );
 }

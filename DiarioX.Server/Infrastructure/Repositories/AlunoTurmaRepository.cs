@@ -16,11 +16,19 @@ public class AlunoTurmaRepository : IAlunoTurmaRepository
 
     public Task<AlunoTurma?> GetAtivaByAlunoIdAsync(int alunoId)
     {
+        // Somente leitura: rastrear o Aluno incluído conflitaria com atualizações do mesmo aluno
+        // na requisição (ex.: reativação); RemanejarAsync recarrega o vínculo antes de alterá-lo.
         return _context.Set<AlunoTurma>()
+            .AsNoTracking()
             .Include(x => x.Aluno).ThenInclude(x => x.Escola)
             .Include(x => x.Turma).ThenInclude(x => x.AnoLetivo)
             .Include(x => x.Turma).ThenInclude(x => x.Escola)
             .FirstOrDefaultAsync(x => x.AlunoId == alunoId && x.DataFim == null);
+    }
+
+    public Task<bool> ExistsByAlunoIdAsync(int alunoId)
+    {
+        return _context.Set<AlunoTurma>().AnyAsync(x => x.AlunoId == alunoId);
     }
 
     public async Task<bool> HasVacancyAsync(int turmaId, DateOnly dataMovimentacao)

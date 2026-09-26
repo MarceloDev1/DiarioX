@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useConfirm } from '../../hooks/useConfirm';
 import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
 import { formatCnpj, formatCpf, formatTelefone } from '../../utils/formatters';
@@ -39,6 +40,7 @@ const emptyEscolaForm: EscolaFormState = {
 };
 
 function EscolasPage() {
+    const { confirm, confirmDialog } = useConfirm();
     const { items: escolas, isLoading, isSaving, error, load, save, remove } = useCrudData<Escola>('/api/escolas');
     const { form, setForm, editingId, handleFieldChange, startEdit, clear } = useCrudForm<EscolaFormState & Record<string, unknown>>(
         emptyEscolaForm as EscolaFormState & Record<string, unknown>
@@ -151,7 +153,20 @@ function EscolasPage() {
         setView('list');
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: number, nome: string) => {
+        const confirmed = await confirm({
+            title: 'Excluir escola',
+            variant: 'danger',
+            confirmLabel: 'Excluir',
+            message: (
+                <>
+                    <p>Tem certeza que deseja excluir a escola <strong>{nome}</strong>?</p>
+                    <p>Esta ação não pode ser desfeita.</p>
+                </>
+            ),
+        });
+        if (!confirmed) return;
+
         await remove(id);
     };
 
@@ -314,7 +329,7 @@ function EscolasPage() {
                                         <td>
                                             <div className="action-group">
                                                 <button type="button" className="table-action-button" onClick={() => handleEdit(escola)}>Editar</button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(escola.id)}>Excluir</button>
+                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(escola.id, escola.nome)}>Excluir</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -324,6 +339,7 @@ function EscolasPage() {
                     </div>
                 )}
             </div>
+            {confirmDialog}
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
 import { apiFetch, readApiError } from '../../utils/api';
 import { formatCpf, formatTelefone, formatCep } from '../../utils/formatters';
@@ -6,6 +6,7 @@ import { validateCpf } from '../../utils/validators';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import StatusPill from '../ui/StatusPill';
+import ConfirmDialog from '../ui/ConfirmDialog';
 
 type View = 'list' | 'form';
 
@@ -154,6 +155,9 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
     const [editingId, setEditingId] = useState<number | null>(null);
 
     const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null);
+    const [alunoToDelete, setAlunoToDelete] = useState<Aluno | null>(null);
+    const [alunoToToggle, setAlunoToToggle] = useState<Aluno | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
 
@@ -305,22 +309,27 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         setFieldErrors(emptyFieldErrors);
     };
 
-    const handleDeleteClick = async (id: number) => {
-        if (window.confirm('Tem certeza que deseja remover este aluno?')) {
-            const success = await remove(id);
-            if (success) {
-                setSuccessMessage('Aluno removido com sucesso!');
-                setTimeout(() => setSuccessMessage(null), 3000);
-            }
+    const handleConfirmDelete = async () => {
+        if (!alunoToDelete) return;
+
+        setIsDeleting(true);
+        const success = await remove(alunoToDelete.id);
+        setIsDeleting(false);
+        setAlunoToDelete(null);
+
+        if (success) {
+            setSuccessMessage('Aluno removido com sucesso!');
+            setTimeout(() => setSuccessMessage(null), 3000);
         }
     };
 
-    const handleToggleStatus = async (aluno: Aluno) => {
+    const handleCancelDelete = useCallback(() => setAlunoToDelete(null), []);
+
+    const handleConfirmToggleStatus = async () => {
+        if (!alunoToToggle) return;
+
+        const aluno = alunoToToggle;
         const inativar = aluno.status !== 'INATIVO';
-        const confirmMessage = inativar
-            ? 'Tem certeza que deseja inativar este aluno? Alunos inativos não podem ser enturmados nem remanejados.'
-            : 'Tem certeza que deseja ativar este aluno?';
-        if (!window.confirm(confirmMessage)) return;
 
         setSuccessMessage(null);
         setLocalError(null);
@@ -340,8 +349,12 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
             setLocalError(e instanceof Error ? e.message : 'Falha ao alterar o status do aluno.');
         } finally {
             setStatusUpdatingId(null);
+            setAlunoToToggle(null);
         }
     };
+
+    const handleCancelToggleStatus = useCallback(() => setAlunoToToggle(null), []);
+    const inativandoAluno = alunoToToggle?.status !== 'INATIVO';
 
     const handleNewAluno = () => {
         setEditingId(null);
@@ -418,12 +431,12 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                                     <button
                                                         type="button"
                                                         className="table-action-button"
-                                                        onClick={() => handleToggleStatus(aluno)}
+                                                        onClick={() => setAlunoToToggle(aluno)}
                                                         disabled={statusUpdatingId === aluno.id}
                                                     >
                                                         {aluno.status === 'INATIVO' ? 'Ativar' : 'Inativar'}
                                                     </button>
-                                                    <button type="button" className="table-action-button danger" onClick={() => handleDeleteClick(aluno.id)}>Excluir</button>
+                                                    <button type="button" className="table-action-button danger" onClick={() => setAlunoToDelete(aluno)}>Excluir</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -761,6 +774,48 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                     </form>
                 </div>
             )}
+
+            <ConfirmDialog
+                open={alunoToToggle !== null}
+                title={inativandoAluno ? 'Inativar aluno' : 'Ativar aluno'}
+                variant={inativandoAluno ? 'warning' : 'success'}
+                confirmLabel={inativandoAluno ? 'Inativar' : 'Ativar'}
+                isLoading={statusUpdatingId !== null}
+                onConfirm={handleConfirmToggleStatus}
+                onCancel={handleCancelToggleStatus}
+            >
+                <p>
+                    Deseja {inativandoAluno ? 'inativar' : 'ativar'} <strong>{alunoToToggle?.nome}</strong>
+                    {alunoToToggle?.matricula && <> (matrícula {alunoToToggle.matricula})</>}?
+                </p>
+                {inativandoAluno ? (
+                    <p>
+                        Enquanto estiver inativo, o aluno não poderá ser enturmado nem remanejado.
+                        O cadastro e o histórico são mantidos, e você pode reativá-lo a qualquer momento.
+                    </p>
+                ) : (
+                    <p>
+                        O aluno voltará a ficar disponível para enturmação e remanejamento. Se já estiver
+                        em uma turma, ficará <strong>Ativo</strong>; caso contrário, <strong>Aguardando Enturmação</strong>.
+                    </p>
+                )}
+            </ConfirmDialog>
+
+            <ConfirmDialog
+                open={alunoToDelete !== null}
+                title="Excluir aluno"
+                variant="danger"
+                confirmLabel="Excluir"
+                isLoading={isDeleting}
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+            >
+                <p>
+                    Tem certeza que deseja excluir <strong>{alunoToDelete?.nome}</strong>
+                    {alunoToDelete?.matricula && <> (matrícula {alunoToDelete.matricula})</>}?
+                </p>
+                <p>Esta ação não pode ser desfeita. Se o aluno apenas deixou a escola, prefira <strong>Inativar</strong> para manter o histórico.</p>
+            </ConfirmDialog>
         </div>
     );
 }

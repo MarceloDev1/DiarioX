@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useConfirm } from '../../hooks/useConfirm';
 import { apiFetch } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
@@ -33,6 +34,7 @@ interface GradeItem {
 const turnoLabels: Record<string, string> = { MANHA: 'Manhã', TARDE: 'Tarde', NOITE: 'Noite', INTEGRAL: 'Integral' };
 
 function ProfessorAlocacoesPage() {
+    const { confirm, confirmDialog } = useConfirm();
     const [professores, setProfessores] = useState<Professor[]>([]);
     const [disponiveis, setDisponiveis] = useState<Disponibilidade[]>([]);
     const [professorId, setProfessorId] = useState('');
@@ -107,8 +109,26 @@ function ProfessorAlocacoesPage() {
         if (!professorId || grade.length === 0) return;
         const substituicoes = grade.filter(item => item.substituirAlocacaoId !== null);
         if (substituicoes.length > 0) {
-            const nomes = substituicoes.map(item => `${item.disciplinaNome} em ${item.turmaNome}`).join(', ');
-            if (!window.confirm(`Esta disciplina já possui professor: ${nomes}. Deseja substituí-lo?`)) return;
+            const confirmed = await confirm({
+                title: substituicoes.length === 1 ? 'Substituir professor' : 'Substituir professores',
+                variant: 'warning',
+                confirmLabel: 'Substituir',
+                message: (
+                    <>
+                        <p>{substituicoes.length === 1 ? 'Esta vaga já possui professor alocado:' : 'Estas vagas já possuem professor alocado:'}</p>
+                        <ul className="confirm-dialog-list">
+                            {substituicoes.map(item => (
+                                <li key={`${item.turmaId}-${item.disciplinaId}`}>
+                                    <strong>{item.disciplinaNome}</strong> em {item.turmaNome}
+                                    {item.professorAtualNome && <> — atualmente com {item.professorAtualNome}</>}
+                                </li>
+                            ))}
+                        </ul>
+                        <p>Ao confirmar, a alocação atual será encerrada e substituída.</p>
+                    </>
+                ),
+            });
+            if (!confirmed) return;
         }
 
         setSaving(true);
@@ -204,6 +224,7 @@ function ProfessorAlocacoesPage() {
                     </div>
                 )}
             </section>
+            {confirmDialog}
         </div>
     );
 }

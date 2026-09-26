@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ChangeEvent } from 'react';
+import { useConfirm } from '../../hooks/useConfirm';
 import { apiFetch } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
@@ -73,6 +74,7 @@ async function readApiError(res: Response): Promise<string> {
 }
 
 function AnosLetivosPage() {
+    const { confirm, confirmDialog } = useConfirm();
     const [anos, setAnos] = useState<AnoLetivo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -221,7 +223,20 @@ function AnosLetivosPage() {
         }
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: number, anoReferencia: number) => {
+        const confirmed = await confirm({
+            title: 'Excluir ano letivo',
+            variant: 'danger',
+            confirmLabel: 'Excluir',
+            message: (
+                <>
+                    <p>Tem certeza que deseja excluir o ano letivo <strong>{anoReferencia}</strong>?</p>
+                    <p>Os períodos avaliativos deste ano também serão excluídos. Esta ação não pode ser desfeita.</p>
+                </>
+            ),
+        });
+        if (!confirmed) return;
+
         setError(null);
         try {
             const res = await apiFetch(`/api/anosletivos/${id}`, { method: 'DELETE' });
@@ -442,7 +457,7 @@ function AnosLetivosPage() {
                                         <td>
                                             <div className="action-group">
                                                 <button type="button" className="table-action-button" onClick={() => handleEdit(a)}>Editar</button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(a.id)}>Excluir</button>
+                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(a.id, a.anoReferencia)}>Excluir</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -452,6 +467,7 @@ function AnosLetivosPage() {
                     </div>
                 )}
             </div>
+            {confirmDialog}
         </div>
     );
 }

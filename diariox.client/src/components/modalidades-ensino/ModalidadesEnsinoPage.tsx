@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useConfirm } from '../../hooks/useConfirm';
 import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
 import { apiFetch, readApiError } from '../../utils/api';
@@ -30,6 +31,7 @@ const emptyForm: ModalidadeEnsinoFormState = {
 };
 
 function ModalidadesEnsinoPage() {
+    const { confirm, confirmDialog } = useConfirm();
     const { items: modalidades, isLoading, isSaving, error, load, save, remove } =
         useCrudData<ModalidadeEnsino>('/api/modalidadesensino');
     const { form, setForm, editingId, handleFieldChange, startEdit, clear } =
@@ -124,16 +126,44 @@ function ModalidadesEnsinoPage() {
         setView('list');
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: number, nome: string) => {
+        const confirmed = await confirm({
+            title: 'Excluir modalidade de ensino',
+            variant: 'danger',
+            confirmLabel: 'Excluir',
+            message: (
+                <>
+                    <p>Tem certeza que deseja excluir a modalidade <strong>{nome}</strong>?</p>
+                    <p>Esta ação não pode ser desfeita. Se a modalidade apenas deixou de ser oferecida, prefira <strong>Inativar</strong>.</p>
+                </>
+            ),
+        });
+        if (!confirmed) return;
+
         await remove(id);
     };
 
     const handleToggleStatus = async (modalidade: ModalidadeEnsino) => {
         const inativar = modalidade.status === 'ATIVO';
-        const confirmMessage = inativar
-            ? 'Tem certeza que deseja inativar esta modalidade de ensino?'
-            : 'Tem certeza que deseja ativar esta modalidade de ensino?';
-        if (!window.confirm(confirmMessage)) return;
+        const confirmed = await confirm(inativar
+            ? {
+                title: 'Inativar modalidade de ensino',
+                variant: 'warning',
+                confirmLabel: 'Inativar',
+                message: (
+                    <>
+                        <p>Deseja inativar a modalidade <strong>{modalidade.nome}</strong>?</p>
+                        <p>O cadastro é mantido e você pode reativá-la a qualquer momento.</p>
+                    </>
+                ),
+            }
+            : {
+                title: 'Ativar modalidade de ensino',
+                variant: 'success',
+                confirmLabel: 'Ativar',
+                message: <p>Deseja ativar a modalidade <strong>{modalidade.nome}</strong>?</p>,
+            });
+        if (!confirmed) return;
 
         setSuccessMessage(null);
         setListError(null);
@@ -330,7 +360,7 @@ function ModalidadesEnsinoPage() {
                                                 >
                                                     {m.status === 'ATIVO' ? 'Inativar' : 'Ativar'}
                                                 </button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(m.id)}>Excluir</button>
+                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(m.id, m.nome)}>Excluir</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -340,6 +370,7 @@ function ModalidadesEnsinoPage() {
                     </div>
                 )}
             </div>
+            {confirmDialog}
         </div>
     );
 }

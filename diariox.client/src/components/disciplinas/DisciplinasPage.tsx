@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ChangeEvent } from 'react';
+import { useConfirm } from '../../hooks/useConfirm';
 import { apiFetch } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
@@ -48,6 +49,7 @@ async function readApiError(res: Response): Promise<string> {
 }
 
 function DisciplinasPage() {
+    const { confirm, confirmDialog } = useConfirm();
     const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
     const [etapasEnsino, setEtapasEnsino] = useState<EtapaEnsino[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -206,8 +208,19 @@ function DisciplinasPage() {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!window.confirm('Tem certeza que deseja excluir esta disciplina?')) return;
+    const handleDelete = async (id: number, nome: string) => {
+        const confirmed = await confirm({
+            title: 'Excluir disciplina',
+            variant: 'danger',
+            confirmLabel: 'Excluir',
+            message: (
+                <>
+                    <p>Tem certeza que deseja excluir a disciplina <strong>{nome}</strong>?</p>
+                    <p>Esta ação não pode ser desfeita.</p>
+                </>
+            ),
+        });
+        if (!confirmed) return;
 
         setError(null);
         try {
@@ -380,7 +393,7 @@ function DisciplinasPage() {
                                         <td>
                                             <div className="action-group">
                                                 <button type="button" className="table-action-button" onClick={() => handleEdit(d)}>Editar</button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(d.id)}>Excluir</button>
+                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(d.id, d.nome)}>Excluir</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -390,6 +403,7 @@ function DisciplinasPage() {
                     </div>
                 )}
             </div>
+            {confirmDialog}
         </div>
     );
 }

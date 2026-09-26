@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useConfirm } from '../../hooks/useConfirm';
 import { useCrudData } from '../../hooks/useCrudData';
 import { useCrudForm } from '../../hooks/useCrudForm';
 import { formatCpf } from '../../utils/formatters';
@@ -46,6 +47,7 @@ const emptyUsuarioForm: UsuarioFormState = {
 };
 
 function UsuariosPage() {
+    const { confirm, confirmDialog } = useConfirm();
     const { items: usuarios, isLoading, isSaving, error, load, save, remove } = useCrudData<Usuario>('/api/users');
     const { form, setForm, editingId, startEdit, clear } = useCrudForm<UsuarioFormState & Record<string, unknown>>(
         emptyUsuarioForm as UsuarioFormState & Record<string, unknown>
@@ -153,7 +155,20 @@ function UsuariosPage() {
         }
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: number, email: string) => {
+        const confirmed = await confirm({
+            title: 'Excluir usuário',
+            variant: 'danger',
+            confirmLabel: 'Excluir',
+            message: (
+                <>
+                    <p>Tem certeza que deseja excluir o usuário <strong>{email}</strong>?</p>
+                    <p>Ele perderá o acesso ao sistema. Esta ação não pode ser desfeita.</p>
+                </>
+            ),
+        });
+        if (!confirmed) return;
+
         const deleted = await remove(id);
         if (deleted && editingId === id) clear();
     };
@@ -353,7 +368,7 @@ function UsuariosPage() {
                                         <td>
                                             <div className="action-group">
                                                 <button type="button" className="table-action-button" onClick={() => handleEdit(usuario)}>Editar</button>
-                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(usuario.id)}>Excluir</button>
+                                                <button type="button" className="table-action-button danger" onClick={() => handleDelete(usuario.id, usuario.email)}>Excluir</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -363,6 +378,7 @@ function UsuariosPage() {
                     </div>
                 )}
             </div>
+            {confirmDialog}
         </div>
     );
 }
