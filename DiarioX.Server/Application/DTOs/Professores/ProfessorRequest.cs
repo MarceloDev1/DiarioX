@@ -10,8 +10,8 @@ public class ProfessorRequest
     public string Telefone { get; set; } = string.Empty;
 
     // Dados Contratuais
-    public string Matricula { get; set; } = string.Empty;
-    public DateTime DataAdmissao { get; set; }
+    public string? Matricula { get; set; }
+    public DateTime? DataAdmissao { get; set; }
     public string Situacao { get; set; } = "ATIVO";
 
     // Relacionamentos

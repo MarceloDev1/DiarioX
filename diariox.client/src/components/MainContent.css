@@ -625,6 +625,11 @@
     font-weight: 500;
 }
 
+.field-hint {
+    color: #4a5568;
+    font-size: 0.8rem;
+}
+
 .required {
     color: #b4233a;
     font-weight: 700;
@@ -768,4 +773,59 @@
         gap: 1rem;
         align-items: flex-start;
     }
+}
+
+/* Abas de formulário */
+.form-tabs {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 2px solid #e5ecf5;
+    overflow-x: auto;
+}
+
+.form-tab {
+    padding: 0.7rem 1.1rem;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    background: none;
+    color: #5b6475;
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.form-tab:hover {
+    color: #0f3460;
+    background: #f4f7fb;
+}
+
+.form-tab.active {
+    color: #0f3460;
+    border-bottom-color: #0f3460;
+}
+
+.form-tab.has-error {
+    color: #b4233a;
+}
+
+.form-tab.has-error.active {
+    border-bottom-color: #b4233a;
+}
+
+.form-tabs ~ .form-section {
+    grid-column: 1 / -1;
+}
+
+.form-section[hidden] {
+    display: none;
+}
+
+.form-tab-hint {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: #5b6475;
+    font-size: 0.85rem;
 }

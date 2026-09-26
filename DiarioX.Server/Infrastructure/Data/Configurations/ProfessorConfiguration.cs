@@ -66,12 +66,12 @@ public class ProfessorConfiguration : IEntityTypeConfiguration<Professor>
         builder.Property(x => x.Matricula)
             .HasColumnName("matricula")
             .HasMaxLength(50)
-            .IsRequired();
+            .IsRequired(false);
 
         builder.Property(x => x.DataAdmissao)
             .HasColumnName("data_admissao")
             .HasColumnType("date")
-            .IsRequired();
+            .IsRequired(false);
 
         builder.Property(x => x.Situacao)
             .HasColumnName("situacao")

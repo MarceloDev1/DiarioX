@@ -36,7 +36,7 @@ public class ProfessorRepository : BaseRepository<Professor>, IProfessorReposito
         return await _dbSet
             .AsNoTracking()
             .FirstOrDefaultAsync(p =>
-                EF.Functions.ILike(p.Matricula, matricula));
+                p.Matricula != null && EF.Functions.ILike(p.Matricula, matricula));
     }
 
     public override async Task<IEnumerable<Professor>> GetAllAsync()
@@ -123,7 +123,7 @@ public class ProfessorRepository : BaseRepository<Professor>, IProfessorReposito
     {
         return await _dbSet
             .AsNoTracking()
-            .AnyAsync(p => EF.Functions.ILike(p.Matricula, matricula));
+            .AnyAsync(p => p.Matricula != null && EF.Functions.ILike(p.Matricula, matricula));
     }
 
     public async Task<bool> ExistsByEmailAsync(string email)

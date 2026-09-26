@@ -57,6 +57,50 @@ public class ProfessorServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_SemDadosContratuaisNemDisciplinas_CadastraProfessor()
+    {
+        // Arrange
+        var profRepository = new Mock<IProfessorRepository>();
+        Professor? added = null;
+
+        profRepository.Setup(r => r.AddAsync(It.IsAny<Professor>()))
+            .Callback<Professor>(p => { p.Id = 10; added = p; })
+            .ReturnsAsync((Professor p) => p);
+        profRepository.Setup(r => r.GetByIdAsync(10))
+            .ReturnsAsync(() => added);
+
+        var service = new ProfessorService(profRepository.Object, new Mock<IDisciplinaRepository>().Object,
+            new Mock<IEscolaRepository>().Object, new Mock<IUserService>().Object,
+            new Mock<IEmailNotificationService>().Object, new Mock<ILogger<ProfessorService>>().Object,
+            new Mock<IPerfilRepository>().Object);
+
+        var request = new ProfessorRequest
+        {
+            Nome = "Maria Souza",
+            Cpf = "111.444.777-35",
+            DataNascimento = new DateTime(1990, 3, 10),
+            Email = "maria@escola.com",
+            Telefone = "11987654321",
+            Matricula = "  ",
+            DataAdmissao = null,
+            Situacao = "",
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        Assert.True(result.Success, result.Message);
+        Assert.NotNull(added);
+        Assert.Null(added!.Matricula);
+        Assert.Null(added.DataAdmissao);
+        Assert.Equal(Professor.StatusAtivo, added.Situacao);
+        profRepository.Verify(r => r.ExistsByMatriculaAsync(It.IsAny<string>()), Times.Never);
+        profRepository.Verify(r => r.AddEscolaAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        profRepository.Verify(r => r.AddDisciplinaAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
     public async Task DeleteAsync_WhenExists_DeletesProfessor()
     {
         // Arrange

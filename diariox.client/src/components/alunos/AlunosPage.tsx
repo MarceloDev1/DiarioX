@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
 import { apiFetch, readApiError } from '../../utils/api';
 import { formatCpf, formatTelefone, formatCep } from '../../utils/formatters';
 import { validateCpf } from '../../utils/validators';
+import { buscarEnderecoPorCep, formatEnderecoCep } from '../../utils/cep';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import StatusPill from '../ui/StatusPill';
@@ -157,6 +158,9 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
     const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null);
     const [alunoToDelete, setAlunoToDelete] = useState<Aluno | null>(null);
     const [alunoToToggle, setAlunoToToggle] = useState<Aluno | null>(null);
+    const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'notfound' | 'error'>('idle');
+    const cepRequestRef = useRef<AbortController | null>(null);
+    const numeroInputRef = useRef<HTMLInputElement>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
@@ -181,6 +185,60 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         void loadEscolas();
         return () => { cancelled = true; };
     }, []);
+
+    // Cancela uma consulta de CEP pendente ao sair da tela
+    useEffect(() => () => cepRequestRef.current?.abort(), []);
+
+    const handleCepChange = async (event: ChangeEvent<HTMLInputElement>) => {
+        const cep = event.currentTarget.value.replace(/\D/g, '').slice(0, 8);
+        setForm(current => ({ ...current, cep }));
+        setFieldErrors(current => ({ ...current, cep: false }));
+
+        // Só consulta quando o CEP está completo; uma nova digitação descarta a consulta anterior
+        cepRequestRef.current?.abort();
+        cepRequestRef.current = null;
+        if (cep.length !== 8) {
+            setCepStatus('idle');
+            return;
+        }
+
+        const controller = new AbortController();
+        cepRequestRef.current = controller;
+        setCepStatus('loading');
+
+        try {
+            const endereco = await buscarEnderecoPorCep(cep, controller.signal);
+            if (controller.signal.aborted) return;
+
+            if (!endereco) {
+                setCepStatus('notfound');
+                return;
+            }
+
+            setForm(current => ({
+                ...current,
+                enderecoCompleto: formatEnderecoCep(endereco) || current.enderecoCompleto,
+                bairro: endereco.bairro || current.bairro,
+            }));
+            setFieldErrors(current => ({
+                ...current,
+                enderecoCompleto: current.enderecoCompleto && !formatEnderecoCep(endereco),
+                bairro: current.bairro && !endereco.bairro,
+            }));
+            setCepStatus('idle');
+            numeroInputRef.current?.focus();
+        } catch {
+            if (!controller.signal.aborted) setCepStatus('error');
+        } finally {
+            if (cepRequestRef.current === controller) cepRequestRef.current = null;
+        }
+    };
+
+    const resetCepLookup = () => {
+        cepRequestRef.current?.abort();
+        cepRequestRef.current = null;
+        setCepStatus('idle');
+    };
 
     const handleFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = event.currentTarget;
@@ -285,6 +343,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
     };
 
     const handleEditClick = (aluno: Aluno) => {
+        resetCepLookup();
         setEditingId(aluno.id);
         setForm({
             nome: aluno.nome,
@@ -357,6 +416,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
     const inativandoAluno = alunoToToggle?.status !== 'INATIVO';
 
     const handleNewAluno = () => {
+        resetCepLookup();
         setEditingId(null);
         setForm(emptyForm);
         setFieldErrors(emptyFieldErrors);
@@ -366,6 +426,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
 
     // Alternativa 01: descarta as informações preenchidas sem persistir.
     const handleCancelar = () => {
+        resetCepLookup();
         setView('list');
         setForm(emptyForm);
         setEditingId(null);
@@ -671,12 +732,24 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                     id="cep"
                                     name="cep"
                                     value={formatCep(form.cep)}
-                                    onChange={e => setForm(current => ({ ...current, cep: e.target.value }))}
+                                    onChange={handleCepChange}
                                     placeholder="00000-000"
+                                    inputMode="numeric"
+                                    autoComplete="postal-code"
                                     className={fieldErrors.cep ? 'input-error' : ''}
                                     disabled={isSaving}
                                     maxLength={9}
+                                    aria-describedby="cep-status"
                                 />
+                                <span id="cep-status" aria-live="polite">
+                                    {cepStatus === 'loading' && <span className="field-hint">Buscando endereço...</span>}
+                                    {cepStatus === 'notfound' && (
+                                        <span className="field-error">CEP não encontrado. Confira o número ou preencha o endereço manualmente.</span>
+                                    )}
+                                    {cepStatus === 'error' && (
+                                        <span className="field-error">Não foi possível consultar o CEP. Preencha o endereço manualmente.</span>
+                                    )}
+                                </span>
                                 {fieldErrors.cep && <span className="field-error">CEP é obrigatório</span>}
                             </div>
 
@@ -703,6 +776,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                     Número <span className="required">*</span>
                                 </label>
                                 <input
+                                    ref={numeroInputRef}
                                     type="text"
                                     id="numero"
                                     name="numero"

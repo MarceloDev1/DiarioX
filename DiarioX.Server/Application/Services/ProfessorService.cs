@@ -277,9 +277,11 @@ public class ProfessorService : IProfessorService
             DataNascimento = request.DataNascimento,
             Email = (request.Email ?? string.Empty).Trim().ToLowerInvariant(),
             Telefone = (request.Telefone ?? string.Empty).Trim(),
-            Matricula = (request.Matricula ?? string.Empty).Trim(),
-            DataAdmissao = request.DataAdmissao,
-            Situacao = (request.Situacao ?? "ATIVO").Trim().ToUpperInvariant(),
+            Matricula = string.IsNullOrWhiteSpace(request.Matricula) ? null : request.Matricula.Trim(),
+            DataAdmissao = request.DataAdmissao == default(DateTime) ? null : request.DataAdmissao,
+            Situacao = string.IsNullOrWhiteSpace(request.Situacao)
+                ? Professor.StatusAtivo
+                : request.Situacao.Trim().ToUpperInvariant(),
             EscolaIds = (request.EscolaIds ?? new List<int>()).Distinct().ToList(),
             DisciplinaIds = request.DisciplinaIds ?? new List<int>(),
         };
@@ -310,18 +312,8 @@ public class ProfessorService : IProfessorService
         if (string.IsNullOrWhiteSpace(request.Telefone))
             return Invalid("Telefone é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(request.Matricula))
-            return Invalid("Matrícula é obrigatória.");
-
-        if (request.DataAdmissao == default)
-            return Invalid("Data de admissão é obrigatória.");
-
-        if (request.EscolaIds is null || request.EscolaIds.Count == 0)
-            return Invalid("Por favor, selecione pelo menos uma escola.");
-
-        // EX01 - Validar disciplinas
-        if (request.DisciplinaIds is null || request.DisciplinaIds.Count == 0)
-            return Invalid("Por favor, selecione pelo menos uma disciplina.");
+        // Dados contratuais (matrícula, admissão, escolas) e habilitação pedagógica (disciplinas)
+        // são opcionais: podem ser completados depois do cadastro inicial.
 
         // Validar situação
         if (!SituacoesValidas.ContainsKey(request.Situacao))
@@ -337,7 +329,7 @@ public class ProfessorService : IProfessorService
             return Conflict("Este CPF já está vinculado a um professor cadastrado.");
 
         // RN01 - Validar duplicação de Matrícula
-        if (await _professorRepository.ExistsByMatriculaAsync(request.Matricula))
+        if (request.Matricula is not null && await _professorRepository.ExistsByMatriculaAsync(request.Matricula))
             return Conflict("Esta matrícula já está vinculada a um professor cadastrado.");
 
         // Validar duplicação de Email
@@ -379,8 +371,7 @@ public class ProfessorService : IProfessorService
         }
 
         // RN01 - Validar Matrícula (excluindo o próprio)
-        var matriculaExists = await _professorRepository.ExistsByMatriculaAsync(request.Matricula);
-        if (matriculaExists)
+        if (request.Matricula is not null && await _professorRepository.ExistsByMatriculaAsync(request.Matricula))
         {
             var existing = await _professorRepository.GetByMatriculaAsync(request.Matricula);
             if (existing?.Id != id)
@@ -524,10 +515,12 @@ public class ProfessorService : IProfessorService
     {
         try
         {
+            var escolas = string.Join(", ", professor.ProfessorEscolas.Select(pe => pe.Escola.Nome).OrderBy(n => n));
+
             await _emailNotificationService.SendWelcomeProfessorAsync(
                 professor.Email,
                 professor.Nome,
-                string.Join(", ", professor.ProfessorEscolas.Select(pe => pe.Escola.Nome).OrderBy(n => n)),
+                string.IsNullOrEmpty(escolas) ? "Nenhuma escola vinculada ainda" : escolas,
                 professor.Email);
 
             _logger.LogInformation("Email de boas-vindas de professor enviado com sucesso para {Email}", professor.Email);

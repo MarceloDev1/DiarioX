@@ -8,6 +8,7 @@ import StatusPill from '../ui/StatusPill';
 import ConfirmDialog from '../ui/ConfirmDialog';
 
 type View = 'list' | 'form';
+type FormTab = 'pessoais' | 'contratuais' | 'habilitacao';
 
 interface Disciplina {
     id: number;
@@ -26,8 +27,8 @@ interface Professor {
     dataNascimento: string;
     email: string;
     telefone: string;
-    matricula: string;
-    dataAdmissao: string;
+    matricula: string | null;
+    dataAdmissao: string | null;
     situacao: string;
     escolas: EscolaVinculada[];
     disciplinas: Disciplina[];
@@ -67,12 +68,13 @@ interface ProfessorFieldErrors {
     dataNascimento: boolean;
     email: boolean;
     telefone: boolean;
-    matricula: boolean;
-    dataAdmissao: boolean;
-    situacao: boolean;
-    escolaIds: boolean;
-    disciplinaIds: boolean;
 }
+
+const formTabs: { id: FormTab; label: string }[] = [
+    { id: 'pessoais', label: ' Dados Pessoais' },
+    { id: 'contratuais', label: ' Dados Contratuais' },
+    { id: 'habilitacao', label: ' Habilitação Pedagógica' },
+];
 
 const situacoes = [
     { value: 'ATIVO', label: 'Ativo' },
@@ -100,11 +102,6 @@ const emptyFieldErrors: ProfessorFieldErrors = {
     dataNascimento: false,
     email: false,
     telefone: false,
-    matricula: false,
-    dataAdmissao: false,
-    situacao: false,
-    escolaIds: false,
-    disciplinaIds: false,
 };
 
 function ProfessoresPage() {
@@ -113,6 +110,7 @@ function ProfessoresPage() {
 
     const [view, setView] = useState<View>('list');
     const [form, setForm] = useState<ProfessorFormState>(emptyForm);
+    const [activeTab, setActiveTab] = useState<FormTab>('pessoais');
     const [fieldErrors, setFieldErrors] = useState<ProfessorFieldErrors>(emptyFieldErrors);
     const [localError, setLocalError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -196,11 +194,6 @@ function ProfessoresPage() {
             dataNascimento: !form.dataNascimento,
             email: !emailRegex.test(form.email),
             telefone: !form.telefone.trim(),
-            matricula: !form.matricula.trim(),
-            dataAdmissao: !form.dataAdmissao,
-            situacao: !form.situacao,
-            escolaIds: form.escolaIds.length === 0,
-            disciplinaIds: form.disciplinaIds.length === 0,
         };
 
         setFieldErrors(nextErrors);
@@ -208,6 +201,7 @@ function ProfessoresPage() {
 
         if (hasErrors) {
             setLocalError('Por favor, preencha todos os campos obrigatórios.');
+            setActiveTab('pessoais');
             return false;
         }
 
@@ -225,8 +219,8 @@ function ProfessoresPage() {
             dataNascimento: form.dataNascimento,
             email: form.email,
             telefone: form.telefone,
-            matricula: form.matricula,
-            dataAdmissao: form.dataAdmissao,
+            matricula: form.matricula.trim() || null,
+            dataAdmissao: form.dataAdmissao || null,
             situacao: form.situacao,
             escolaIds: form.escolaIds.map(id => parseInt(id)),
             disciplinaIds: form.disciplinaIds.map(id => parseInt(id)),
@@ -247,15 +241,16 @@ function ProfessoresPage() {
         setForm({
             nome: professor.nome,
             cpf: professor.cpf,
-            dataNascimento: professor.dataNascimento,
+            dataNascimento: professor.dataNascimento.slice(0, 10),
             email: professor.email,
             telefone: professor.telefone,
-            matricula: professor.matricula,
-            dataAdmissao: professor.dataAdmissao,
+            matricula: professor.matricula ?? '',
+            dataAdmissao: professor.dataAdmissao?.slice(0, 10) ?? '',
             situacao: professor.situacao,
             escolaIds: professor.escolas.map(e => e.id.toString()),
             disciplinaIds: professor.disciplinas.map(d => d.id.toString()),
         });
+        setActiveTab('pessoais');
         setView('form');
         setLocalError(null);
         setFieldErrors(emptyFieldErrors);
@@ -333,6 +328,7 @@ function ProfessoresPage() {
         setForm(emptyForm);
         setFieldErrors(emptyFieldErrors);
         setLocalError(null);
+        setActiveTab('pessoais');
         setView('form');
     };
 
@@ -426,9 +422,34 @@ function ProfessoresPage() {
                     </div>
 
                     <form onSubmit={handleFormSubmit} className="form-grid">
+                        <div className="form-tabs" role="tablist">
+                            {formTabs.map(tab => {
+                                const hasErrors = tab.id === 'pessoais' && Object.values(fieldErrors).some(Boolean);
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        role="tab"
+                                        id={`professor-tab-${tab.id}`}
+                                        aria-selected={activeTab === tab.id}
+                                        aria-controls={`professor-panel-${tab.id}`}
+                                        className={`form-tab${activeTab === tab.id ? ' active' : ''}${hasErrors ? ' has-error' : ''}`}
+                                        onClick={() => setActiveTab(tab.id)}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
                         {/* Dados Pessoais */}
-                        <fieldset className="form-section">
-                            <legend>📋 Dados Pessoais</legend>
+                        <fieldset
+                            className="form-section"
+                            role="tabpanel"
+                            id="professor-panel-pessoais"
+                            aria-labelledby="professor-tab-pessoais"
+                            hidden={activeTab !== 'pessoais'}
+                        >
 
                             <div className="form-group">
                                 <label htmlFor="nome">
@@ -522,69 +543,58 @@ function ProfessoresPage() {
                         </fieldset>
 
                         {/* Dados Contratuais */}
-                        <fieldset className="form-section">
-                            <legend>📄 Dados Contratuais</legend>
+                        <fieldset
+                            className="form-section"
+                            role="tabpanel"
+                            id="professor-panel-contratuais"
+                            aria-labelledby="professor-tab-contratuais"
+                            hidden={activeTab !== 'contratuais'}
+                        >
+                            <p className="form-tab-hint">Opcional: estes dados podem ser preenchidos depois.</p>
 
                             <div className="form-group">
-                                <label htmlFor="matricula">
-                                    Matrícula <span className="required">*</span>
-                                </label>
+                                <label htmlFor="matricula">Matrícula</label>
                                 <input
                                     type="text"
                                     id="matricula"
                                     name="matricula"
                                     value={form.matricula}
                                     onChange={handleFieldChange}
-                                    className={fieldErrors.matricula ? 'input-error' : ''}
                                     disabled={isSaving}
                                 />
-                                {fieldErrors.matricula && <span className="field-error">Matrícula é obrigatória</span>}
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="dataAdmissao">
-                                    Data de Admissão <span className="required">*</span>
-                                </label>
+                                <label htmlFor="dataAdmissao">Data de Admissão</label>
                                 <input
                                     type="date"
                                     id="dataAdmissao"
                                     name="dataAdmissao"
                                     value={form.dataAdmissao}
                                     onChange={handleFieldChange}
-                                    className={fieldErrors.dataAdmissao ? 'input-error' : ''}
                                     disabled={isSaving}
                                 />
-                                {fieldErrors.dataAdmissao && (
-                                    <span className="field-error">Data de admissão é obrigatória</span>
-                                )}
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="situacao">
-                                    Situação <span className="required">*</span>
-                                </label>
+                                <label htmlFor="situacao">Situação</label>
                                 <select
                                     id="situacao"
                                     name="situacao"
                                     value={form.situacao}
                                     onChange={handleFieldChange}
-                                    className={fieldErrors.situacao ? 'input-error' : ''}
                                     disabled={isSaving}
                                 >
-                                    <option value="">Selecione...</option>
                                     {situacoes.map(situacao => (
                                         <option key={situacao.value} value={situacao.value}>
                                             {situacao.label}
                                         </option>
                                     ))}
                                 </select>
-                                {fieldErrors.situacao && <span className="field-error">Situação é obrigatória</span>}
                             </div>
 
-                            <div className="form-group">
-                                <label>
-                                    Escolas <span className="required">*</span>
-                                </label>
+                            <div className="form-group form-field-full">
+                                <label>Escolas</label>
                                 <div className="checkbox-group">
                                     {escolas.length === 0 ? (
                                         <p className="no-options">Nenhuma escola disponível</p>
@@ -604,20 +614,21 @@ function ProfessoresPage() {
                                         ))
                                     )}
                                 </div>
-                                {fieldErrors.escolaIds && (
-                                    <span className="field-error">Selecione pelo menos uma escola</span>
-                                )}
                             </div>
                         </fieldset>
 
                         {/* Habilitação Pedagógica */}
-                        <fieldset className="form-section">
-                            <legend>🎓 Habilitação Pedagógica</legend>
+                        <fieldset
+                            className="form-section"
+                            role="tabpanel"
+                            id="professor-panel-habilitacao"
+                            aria-labelledby="professor-tab-habilitacao"
+                            hidden={activeTab !== 'habilitacao'}
+                        >
+                            <p className="form-tab-hint">Opcional: as disciplinas podem ser vinculadas depois.</p>
 
-                            <div className="form-group">
-                                <label>
-                                    Disciplinas <span className="required">*</span>
-                                </label>
+                            <div className="form-group form-field-full">
+                                <label>Disciplinas</label>
                                 <div className="checkbox-group">
                                     {disciplinas.length === 0 ? (
                                         <p className="no-options">Nenhuma disciplina disponível</p>
@@ -637,9 +648,6 @@ function ProfessoresPage() {
                                         ))
                                     )}
                                 </div>
-                                {fieldErrors.disciplinaIds && (
-                                    <span className="field-error">Selecione pelo menos uma disciplina</span>
-                                )}
                             </div>
                         </fieldset>
 
