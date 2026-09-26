@@ -25,19 +25,25 @@ public class UserService : IUserService
     private readonly IUsuarioPerfilRepository _usuarioPerfilRepository;
     private readonly IEmailNotificationService _emailNotificationService;
     private readonly ILogger<UserService> _logger;
+    private readonly IEscolaRepository _escolaRepository;
+    private readonly ITenantContext _tenantContext;
 
     public UserService(
         IUserRepository userRepository,
         IPerfilRepository perfilRepository,
         IUsuarioPerfilRepository usuarioPerfilRepository,
         IEmailNotificationService emailNotificationService,
-        ILogger<UserService> logger)
+        ILogger<UserService> logger,
+        IEscolaRepository escolaRepository,
+        ITenantContext tenantContext)
     {
         _userRepository = userRepository;
         _perfilRepository = perfilRepository;
         _usuarioPerfilRepository = usuarioPerfilRepository;
         _emailNotificationService = emailNotificationService;
         _logger = logger;
+        _escolaRepository = escolaRepository;
+        _tenantContext = tenantContext;
     }
 
     public async Task<IEnumerable<UserResponse>> GetAllAsync()
@@ -56,19 +62,20 @@ public class UserService : IUserService
     {
         var normalized = NormalizeRequest(request);
 
-        if (normalized.PerfilId.HasValue)
-        {
-            var perfil = await _perfilRepository.GetByIdAsync(normalized.PerfilId.Value);
-            if (perfil is null)
-                return Invalid("Perfil nao encontrado.");
-
-            if (IsAdministrador(perfil))
-                return Invalid(AdministradorExclusivoMessage);
-        }
+        var (perfil, perfilError) = await LoadPerfilAsync(normalized);
+        if (perfilError is not null)
+            return perfilError;
 
         var validation = await ValidateForCreateAsync(normalized);
         if (!validation.Success)
             return validation;
+
+        if (perfil is not null)
+        {
+            var escolasError = await ValidateEscolasAsync(perfil, normalized.EscolaIds!, atuais: null);
+            if (escolasError is not null)
+                return escolasError;
+        }
 
         var user = new User
         {
@@ -83,15 +90,8 @@ public class UserService : IUserService
 
         var created = await _userRepository.AddAsync(user);
 
-        if (normalized.PerfilId.HasValue)
-        {
-            await _usuarioPerfilRepository.AddAsync(new UsuarioPerfil
-            {
-                UsuarioId = created.Id,
-                PerfilId = normalized.PerfilId.Value,
-                EscolaId = null,
-            });
-        }
+        if (perfil is not null)
+            await _usuarioPerfilRepository.SubstituirAsync(created.Id, perfil.Id, normalized.EscolaIds!);
 
         var result = await _userRepository.GetByIdAsync(created.Id);
         var userResponse = MapToResponse(result!);
@@ -128,19 +128,22 @@ public class UserService : IUserService
 
         var normalized = NormalizeRequest(request);
 
-        if (normalized.PerfilId.HasValue)
-        {
-            var perfil = await _perfilRepository.GetByIdAsync(normalized.PerfilId.Value);
-            if (perfil is null)
-                return Invalid("Perfil nao encontrado.");
-
-            if (IsAdministrador(perfil))
-                return Invalid(AdministradorExclusivoMessage);
-        }
+        var (perfil, perfilError) = await LoadPerfilAsync(normalized);
+        if (perfilError is not null)
+            return perfilError;
 
         var validation = await ValidateForUpdateAsync(normalized, id);
         if (!validation.Success)
             return validation;
+
+        // Perfil ou escolas só são regravados quando mudam.
+        var alterarAcesso = perfil is not null && !MesmoAcesso(user, perfil.Id, normalized.EscolaIds!);
+        if (alterarAcesso)
+        {
+            var escolasError = await ValidateEscolasAsync(perfil!, normalized.EscolaIds!, user.UsuariosPerfis.ToList());
+            if (escolasError is not null)
+                return escolasError;
+        }
 
         user.Email = normalized.Email;
         user.Cpf = normalized.Cpf;
@@ -152,24 +155,8 @@ public class UserService : IUserService
 
         await _userRepository.UpdateAsync(user);
 
-        if (normalized.PerfilId.HasValue)
-        {
-            var existing = await _usuarioPerfilRepository.GetGlobalByUsuarioIdAsync(id);
-            if (existing is null)
-            {
-                await _usuarioPerfilRepository.AddAsync(new UsuarioPerfil
-                {
-                    UsuarioId = id,
-                    PerfilId = normalized.PerfilId.Value,
-                    EscolaId = null,
-                });
-            }
-            else if (existing.PerfilId != normalized.PerfilId.Value)
-            {
-                existing.PerfilId = normalized.PerfilId.Value;
-                await _usuarioPerfilRepository.UpdateAsync(existing);
-            }
-        }
+        if (alterarAcesso)
+            await _usuarioPerfilRepository.SubstituirAsync(id, perfil!.Id, normalized.EscolaIds!);
 
         var updated = await _userRepository.GetByIdAsync(id);
         return new UserCommandResult(true, "Usuario atualizado com sucesso.", MapToResponse(updated!));
@@ -194,6 +181,68 @@ public class UserService : IUserService
         }
 
         return new UserCommandResult(true, "Usuário removido com sucesso.");
+    }
+
+    private async Task<(Perfil? Perfil, UserCommandResult? Error)> LoadPerfilAsync(UserRequest request)
+    {
+        if (!request.PerfilId.HasValue)
+        {
+            return request.EscolaIds!.Count > 0
+                ? (null, Invalid("Selecione o perfil do usuário para definir as escolas de atuação."))
+                : (null, null);
+        }
+
+        var perfil = await _perfilRepository.GetByIdAsync(request.PerfilId.Value);
+        if (perfil is null)
+            return (null, Invalid("Perfil nao encontrado."));
+
+        if (IsAdministrador(perfil))
+            return (null, Invalid(AdministradorExclusivoMessage));
+
+        return (perfil, null);
+    }
+
+    /// <summary>
+    /// As escolas precisam existir e estar ao alcance de quem cadastra (o repositório de escolas já
+    /// respeita o escopo do usuário logado). Quem atua só em algumas escolas não concede acesso à rede
+    /// inteira nem altera usuários que atuam fora das suas escolas.
+    /// </summary>
+    private async Task<UserCommandResult?> ValidateEscolasAsync(Perfil perfil, IReadOnlyList<int> escolaIds, IReadOnlyList<UsuarioPerfil>? atuais)
+    {
+        foreach (var escolaId in escolaIds)
+        {
+            if (await _escolaRepository.GetByIdAsync(escolaId) is null)
+                return Invalid("Escola de atuação não encontrada.");
+        }
+
+        var escopo = _tenantContext.EscolaIds;
+        if (escopo is null)
+            return null;
+
+        if (atuais is { Count: > 0 })
+        {
+            var atuaisForaDoEscopo = atuais.Any(up => up.EscolaId is null
+                ? !IsProfessor(up.Perfil)
+                : !escopo.Contains(up.EscolaId.Value));
+            if (atuaisForaDoEscopo)
+                return Invalid("Você só pode alterar o perfil e as escolas de usuários que atuam apenas nas suas escolas.");
+        }
+
+        // No perfil Professor, sem escolas significa "as escolas em que leciona", não a rede inteira.
+        if (escolaIds.Count == 0 && !IsProfessor(perfil))
+            return Invalid("Selecione as escolas de atuação. Somente usuários com acesso a todas as escolas podem conceder esse acesso.");
+
+        return null;
+    }
+
+    private static bool MesmoAcesso(User user, int perfilId, IReadOnlyList<int> escolaIds)
+    {
+        var atuais = user.UsuariosPerfis;
+        if (atuais.Count == 0 || atuais.Any(up => up.PerfilId != perfilId))
+            return false;
+
+        var escolasAtuais = atuais.Where(up => up.EscolaId is not null).Select(up => up.EscolaId!.Value).ToHashSet();
+        return escolasAtuais.SetEquals(escolaIds);
     }
 
     private async Task<UserCommandResult> ValidateForCreateAsync(UserRequest request)
@@ -258,6 +307,7 @@ public class UserService : IUserService
             Senha = string.IsNullOrWhiteSpace(request.Senha) ? null : request.Senha.Trim(),
             Status = (request.Status ?? string.Empty).Trim().ToUpperInvariant(),
             PerfilId = request.PerfilId,
+            EscolaIds = (request.EscolaIds ?? []).Where(id => id > 0).Distinct().Order().ToList(),
         };
     }
 
@@ -306,9 +356,13 @@ public class UserService : IUserService
     private static bool IsAdministrador(Perfil perfil)
         => string.Equals(perfil.Nome, Perfil.Administrador, StringComparison.OrdinalIgnoreCase);
 
+    private static bool IsProfessor(Perfil? perfil)
+        => string.Equals(perfil?.Nome, Perfil.Professor, StringComparison.OrdinalIgnoreCase);
+
     private static UserResponse MapToResponse(User user)
     {
-        var globalPerfil = user.UsuariosPerfis.FirstOrDefault(up => up.EscolaId == null);
+        // Todas as linhas do usuário têm o mesmo perfil: uma por escola de atuação ou uma sem escola.
+        var perfil = user.UsuariosPerfis.FirstOrDefault();
         return new UserResponse(
             user.Id,
             user.Email,
@@ -317,8 +371,9 @@ public class UserService : IUserService
             user.Status,
             user.UltimoAcesso,
             user.CreatedAt,
-            globalPerfil?.PerfilId,
-            globalPerfil?.Perfil?.Nome
+            perfil?.PerfilId,
+            perfil?.Perfil?.Nome,
+            user.UsuariosPerfis.Where(up => up.EscolaId is not null).Select(up => up.EscolaId!.Value).Order().ToList()
         );
     }
 }

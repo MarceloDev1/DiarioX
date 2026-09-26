@@ -41,6 +41,8 @@ public static class Permissoes
         // Enturmar e remanejar alteram a situação do aluno: exigem "alunos.editar".
         new("alunos", "Alunos", Crud),
         new("chamada", "Chamada", Crud),
+        // Cada relatório também exige ver o módulo dos dados que exibe (ex.: alunos.visualizar).
+        new("relatorios", "Relatórios", [Visualizar]),
         new("usuarios", "Usuários", Crud),
         new("configuracoes", "Configurações (permissões)", [Visualizar, Editar]),
     ];
@@ -89,6 +91,7 @@ public static class Permissoes
 
     public static class Turmas
     {
+        public const string Visualizar = "turmas.visualizar";
         public const string Criar = "turmas.criar";
         public const string Editar = "turmas.editar";
         public const string Excluir = "turmas.excluir";
@@ -123,6 +126,11 @@ public static class Permissoes
         public const string Criar = "chamada.criar";
         public const string Editar = "chamada.editar";
         public const string Excluir = "chamada.excluir";
+    }
+
+    public static class Relatorios
+    {
+        public const string Visualizar = "relatorios.visualizar";
     }
 
     public static class Usuarios

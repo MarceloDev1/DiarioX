@@ -30,7 +30,8 @@ public class EscolaRepository : BaseRepository<Escola>, IEscolaRepository
 
     public async Task<bool> ExistsByCodigoInepAsync(string codigoInep, int? excludeId = null)
     {
-        return await _dbSet.AnyAsync(e =>
+        // O código INEP é único na instituição, inclusive entre escolas fora do escopo do usuário.
+        return await _dbSet.IgnoreQueryFilters([AppDbContext.FiltroEscola]).AnyAsync(e =>
             EF.Functions.ILike(e.CodigoInep, codigoInep) &&
             (!excludeId.HasValue || e.Id != excludeId.Value));
     }

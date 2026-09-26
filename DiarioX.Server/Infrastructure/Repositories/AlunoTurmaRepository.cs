@@ -18,7 +18,9 @@ public class AlunoTurmaRepository : IAlunoTurmaRepository
     {
         // Somente leitura: rastrear o Aluno incluído conflitaria com atualizações do mesmo aluno
         // na requisição (ex.: reativação); RemanejarAsync recarrega o vínculo antes de alterá-lo.
+        // A enturmação ativa é única por aluno na instituição; vale mesmo fora do escopo do usuário.
         return _context.Set<AlunoTurma>()
+            .IgnoreQueryFilters([AppDbContext.FiltroEscola])
             .AsNoTracking()
             .Include(x => x.Aluno).ThenInclude(x => x.Escola)
             .Include(x => x.Turma).ThenInclude(x => x.AnoLetivo)
@@ -28,7 +30,8 @@ public class AlunoTurmaRepository : IAlunoTurmaRepository
 
     public Task<bool> ExistsByAlunoIdAsync(int alunoId)
     {
-        return _context.Set<AlunoTurma>().AnyAsync(x => x.AlunoId == alunoId);
+        // O histórico em escolas fora do escopo do usuário também impede a exclusão do aluno.
+        return _context.Set<AlunoTurma>().IgnoreQueryFilters([AppDbContext.FiltroEscola]).AnyAsync(x => x.AlunoId == alunoId);
     }
 
     public async Task<bool> HasVacancyAsync(int turmaId, DateOnly dataMovimentacao)
@@ -51,6 +54,7 @@ public class AlunoTurmaRepository : IAlunoTurmaRepository
 
         var aluno = await _context.Set<Aluno>().FirstAsync(x => x.Id == alunoId);
         var vinculoAtivo = await _context.Set<AlunoTurma>()
+            .IgnoreQueryFilters([AppDbContext.FiltroEscola])
             .AnyAsync(x => x.AlunoId == alunoId && x.DataFim == null);
 
         if (vinculoAtivo)

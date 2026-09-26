@@ -1,0 +1,156 @@
+.relatorios-categoria + .relatorios-categoria {
+    margin-top: 1.75rem;
+}
+
+.relatorios-catalogo {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 0.75rem;
+}
+
+.relatorio-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid #e0e8f0;
+    border-radius: 10px;
+    background: #f9fbfd;
+    color: #44536b;
+    text-decoration: none;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.relatorio-card:hover,
+.relatorio-card:focus-visible {
+    border-color: #0f3460;
+    background: #f3f7fc;
+}
+
+.relatorio-card > span {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.92rem;
+}
+
+.relatorio-card strong {
+    color: #0f3460;
+    font-size: 1rem;
+}
+
+.relatorio-card svg {
+    flex-shrink: 0;
+    color: #0f3460;
+}
+
+.relatorio-voltar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+    color: #0f3460;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.relatorio-voltar:hover {
+    text-decoration: underline;
+}
+
+.relatorio-header {
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.relatorio-header .page-intro {
+    margin: 0.35rem 0 0;
+}
+
+.relatorio-exportar {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.relatorio-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.relatorio-filtros .form-group {
+    flex: 1 1 200px;
+    max-width: 320px;
+}
+
+.relatorio-resultado {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.relatorio-aplicados {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+    margin: 0;
+    color: #44536b;
+    font-size: 0.9rem;
+}
+
+.relatorio-grafico {
+    margin: 0;
+    padding: 1rem 1.1rem 0.5rem;
+    border: 1px solid #e0e8f0;
+    border-radius: 10px;
+}
+
+.relatorio-grafico figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.5rem;
+    color: #0f3460;
+}
+
+.relatorio-legenda {
+    display: flex;
+    gap: 1rem;
+    color: #44536b;
+    font-size: 0.85rem;
+}
+
+.relatorio-legenda-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.relatorio-legenda-cor {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.relatorio-tabela .numero {
+    text-align: right;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .relatorio-header {
+        flex-direction: column;
+    }
+
+    .relatorio-filtros .form-group {
+        max-width: none;
+    }
+}

@@ -23,8 +23,12 @@ public class UserResponseTests
             ultimoAcesso,
             createdAt ?? new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             perfilId,
-            perfilNome
+            perfilNome,
+            SemEscolas
         );
+
+    // A mesma instância em todas as amostras: listas em records comparam por referência.
+    private static readonly IReadOnlyList<int> SemEscolas = [];
 
     [Fact]
     public void Constructor_AssignsAllProperties()
@@ -42,7 +46,8 @@ public class UserResponseTests
             UltimoAcesso: ultimoAcesso,
             CreatedAt: createdAt,
             PerfilId: 7,
-            PerfilNome: "Professor"
+            PerfilNome: "Professor",
+            EscolaIds: [3]
         );
 
         Assert.Equal(42, response.Id);

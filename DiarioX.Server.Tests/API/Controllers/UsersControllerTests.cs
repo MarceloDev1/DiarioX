@@ -240,7 +240,8 @@ public class UsersControllerTests
         UltimoAcesso: null,
         CreatedAt: DateTime.UtcNow,
         PerfilId: 1,
-        PerfilNome: "Administrador"
+        PerfilNome: "Administrador",
+        EscolaIds: []
     );
 
     private static string? GetMessage(object? value)

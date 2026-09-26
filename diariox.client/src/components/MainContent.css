@@ -1169,3 +1169,22 @@ a.btn {
     justify-content: center;
     text-decoration: none;
 }
+
+.usuario-escopo {
+    border: 1px solid #e0e8f0;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin: 0;
+}
+
+.usuario-escopo legend {
+    font-weight: 600;
+    padding: 0 0.35rem;
+}
+
+.usuario-escopo-opcoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    margin-bottom: 0.5rem;
+}

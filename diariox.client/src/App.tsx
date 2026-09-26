@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router';
 import './App.css';
 import Login from './components/Login';
 import ResetPassword from './components/ResetPassword';
@@ -10,33 +11,36 @@ import PermissoesProvider from './components/PermissoesProvider';
 import FinanceiroPlataformaPage from './components/faturamento/FinanceiroPlataformaPage';
 import AvisoFinanceiro from './components/faturamento/AvisoFinanceiro';
 import { clearSession, restoreSession, saveSession, UNAUTHORIZED_EVENT, type Session } from './utils/api';
+import { caminhoDaPagina, paginaDoCaminho } from './utils/rotas';
 
 function App() {
     // Recarregar a página mantém o usuário logado enquanto o token salvo for válido.
     const [session, setSession] = useState<Session | null>(restoreSession);
     // Administrador global sem instituição selecionada pode abrir a gestão de instituições ou o financeiro.
     const [adminView, setAdminView] = useState<'instituicoes' | 'financeiro' | null>(null);
-    const [currentPage, setCurrentPage] = useState('home');
-    const [initialAlunoId, setInitialAlunoId] = useState<number | null>(null);
+    // A página aberta vem da URL: recarregar, voltar/avançar e compartilhar links funcionam.
+    const location = useLocation();
+    const navigate = useNavigate();
+    const currentPage = paginaDoCaminho(location.pathname);
     // O link do e-mail de redefinição abre /redefinir-senha?token=...; lido uma vez ao carregar.
     const [resetToken, setResetToken] = useState<string | null>(() =>
         window.location.pathname === '/redefinir-senha'
             ? new URLSearchParams(window.location.search).get('token')
             : null
     );
-    const isFirstAccessRoute = window.location.pathname === '/primeiro-acesso';
+    const isFirstAccessRoute = location.pathname === '/primeiro-acesso';
 
     // Mantém salvas as mudanças feitas na sessão (ex.: "Trocar instituição").
     useEffect(() => {
         if (session) saveSession(session);
     }, [session]);
 
-    // Token expirado ou inválido em qualquer chamada da API: volta para o login.
+    // Token expirado ou inválido em qualquer chamada da API: volta para o login, mantendo a URL
+    // para que o usuário volte à mesma página depois de entrar.
     useEffect(() => {
         const handleUnauthorized = () => {
             clearSession();
             setSession(null);
-            setCurrentPage('home');
         };
         window.addEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
         return () => window.removeEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
@@ -44,25 +48,24 @@ function App() {
 
     function handleResetSuccess() {
         setResetToken(null);
-        window.history.replaceState({}, '', '/');
+        navigate('/', { replace: true });
     }
 
     function handleNavigate(page: string, alunoId?: number) {
-        setCurrentPage(page);
-        setInitialAlunoId(alunoId ?? null);
+        navigate(caminhoDaPagina(page) + (alunoId ? `?alunoId=${alunoId}` : ''));
     }
 
     function handleLogout() {
         setAdminView(null);
         clearSession();
         setSession(null);
-        setCurrentPage('home');
+        navigate('/');
     }
 
     function handleChangeTenant() {
         setAdminView(null);
         setSession(current => current && { ...current, tenantId: null, tenantNome: null });
-        setCurrentPage('home');
+        navigate('/');
     }
 
     if (resetToken) {
@@ -132,7 +135,7 @@ function App() {
                         </div>
                     </header>
                     <AvisoFinanceiro onVerFaturas={() => handleNavigate('assinatura')} />
-                    <MainContent page={currentPage} onNavigate={handleNavigate} initialAlunoId={initialAlunoId} />
+                    <MainContent onNavigate={handleNavigate} />
                 </main>
             </div>
         </PermissoesProvider>

@@ -148,20 +148,6 @@ public class EscolaServiceTests
             .Setup(r => r.GetByIdAsync(25))
             .ReturnsAsync(BuildEscola(25, "11111111000191", diretorCpf: "52998224725", diretorId: 77));
 
-        var perfilGlobal = new UsuarioPerfil
-        {
-            Id = 10,
-            UsuarioId = 77,
-            PerfilId = 2,
-            EscolaId = null,
-            Usuario = diretor,
-            Perfil = new Perfil { Id = 2, Nome = "Diretor" }
-        };
-
-        fixture.UsuarioPerfilRepository
-            .Setup(r => r.GetGlobalByUsuarioIdAsync(77))
-            .ReturnsAsync(perfilGlobal);
-
         var result = await fixture.Service.CreateAsync(request);
 
         Assert.True(result.Success);
@@ -174,10 +160,6 @@ public class EscolaServiceTests
         Assert.Equal("contato@escola.com", captured.EmailInstitucional);
         Assert.Equal("ATIVO", captured.Status);
         Assert.Equal(77, captured.DiretorId);
-
-        fixture.UsuarioPerfilRepository.Verify(
-            r => r.UpdateAsync(It.Is<UsuarioPerfil>(up => up.Id == 10 && up.EscolaId == 25)),
-            Times.Once);
     }
 
     [Fact]
@@ -213,7 +195,6 @@ public class EscolaServiceTests
         Assert.Equal(Escola.StatusInativo, existing.Status);
         Assert.Null(existing.DiretorId);
         fixture.EscolaRepository.Verify(r => r.UpdateAsync(existing), Times.Once);
-        fixture.UsuarioPerfilRepository.Verify(r => r.UpdateAsync(It.IsAny<UsuarioPerfil>()), Times.Never);
     }
 
     [Fact]
@@ -242,14 +223,13 @@ public class EscolaServiceTests
         fixture.EscolaRepository.Verify(r => r.DeleteAsync(5), Times.Once);
     }
 
-    private static (EscolaService Service, Mock<IEscolaRepository> EscolaRepository, Mock<IUserRepository> UserRepository, Mock<IUsuarioPerfilRepository> UsuarioPerfilRepository) BuildService()
+    private static (EscolaService Service, Mock<IEscolaRepository> EscolaRepository, Mock<IUserRepository> UserRepository) BuildService()
     {
         var escolaRepository = new Mock<IEscolaRepository>();
         var userRepository = new Mock<IUserRepository>();
-        var usuarioPerfilRepository = new Mock<IUsuarioPerfilRepository>();
 
-        var service = new EscolaService(escolaRepository.Object, userRepository.Object, usuarioPerfilRepository.Object);
-        return (service, escolaRepository, userRepository, usuarioPerfilRepository);
+        var service = new EscolaService(escolaRepository.Object, userRepository.Object);
+        return (service, escolaRepository, userRepository);
     }
 
     private static EscolaRequest BuildValidRequest() => new()
