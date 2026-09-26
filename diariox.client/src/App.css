@@ -30,6 +30,31 @@
     margin-bottom: 2rem;
 }
 
+.main-header-titulo h1 {
+    margin: 0;
+    color: #0f3460;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.2;
+}
+
+.main-header-titulo p {
+    margin-top: 0.2rem;
+    color: #5b6475;
+    font-size: 0.9rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    .main-header-titulo h1 {
+        color: var(--text-h);
+    }
+
+    .main-header-titulo p {
+        color: var(--text);
+    }
+}
+
 .main-header-user {
     display: flex;
     align-items: center;
@@ -53,6 +78,7 @@
     background-color: #fff;
     color: #6c3fc5;
     font-weight: 600;
+    white-space: nowrap;
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
 }

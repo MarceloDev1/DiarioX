@@ -120,7 +120,14 @@ function App() {
                 <Sidebar onSelectPage={page => handleNavigate(page)} currentPage={currentPage} isGlobalAdmin={session.isGlobalAdmin} />
                 <main className="main-area">
                     <header className="main-header">
-                        <h1>Diário de Classe</h1>
+                        {currentPage === 'home' ? (
+                            <div className="main-header-titulo">
+                                <h1>Bem-vindo(a) ao Diário de Classe</h1>
+                                <p>Visão geral do sistema educacional</p>
+                            </div>
+                        ) : (
+                            <h1>Diário de Classe</h1>
+                        )}
                         <div className="main-header-user">
                             {session.tenantNome && <span className="main-header-tenant">{session.tenantNome}</span>}
                             <p>Olá, <strong>{session.email}</strong>!</p>

@@ -19,6 +19,7 @@ import ChamadaPage from './chamada/ChamadaPage';
 import AssinaturaPage from './configuracoes/AssinaturaPage';
 import FinanceiroPlataformaPage from './faturamento/FinanceiroPlataformaPage';
 import RelatoriosPage from './relatorios/RelatoriosPage';
+import HomePage from './home/HomePage';
 
 import { usePermissoes } from '../hooks/usePermissoes';
 import { permissaoDaPagina } from '../utils/permissoes';
@@ -81,12 +82,7 @@ function MainContent({ onNavigate }: MainContentProps) {
             <Route path="/permissoes" element={<PermissoesPage />} />
             <Route path="/assinatura" element={<AssinaturaPage />} />
             <Route path="/financeiro-plataforma" element={<FinanceiroPlataformaPage />} />
-            <Route path="/" element={
-                <div className="content-card">
-                    <h2>Bem-vindo(a) ao Diário de Classe</h2>
-                    <p>Selecione uma opção no menu lateral para gerenciar os registros.</p>
-                </div>
-            } />
+            <Route path="/" element={<HomePage />} />
             <Route path="*" element={
                 <div className="content-card">
                     <h2>Página não encontrada</h2>

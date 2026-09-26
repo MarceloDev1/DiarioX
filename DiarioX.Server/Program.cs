@@ -1,5 +1,6 @@
 using System.Text;
 using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Application.Dashboard;
 using DiarioX.Server.Application.Faturamento;
 using DiarioX.Server.Application.Interfaces;
 using DiarioX.Server.Application.Relatorios;
@@ -8,6 +9,7 @@ using DiarioX.Server.Application.Services;
 using DiarioX.Server.Domain.Entities;
 using DiarioX.Server.Domain.Interfaces;
 using DiarioX.Server.Infrastructure.Authorization;
+using DiarioX.Server.Infrastructure.Dashboard;
 using DiarioX.Server.Infrastructure.Data;
 using DiarioX.Server.Infrastructure.Relatorios;
 using DiarioX.Server.Infrastructure.Repositories;
@@ -99,6 +101,10 @@ builder.Services.AddScoped<IRelatorio, AlunosAguardandoEnturmacaoRelatorio>();
 builder.Services.AddSingleton<IExportadorRelatorio, ExcelExportador>();
 builder.Services.AddSingleton<IExportadorRelatorio, PdfExportador>();
 builder.Services.AddScoped<IRelatorioService, RelatorioService>();
+
+// Painel da página inicial
+builder.Services.AddScoped<IDashboardConsultas, DashboardConsultas>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // Faturamento da plataforma (Asaas): a chave de API e o token do webhook ficam em user-secrets/variáveis de ambiente.
 builder.Services.Configure<AsaasOptions>(builder.Configuration.GetSection(AsaasOptions.Secao));
