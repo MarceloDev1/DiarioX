@@ -69,6 +69,16 @@ public class AnoLetivoService : IAnoLetivoService
         var validation = await ValidateRequestAsync(request, id);
         if (!validation.Success) return validation;
 
+        // Os períodos são casados pelo número; os que deixam de existir não podem ter avaliações.
+        var numeros = request.Periodos.Select(p => p.Numero).ToHashSet();
+        var removidos = existing.Periodos.Where(p => !numeros.Contains(p.Numero)).ToList();
+        if (await _repository.PeriodosPossuemAvaliacoesAsync(removidos.Select(p => p.Id)))
+        {
+            var nomes = string.Join(", ", removidos.OrderBy(p => p.Numero).Select(p => p.Nome));
+            return Invalid($"Não é possível remover o(s) período(s) {nomes}: já existem avaliações lançadas. " +
+                           "Exclua as avaliações ou mantenha o tipo de período.");
+        }
+
         var entity = new AnoLetivo
         {
             Id = id,
@@ -115,6 +125,9 @@ public class AnoLetivoService : IAnoLetivoService
         var qtdEsperada = QuantidadePeriodos[request.TipoPeriodo];
         if (request.Periodos.Count != qtdEsperada)
             return Invalid($"O tipo {request.TipoPeriodo} requer exatamente {qtdEsperada} período(s).");
+
+        if (!request.Periodos.Select(p => p.Numero).Order().SequenceEqual(Enumerable.Range(1, qtdEsperada)))
+            return Invalid($"Os períodos devem ser numerados de 1 a {qtdEsperada}.");
 
         for (var i = 0; i < request.Periodos.Count; i++)
         {

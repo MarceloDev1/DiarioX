@@ -10,4 +10,8 @@ public class EtapaEnsino : ITenantEntity
     public string Sigla { get; set; } = string.Empty;
     public int OrdemCronologica { get; set; }
     public int? IdadeRecomendada { get; set; }
+
+    /// <summary>Regra de avaliação das turmas da etapa; nula = regra padrão do sistema.</summary>
+    public int? RegraAvaliacaoId { get; set; }
+    public RegraAvaliacao? RegraAvaliacao { get; set; }
 }

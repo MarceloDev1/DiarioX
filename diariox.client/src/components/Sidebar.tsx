@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './Sidebar.css';
 import type { IconType } from 'react-icons';
-import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare, FiDollarSign, FiCreditCard, FiBarChart2 } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare, FiDollarSign, FiCreditCard, FiBarChart2, FiEdit3, FiSliders } from 'react-icons/fi';
 import { MdSchool, MdPeople, MdManageAccounts } from 'react-icons/md';
 import { usePermissoes } from '../hooks/usePermissoes';
 import { permissaoDaPagina } from '../utils/permissoes';
@@ -45,6 +45,7 @@ const menuItems: MenuItem[] = [
         { id: 'etapas-ensino', label: 'Etapas de Ensino', icon: FiLayers },
         { id: 'anos-letivos', label: 'Anos Letivos', icon: FiAward },
         { id: 'disciplinas', label: 'Disciplinas', icon: FiBook },
+        { id: 'regras-avaliacao', label: 'Regras de Avaliação', icon: FiSliders },
         { id: 'turmas', label: 'Turmas', icon: FiUsers },
         { id: 'professores', label: 'Professores', icon: FiUsers },
     ] },
@@ -53,6 +54,7 @@ const menuItems: MenuItem[] = [
     { id: 'enturmar-aluno', label: 'Enturmar Aluno', icon: FiUserCheck },
     { id: 'remanejar-aluno', label: 'Remanejar Aluno', icon: FiRotateCcw },
     { id: 'chamada', label: 'Chamada', icon: FiCheckSquare },
+    { id: 'notas', label: 'Notas', icon: FiEdit3 },
     { id: 'relatorios', label: 'Relatórios', icon: FiBarChart2 },
     { id: 'usuarios', label: 'Usuários', icon: FiUser },
     { id: 'configuracoes', label: 'Configurações', icon: FiSettings, submenu: [

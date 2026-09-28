@@ -59,6 +59,9 @@ public class AppDbContext : DbContext
     public DbSet<AlunoTurma> AlunosTurmas => Set<AlunoTurma>();
     public DbSet<Chamada> Chamadas => Set<Chamada>();
     public DbSet<ChamadaAluno> ChamadasAlunos => Set<ChamadaAluno>();
+    public DbSet<RegraAvaliacao> RegrasAvaliacao => Set<RegraAvaliacao>();
+    public DbSet<Avaliacao> Avaliacoes => Set<Avaliacao>();
+    public DbSet<NotaAvaliacao> NotasAvaliacoes => Set<NotaAvaliacao>();
     public DbSet<PlanoAssinatura> PlanosAssinatura => Set<PlanoAssinatura>();
     public DbSet<Assinatura> Assinaturas => Set<Assinatura>();
     public DbSet<FaturaAssinatura> FaturasAssinatura => Set<FaturaAssinatura>();
@@ -91,6 +94,9 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AlunoTurmaConfiguration());
         modelBuilder.ApplyConfiguration(new ChamadaConfiguration());
         modelBuilder.ApplyConfiguration(new ChamadaAlunoConfiguration());
+        modelBuilder.ApplyConfiguration(new RegraAvaliacaoConfiguration());
+        modelBuilder.ApplyConfiguration(new AvaliacaoConfiguration());
+        modelBuilder.ApplyConfiguration(new NotaAvaliacaoConfiguration());
         modelBuilder.ApplyConfiguration(new PlanoAssinaturaConfiguration());
         modelBuilder.ApplyConfiguration(new AssinaturaConfiguration());
         modelBuilder.ApplyConfiguration(new FaturaAssinaturaConfiguration());
@@ -150,7 +156,7 @@ public class AppDbContext : DbContext
 
     /// <summary>
     /// Dados que pertencem a uma escola seguem o escopo do usuário. Cadastros da rede (modalidades,
-    /// etapas, anos letivos e disciplinas) continuam visíveis para todas as escolas.
+    /// etapas, anos letivos, disciplinas e regras de avaliação) continuam visíveis para todas as escolas.
     /// </summary>
     private void ConfigureEscolaFilters(ModelBuilder modelBuilder)
     {
@@ -166,6 +172,10 @@ public class AppDbContext : DbContext
             c => !EscopoPorEscola || EscolasPermitidas.Contains(c.Turma.EscolaId));
         modelBuilder.Entity<ChamadaAluno>().HasQueryFilter(FiltroEscola,
             r => !EscopoPorEscola || EscolasPermitidas.Contains(r.Chamada.Turma.EscolaId));
+        modelBuilder.Entity<Avaliacao>().HasQueryFilter(FiltroEscola,
+            a => !EscopoPorEscola || EscolasPermitidas.Contains(a.Turma.EscolaId));
+        modelBuilder.Entity<NotaAvaliacao>().HasQueryFilter(FiltroEscola,
+            n => !EscopoPorEscola || EscolasPermitidas.Contains(n.Avaliacao.Turma.EscolaId));
         modelBuilder.Entity<ProfessorAlocacao>().HasQueryFilter(FiltroEscola,
             pa => !EscopoPorEscola || EscolasPermitidas.Contains(pa.Turma.EscolaId));
         modelBuilder.Entity<ProfessorEscola>().HasQueryFilter(FiltroEscola,

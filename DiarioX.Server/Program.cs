@@ -71,6 +71,8 @@ builder.Services.AddScoped<IAlunoTurmaRepository, AlunoTurmaRepository>();
 builder.Services.AddScoped<IPerfilPermissaoRepository, PerfilPermissaoRepository>();
 builder.Services.AddScoped<IChamadaRepository, ChamadaRepository>();
 builder.Services.AddScoped<IFaturamentoRepository, FaturamentoRepository>();
+builder.Services.AddScoped<IRegraAvaliacaoRepository, RegraAvaliacaoRepository>();
+builder.Services.AddScoped<IAvaliacaoRepository, AvaliacaoRepository>();
 
 // Dependency Injection - Services
 builder.Services.AddScoped<ITenantService, TenantService>();
@@ -90,6 +92,8 @@ builder.Services.AddScoped<IAlunoService, AlunoService>();
 builder.Services.AddScoped<IRemanejamentoAlunoService, RemanejamentoAlunoService>();
 builder.Services.AddScoped<IPermissaoService, PermissaoService>();
 builder.Services.AddScoped<IChamadaService, ChamadaService>();
+builder.Services.AddScoped<IRegraAvaliacaoService, RegraAvaliacaoService>();
+builder.Services.AddScoped<INotaService, NotaService>();
 
 // Relatórios: cada IRelatorio registrado aparece no catálogo; exportação em Excel (ClosedXML) e PDF (QuestPDF).
 // QuestPDF: licença Community, gratuita para empresas com receita bruta anual abaixo de US$ 1 milhão.
@@ -98,6 +102,7 @@ builder.Services.AddScoped<IRelatorioConsultas, RelatorioConsultas>();
 builder.Services.AddScoped<IRelatorio, OcupacaoVagasRelatorio>();
 builder.Services.AddScoped<IRelatorio, RelacaoAlunosTurmaRelatorio>();
 builder.Services.AddScoped<IRelatorio, AlunosAguardandoEnturmacaoRelatorio>();
+builder.Services.AddScoped<IRelatorio, MapaNotasRelatorio>();
 builder.Services.AddSingleton<IExportadorRelatorio, ExcelExportador>();
 builder.Services.AddSingleton<IExportadorRelatorio, PdfExportador>();
 builder.Services.AddScoped<IRelatorioService, RelatorioService>();

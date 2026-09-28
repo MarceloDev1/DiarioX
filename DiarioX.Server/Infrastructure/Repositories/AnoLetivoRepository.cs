@@ -58,9 +58,23 @@ public class AnoLetivoRepository : IAnoLetivoRepository
         existing.DataTermino = entity.DataTermino;
         existing.TipoPeriodo = entity.TipoPeriodo;
 
-        _context.PeriodosAvaliativos.RemoveRange(existing.Periodos);
+        // Casa os períodos pelo número para preservar os Ids: as avaliações apontam para eles.
+        var novos = entity.Periodos.ToDictionary(p => p.Numero);
+        foreach (var periodo in existing.Periodos.ToList())
+        {
+            if (novos.Remove(periodo.Numero, out var novo))
+            {
+                periodo.Nome = novo.Nome;
+                periodo.DataInicio = novo.DataInicio;
+                periodo.DataTermino = novo.DataTermino;
+            }
+            else
+            {
+                _context.PeriodosAvaliativos.Remove(periodo);
+            }
+        }
 
-        foreach (var periodo in entity.Periodos)
+        foreach (var periodo in novos.Values)
         {
             existing.Periodos.Add(new PeriodoAvaliativo
             {
@@ -73,6 +87,18 @@ public class AnoLetivoRepository : IAnoLetivoRepository
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> PeriodosPossuemAvaliacoesAsync(IEnumerable<int> periodoIds)
+    {
+        var ids = periodoIds.ToList();
+        if (ids.Count == 0)
+            return false;
+
+        // O ano letivo é da rede toda: considera as avaliações de todas as escolas.
+        return await _context.Avaliacoes
+            .IgnoreQueryFilters([AppDbContext.FiltroEscola])
+            .AnyAsync(a => ids.Contains(a.PeriodoAvaliativoId));
     }
 
     public async Task DeleteAsync(AnoLetivo entity)

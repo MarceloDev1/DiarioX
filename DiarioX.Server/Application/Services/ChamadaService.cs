@@ -48,7 +48,7 @@ public class ChamadaService : IChamadaService
             .Select(turma =>
             {
                 var permitidas = disciplinas
-                    .Where(d => escopo is null ? FazParteDaGrade(d, turma) : escopo.Contains((turma.Id, d.Id)))
+                    .Where(d => escopo is null ? d.FazParteDaGrade(turma) : escopo.Contains((turma.Id, d.Id)))
                     .OrderBy(d => d.Nome)
                     .Select(d => new ChamadaDisciplinaResponse(d.Id, d.Nome))
                     .ToList();
@@ -268,15 +268,11 @@ public class ChamadaService : IChamadaService
                 Error: ChamadaResultError.Forbidden));
         }
 
-        if (escopo is null && !FazParteDaGrade(disciplina, turma))
+        if (escopo is null && !disciplina.FazParteDaGrade(turma))
             return (null, Invalid("A disciplina não faz parte da grade desta turma."));
 
         return (turma, null);
     }
-
-    // Mesma regra da alocação de professor: disciplina sem etapas vinculadas vale para qualquer etapa.
-    private static bool FazParteDaGrade(Disciplina disciplina, Turma turma)
-        => disciplina.EtapasEnsino.Count == 0 || disciplina.EtapasEnsino.Any(e => e.EtapaEnsinoId == turma.EtapaEnsinoId);
 
     private static string? ValidarData(Turma turma, DateOnly data)
     {

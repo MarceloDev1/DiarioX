@@ -35,12 +35,15 @@ public static class Permissoes
         new("etapas-ensino", "Etapas de Ensino", Crud),
         new("anos-letivos", "Anos Letivos", Crud),
         new("disciplinas", "Disciplinas", Crud),
+        new("regras-avaliacao", "Regras de Avaliação", Crud),
         new("turmas", "Turmas", Crud),
         new("professores", "Professores", Crud),
         new("alocacao-professor", "Alocação de Professor", [Visualizar, Criar, Excluir]),
         // Enturmar e remanejar alteram a situação do aluno: exigem "alunos.editar".
         new("alunos", "Alunos", Crud),
         new("chamada", "Chamada", Crud),
+        // Criar = cadastrar avaliações e lançar notas; Editar = alterar avaliações; Excluir = excluir avaliações.
+        new("notas", "Notas", Crud),
         // Cada relatório também exige ver o módulo dos dados que exibe (ex.: alunos.visualizar).
         new("relatorios", "Relatórios", [Visualizar]),
         new("usuarios", "Usuários", Crud),
@@ -89,6 +92,14 @@ public static class Permissoes
         public const string Excluir = "disciplinas.excluir";
     }
 
+    public static class RegrasAvaliacao
+    {
+        public const string Visualizar = "regras-avaliacao.visualizar";
+        public const string Criar = "regras-avaliacao.criar";
+        public const string Editar = "regras-avaliacao.editar";
+        public const string Excluir = "regras-avaliacao.excluir";
+    }
+
     public static class Turmas
     {
         public const string Visualizar = "turmas.visualizar";
@@ -126,6 +137,14 @@ public static class Permissoes
         public const string Criar = "chamada.criar";
         public const string Editar = "chamada.editar";
         public const string Excluir = "chamada.excluir";
+    }
+
+    public static class Notas
+    {
+        public const string Visualizar = "notas.visualizar";
+        public const string Criar = "notas.criar";
+        public const string Editar = "notas.editar";
+        public const string Excluir = "notas.excluir";
     }
 
     public static class Relatorios
@@ -169,6 +188,7 @@ public static class Permissoes
                     Professores.Criar, Professores.Editar,
                     AlocacaoProfessor.Criar, AlocacaoProfessor.Excluir,
                     Chamada.Criar, Chamada.Editar,
+                    Notas.Criar, Notas.Editar,
                 ])
                 .ToList();
         }
@@ -178,7 +198,8 @@ public static class Permissoes
 
         if (Is(perfilNome, Perfil.Professor))
             return ["turmas.visualizar", "disciplinas.visualizar", Alunos.Visualizar,
-                Chamada.Visualizar, Chamada.Criar, Chamada.Editar];
+                Chamada.Visualizar, Chamada.Criar, Chamada.Editar,
+                Notas.Visualizar, Notas.Criar, Notas.Editar, Notas.Excluir];
 
         return [];
     }
