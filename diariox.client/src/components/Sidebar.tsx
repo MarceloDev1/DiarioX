@@ -32,8 +32,9 @@ interface MenuItem {
 }
 
 // Itens exclusivos do Administrador global.
+const instituicoesItem: MenuItem = { id: 'instituicoes', label: 'Instituições', icon: FiGlobe };
+
 const globalAdminItems: MenuItem[] = [
-    { id: 'instituicoes', label: 'Instituições', icon: FiGlobe },
     { id: 'financeiro-plataforma', label: 'Financeiro', icon: FiDollarSign },
 ];
 
@@ -41,21 +42,25 @@ const menuItems: MenuItem[] = [
     { id: 'home', label: 'Home', icon: FiHome },
     { id: 'cadastro', label: 'Cadastro', icon: FiBriefcase, submenu: [
         { id: 'escolas', label: 'Escolas', icon: MdSchool },
-        { id: 'modalidades-ensino', label: 'Modalidades de Ensino', icon: FiBook },
-        { id: 'etapas-ensino', label: 'Etapas de Ensino', icon: FiLayers },
+        { id: 'modalidades-ensino', label: 'Modalidades', icon: FiBook },
+        { id: 'etapas-ensino', label: 'Etapas', icon: FiLayers },
         { id: 'anos-letivos', label: 'Anos Letivos', icon: FiAward },
         { id: 'disciplinas', label: 'Disciplinas', icon: FiBook },
         { id: 'turmas', label: 'Turmas', icon: FiUsers },
-        { id: 'professores', label: 'Professores', icon: FiUsers },
     ] },
-    { id: 'alocacao-professor', label: 'Alocação de Professor', icon: MdManageAccounts },
-    { id: 'alunos', label: 'Alunos', icon: MdPeople },
-    { id: 'enturmar-aluno', label: 'Enturmar Aluno', icon: FiUserCheck },
-    { id: 'remanejar-aluno', label: 'Remanejar Aluno', icon: FiRotateCcw },
+    { id: 'professor', label: 'Professor', icon: FiUsers, submenu: [
+        { id: 'professores', label: 'Cadastrar Professor', icon: FiUsers },
+        { id: 'alocacao-professor', label: 'Alocar Professor', icon: MdManageAccounts },
+    ] },
+    { id: 'aluno', label: 'Aluno', icon: MdPeople, submenu: [
+        { id: 'alunos', label: 'Cadastrar Aluno', icon: MdPeople },
+        { id: 'enturmar-aluno', label: 'Enturmar Aluno', icon: FiUserCheck },
+        { id: 'remanejar-aluno', label: 'Remanejar Aluno', icon: FiRotateCcw },
+    ] },
     { id: 'chamada', label: 'Chamada', icon: FiCheckSquare },
     { id: 'relatorios', label: 'Relatórios', icon: FiBarChart2 },
-    { id: 'usuarios', label: 'Usuários', icon: FiUser },
     { id: 'configuracoes', label: 'Configurações', icon: FiSettings, submenu: [
+        { id: 'usuarios', label: 'Usuários', icon: FiUser },
         { id: 'permissoes', label: 'Permissões', icon: FiShield },
         { id: 'assinatura', label: 'Assinatura', icon: FiCreditCard },
     ] },
@@ -67,6 +72,7 @@ function Sidebar({ onSelectPage, currentPage, isGlobalAdmin = false }: SidebarPr
     // Mostra só as páginas permitidas; grupos sem nenhuma página permitida somem.
     const podeAbrir = (id: string) => !permissaoDaPagina[id] || can(permissaoDaPagina[id]);
     const visibleItems = (isGlobalAdmin ? [...menuItems, ...globalAdminItems] : menuItems)
+        .map(item => item.id === 'cadastro' && isGlobalAdmin ? { ...item, submenu: [instituicoesItem, ...item.submenu!] } : item)
         .map(item => item.submenu ? { ...item, submenu: item.submenu.filter(sub => podeAbrir(sub.id)) } : item)
         .filter(item => item.submenu ? item.submenu.length > 0 : podeAbrir(item.id));
 
