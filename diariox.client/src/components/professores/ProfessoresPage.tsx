@@ -49,6 +49,13 @@ interface EscolaOption {
 interface DisciplinaOption {
     id: number;
     nome: string;
+    etapasEnsino: { id: number; modalidadeEnsinoId: number }[];
+}
+
+interface ModalidadeOption {
+    id: number;
+    nome: string;
+    status: string;
 }
 
 interface ProfessorFormState {
@@ -129,15 +136,18 @@ function ProfessoresPage() {
 
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
     const [disciplinas, setDisciplinas] = useState<DisciplinaOption[]>([]);
+    const [modalidades, setModalidades] = useState<ModalidadeOption[]>([]);
+    const [modalidadeIds, setModalidadeIds] = useState<string[]>([]);
 
     useEffect(() => {
         let cancelled = false;
 
         async function loadOptions() {
             try {
-                const [escolasRes, disciplinasRes] = await Promise.all([
+                const [escolasRes, disciplinasRes, modalidadesRes] = await Promise.all([
                     apiFetch('/api/escolas'),
                     apiFetch('/api/disciplinas'),
+                    apiFetch('/api/modalidadesensino'),
                 ]);
                 if (cancelled) return;
 
@@ -149,6 +159,11 @@ function ProfessoresPage() {
                 if (disciplinasRes.ok) {
                     const disciplinasData = (await disciplinasRes.json()) as DisciplinaOption[];
                     setDisciplinas(disciplinasData);
+                }
+
+                if (modalidadesRes.ok) {
+                    const modalidadesData = (await modalidadesRes.json()) as ModalidadeOption[];
+                    setModalidades(modalidadesData.filter(modalidade => modalidade.status === 'ATIVO'));
                 }
             } catch {
                 if (!cancelled) setLocalError('Falha ao carregar opções do formulário.');
@@ -239,6 +254,7 @@ function ProfessoresPage() {
             setSuccessMessage(editingId ? 'Professor atualizado com sucesso!' : 'Professor cadastrado com sucesso!');
             setView('list');
             setForm(emptyForm);
+            setModalidadeIds([]);
             setEditingId(null);
             setTimeout(() => setSuccessMessage(null), 3000);
         }
@@ -259,6 +275,7 @@ function ProfessoresPage() {
             disciplinaIds: professor.disciplinas.map(d => d.id.toString()),
         });
         setActiveTab('pessoais');
+        setModalidadeIds([]);
         setView('form');
         setLocalError(null);
         setFieldErrors(emptyFieldErrors);
@@ -331,6 +348,22 @@ function ProfessoresPage() {
         }
     };
 
+    const disciplinasVisiveis = modalidadeIds.length === 0
+        ? disciplinas
+        : disciplinas.filter(disciplina =>
+            disciplina.etapasEnsino.some(etapa => modalidadeIds.includes(etapa.modalidadeEnsinoId.toString())));
+
+    const handleModalidadesChange = (ids: string[]) => {
+        setModalidadeIds(ids);
+        if (ids.length === 0) return;
+
+        const idsVisiveis = new Set(
+            disciplinas
+                .filter(disciplina => disciplina.etapasEnsino.some(etapa => ids.includes(etapa.modalidadeEnsinoId.toString())))
+                .map(disciplina => disciplina.id.toString()));
+        setForm(current => ({ ...current, disciplinaIds: current.disciplinaIds.filter(id => idsVisiveis.has(id)) }));
+    };
+
     const handleConsultar = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setApplied({
@@ -358,12 +391,14 @@ function ProfessoresPage() {
         setFieldErrors(emptyFieldErrors);
         setLocalError(null);
         setActiveTab('pessoais');
+        setModalidadeIds([]);
         setView('form');
     };
 
     const handleBackToList = () => {
         setView('list');
         setForm(emptyForm);
+        setModalidadeIds([]);
         setEditingId(null);
         setLocalError(null);
         setFieldErrors(emptyFieldErrors);
@@ -687,12 +722,30 @@ function ProfessoresPage() {
                             <p className="form-tab-hint">Opcional: as disciplinas podem ser vinculadas depois.</p>
 
                             <div className="form-group form-field-full">
+                                <label htmlFor="modalidadeIds">Modalidade de Ensino</label>
+                                <MultiSelectDropdown
+                                    id="modalidadeIds"
+                                    options={modalidades.map(modalidade => ({ value: modalidade.id.toString(), label: modalidade.nome }))}
+                                    selected={modalidadeIds}
+                                    onChange={handleModalidadesChange}
+                                    placeholder="Selecione as modalidades para filtrar as disciplinas"
+                                    searchPlaceholder="Pesquisar modalidades..."
+                                    emptyMessage="Nenhuma modalidade disponível"
+                                    disabled={isSaving}
+                                />
+                            </div>
+
+                            <div className="form-group form-field-full">
                                 <label>Disciplinas</label>
                                 <div className="checkbox-group">
-                                    {disciplinas.length === 0 ? (
-                                        <p className="no-options">Nenhuma disciplina disponível</p>
+                                    {disciplinasVisiveis.length === 0 ? (
+                                        <p className="no-options">
+                                            {disciplinas.length === 0
+                                                ? 'Nenhuma disciplina disponível'
+                                                : 'Nenhuma disciplina vinculada às modalidades selecionadas'}
+                                        </p>
                                     ) : (
-                                        disciplinas.map(disciplina => (
+                                        disciplinasVisiveis.map(disciplina => (
                                             <label key={disciplina.id} className="checkbox-label">
                                                 <input
                                                     type="checkbox"

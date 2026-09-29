@@ -129,7 +129,8 @@ public class DisciplinaService : IDisciplinaService
         d.Ativa,
         d.EtapasEnsino.Select(de => new DisciplinaEtapaEnsinoResponse(
             de.EtapaEnsinoId,
-            de.EtapaEnsino?.Nome ?? string.Empty
+            de.EtapaEnsino?.Nome ?? string.Empty,
+            de.EtapaEnsino?.ModalidadeEnsinoId ?? 0
         )).ToList()
     );
 }

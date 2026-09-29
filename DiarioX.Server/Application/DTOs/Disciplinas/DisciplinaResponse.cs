@@ -2,7 +2,8 @@ namespace DiarioX.Server.Application.DTOs.Disciplinas;
 
 public record DisciplinaEtapaEnsinoResponse(
     int Id,
-    string EtapaEnsinoNome
+    string EtapaEnsinoNome,
+    int ModalidadeEnsinoId
 );
 
 public record DisciplinaResponse(
