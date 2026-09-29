@@ -11,7 +11,10 @@ public sealed record ProfessorAlocacaoResponse(
     string Turno,
     int DisciplinaId,
     string DisciplinaNome,
-    bool Ativa
+    bool Ativa,
+    string EscolaNome,
+    string ModalidadeNome,
+    string EtapaNome
 );
 
 public sealed record ProfessorAlocacaoDisponibilidadeResponse(

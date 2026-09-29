@@ -20,6 +20,12 @@ public class ProfessorAlocacaoRepository : BaseRepository<ProfessorAlocacao>, IP
     public async Task<IEnumerable<ProfessorAlocacao>> GetAtivasAsync()
         => await Query().Where(x => x.Ativa).ToListAsync();
 
+    public async Task<IEnumerable<ProfessorAlocacao>> GetAtivasDetalhadasAsync()
+        => await Query()
+            .Where(x => x.Ativa)
+            .OrderBy(x => x.Professor.Nome)
+            .ToListAsync();
+
     public async Task SaveAsync(IEnumerable<ProfessorAlocacao> novas, IEnumerable<int> removerIds)
     {
         var ids = removerIds.Distinct().ToList();
@@ -44,5 +50,8 @@ public class ProfessorAlocacaoRepository : BaseRepository<ProfessorAlocacao>, IP
             .Include(x => x.Professor)
             .Include(x => x.Turma)
                 .ThenInclude(x => x.AnoLetivo)
+            .Include(x => x.Turma).ThenInclude(x => x.Escola)
+            .Include(x => x.Turma).ThenInclude(x => x.ModalidadeEnsino)
+            .Include(x => x.Turma).ThenInclude(x => x.EtapaEnsino)
             .Include(x => x.Disciplina);
 }

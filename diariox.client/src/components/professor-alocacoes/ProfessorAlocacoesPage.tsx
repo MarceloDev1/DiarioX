@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useConfirm } from '../../hooks/useConfirm';
 import { apiFetch } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
@@ -10,6 +10,17 @@ interface Professor {
     id: number;
     nome: string;
     disciplinas: { id: number; nome: string }[];
+}
+
+interface AlocacaoListItem {
+    id: number;
+    professorNome: string;
+    escolaNome: string;
+    modalidadeNome: string;
+    etapaNome: string;
+    turmaNome: string;
+    disciplinaNome: string;
+    turno: string;
 }
 
 interface Disponibilidade {
@@ -37,6 +48,14 @@ const turnoLabels: Record<string, string> = { MANHA: 'Manhã', TARDE: 'Tarde', N
 function ProfessorAlocacoesPage() {
     const { can } = usePermissoes();
     const { confirm, confirmDialog } = useConfirm();
+    const [view, setView] = useState<'list' | 'form'>('list');
+    const [alocacoes, setAlocacoes] = useState<AlocacaoListItem[]>([]);
+    const [listLoading, setListLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [filterProfessor, setFilterProfessor] = useState('');
+    const [filterEscola, setFilterEscola] = useState('');
+    const [filterTurma, setFilterTurma] = useState('');
+    const [applied, setApplied] = useState({ professor: '', escola: '', turma: '' });
     const [professores, setProfessores] = useState<Professor[]>([]);
     const [disponiveis, setDisponiveis] = useState<Disponibilidade[]>([]);
     const [professorId, setProfessorId] = useState('');
@@ -53,6 +72,90 @@ function ProfessorAlocacoesPage() {
             .then(data => setProfessores(data as Professor[]))
             .catch(reason => setError(reason instanceof Error ? reason.message : 'Falha ao carregar professores.'));
     }, []);
+
+    const loadAlocacoes = useCallback(async () => {
+        setListLoading(true);
+        try {
+            const response = await apiFetch('/api/professor-alocacoes');
+            if (!response.ok) throw new Error('Falha ao carregar professores alocados.');
+            setAlocacoes(await response.json() as AlocacaoListItem[]);
+        } catch (reason) {
+            setError(reason instanceof Error ? reason.message : 'Falha ao carregar professores alocados.');
+        } finally {
+            setListLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        void loadAlocacoes();
+    }, [loadAlocacoes]);
+
+    const handleConsultar = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setApplied({
+            professor: filterProfessor.trim().toLowerCase(),
+            escola: filterEscola.trim().toLowerCase(),
+            turma: filterTurma.trim().toLowerCase(),
+        });
+    };
+
+    const handleLimparFiltros = () => {
+        setFilterProfessor('');
+        setFilterEscola('');
+        setFilterTurma('');
+        setApplied({ professor: '', escola: '', turma: '' });
+    };
+
+    const alocacoesFiltradas = alocacoes.filter(item =>
+        item.professorNome.toLowerCase().includes(applied.professor)
+        && item.escolaNome.toLowerCase().includes(applied.escola)
+        && item.turmaNome.toLowerCase().includes(applied.turma));
+
+    const handleAlocar = () => {
+        setSuccess(null);
+        setError(null);
+        void loadDisponiveis('');
+        setView('form');
+    };
+
+    const handleVoltar = () => {
+        setError(null);
+        setView('list');
+        void loadDisponiveis('');
+    };
+
+    const handleDelete = async (item: AlocacaoListItem) => {
+        const confirmed = await confirm({
+            title: 'Desalocar professor',
+            variant: 'danger',
+            confirmLabel: 'Desalocar',
+            message: (
+                <>
+                    <p>
+                        Deseja desalocar <strong>{item.professorNome}</strong> de{' '}
+                        <strong>{item.disciplinaNome}</strong> ({item.turmaNome}, {item.escolaNome})?
+                    </p>
+                    <p>O cadastro do professor é mantido e ele poderá ser alocado novamente.</p>
+                </>
+            ),
+        });
+        if (!confirmed) return;
+
+        setError(null);
+        setSuccess(null);
+        setDeletingId(item.id);
+        try {
+            const response = await apiFetch(`/api/professor-alocacoes/${item.id}`, { method: 'DELETE' });
+            const data = await response.json() as { message?: string };
+            if (!response.ok) throw new Error(data.message ?? 'Falha ao desalocar professor.');
+            setSuccess(data.message ?? 'Professor desalocado com sucesso!');
+            await loadAlocacoes();
+        } catch (reason) {
+            setError(reason instanceof Error ? reason.message : 'Falha ao desalocar professor.');
+        } finally {
+            setDeletingId(null);
+        }
+    };
 
     const loadDisponiveis = async (id: string) => {
         setProfessorId(id);
@@ -147,15 +250,109 @@ function ProfessorAlocacoesPage() {
             });
             const data = await response.json() as { message?: string };
             if (!response.ok) throw new Error(data.message ?? 'Falha ao confirmar alocação.');
-            setSuccess(data.message ?? 'Enturmação realizada com sucesso!');
             setGrade([]);
-            await loadDisponiveis(professorId);
+            await loadDisponiveis('');
+            await loadAlocacoes();
+            setSuccess(data.message ?? 'Enturmação realizada com sucesso!');
+            setView('list');
         } catch (reason) {
             setError(reason instanceof Error ? reason.message : 'Falha ao confirmar alocação.');
         } finally {
             setSaving(false);
         }
     };
+
+    if (view === 'list') {
+        return (
+            <div className="school-page">
+                <section className="content-card">
+                    <div className="section-header">
+                        <div>
+                            <h2>Professores Alocados</h2>
+                            <p>Consulte, edite e remova professores alocados.</p>
+                        </div>
+                        {can('alocacao-professor.criar') && (
+                            <button type="button" className="primary-button" onClick={handleAlocar}>
+                                + Alocar Professor
+                            </button>
+                        )}
+                    </div>
+
+                    <form className="filter-bar" onSubmit={handleConsultar}>
+                        <div className="filter-field">
+                            <label htmlFor="filtro-professor">Professor</label>
+                            <input id="filtro-professor" type="text" className="filter-input" value={filterProfessor} onChange={e => setFilterProfessor(e.target.value)} />
+                        </div>
+                        <div className="filter-field">
+                            <label htmlFor="filtro-escola">Escola</label>
+                            <input id="filtro-escola" type="text" className="filter-input" value={filterEscola} onChange={e => setFilterEscola(e.target.value)} />
+                        </div>
+                        <div className="filter-field">
+                            <label htmlFor="filtro-turma">Turma</label>
+                            <input id="filtro-turma" type="text" className="filter-input" value={filterTurma} onChange={e => setFilterTurma(e.target.value)} />
+                        </div>
+                        <button type="submit" className="filter-button">Consultar</button>
+                        <button type="button" className="filter-button filter-button-static" onClick={handleLimparFiltros}>Limpar</button>
+                    </form>
+
+                    <FeedbackMessage message={error} />
+                    <FeedbackMessage message={success} type="success" />
+
+                    {listLoading || alocacoesFiltradas.length === 0 ? (
+                        <EmptyState
+                            loading={listLoading}
+                            loadingMessage="Carregando professores alocados..."
+                            emptyMessage="Nenhum professor alocado encontrado."
+                            emptySubMessage={alocacoes.length === 0 ? 'Clique em Alocar Professor para começar.' : 'Tente ajustar os filtros.'}
+                        />
+                    ) : (
+                        <div className="table-responsive">
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Professor</th>
+                                        <th>Escola</th>
+                                        <th>Modalidade</th>
+                                        <th>Etapa</th>
+                                        <th>Turma</th>
+                                        <th>Disciplina</th>
+                                        <th>Turno</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {alocacoesFiltradas.map(item => (
+                                        <tr key={item.id}>
+                                            <td>{item.professorNome}</td>
+                                            <td>{item.escolaNome}</td>
+                                            <td>{item.modalidadeNome}</td>
+                                            <td>{item.etapaNome}</td>
+                                            <td>{item.turmaNome}</td>
+                                            <td>{item.disciplinaNome}</td>
+                                            <td>{turnoLabels[item.turno] ?? item.turno}</td>
+                                            <td>
+                                                {can('alocacao-professor.excluir') && (
+                                                    <button
+                                                        type="button"
+                                                        className="table-action-button danger"
+                                                        disabled={deletingId === item.id}
+                                                        onClick={() => void handleDelete(item)}
+                                                    >
+                                                        Desalocar
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </section>
+                {confirmDialog}
+            </div>
+        );
+    }
 
     return (
         <div className="school-page">
@@ -165,6 +362,7 @@ function ProfessorAlocacoesPage() {
                         <h2>Alocação de Professor</h2>
                         <p>Vincule professores habilitados às turmas e disciplinas do ano letivo.</p>
                     </div>
+                    <button type="button" className="btn btn-secondary" onClick={handleVoltar}>← Voltar</button>
                 </div>
                 <FeedbackMessage message={error} />
                 <FeedbackMessage message={success} type="success" />

@@ -4,6 +4,7 @@ namespace DiarioX.Server.Application.Interfaces;
 
 public interface IProfessorAlocacaoService
 {
+    Task<IEnumerable<ProfessorAlocacaoResponse>> GetAllAsync();
     Task<IEnumerable<ProfessorAlocacaoResponse>> GetByProfessorAsync(int professorId);
     Task<IEnumerable<ProfessorAlocacaoDisponibilidadeResponse>> GetDisponiveisAsync(int professorId);
     Task<ProfessorAlocacaoCommandResult> CreateAsync(ProfessorAlocacaoRequest request);

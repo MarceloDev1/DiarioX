@@ -20,6 +20,11 @@ public class ProfessorAlocacoesController : ControllerBase
     }
 
     [Permissao(Permissoes.AlocacaoProfessor.Visualizar)]
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+        => Ok(await _service.GetAllAsync());
+
+    [Permissao(Permissoes.AlocacaoProfessor.Visualizar)]
     [HttpGet("professor/{professorId:int}")]
     public async Task<IActionResult> GetByProfessor(int professorId)
         => Ok(await _service.GetByProfessorAsync(professorId));

@@ -24,6 +24,9 @@ public class ProfessorAlocacaoService : IProfessorAlocacaoService
         _disciplinaRepository = disciplinaRepository;
     }
 
+    public async Task<IEnumerable<ProfessorAlocacaoResponse>> GetAllAsync()
+        => (await _alocacaoRepository.GetAtivasDetalhadasAsync()).Select(Map);
+
     public async Task<IEnumerable<ProfessorAlocacaoResponse>> GetByProfessorAsync(int professorId)
         => (await _alocacaoRepository.GetByProfessorIdAsync(professorId)).Select(Map);
 
@@ -139,13 +142,14 @@ public class ProfessorAlocacaoService : IProfessorAlocacaoService
             return NotFound("Alocação não encontrada.");
 
         await _alocacaoRepository.DeleteAsync(alocacao);
-        return new ProfessorAlocacaoCommandResult(true, "Alocação removida com sucesso!");
+        return new ProfessorAlocacaoCommandResult(true, "Professor desalocado com sucesso!");
     }
 
     private static ProfessorAlocacaoResponse Map(ProfessorAlocacao item)
         => new(item.Id, item.ProfessorId, item.Professor.Nome, item.TurmaId, item.Turma.NomeCompleto,
             item.Turma.AnoLetivoId, item.Turma.AnoLetivo.AnoReferencia, item.Turma.Turno,
-            item.DisciplinaId, item.Disciplina.Nome, item.Ativa);
+            item.DisciplinaId, item.Disciplina.Nome, item.Ativa,
+            item.Turma.Escola.Nome, item.Turma.ModalidadeEnsino.Nome, item.Turma.EtapaEnsino.Nome);
 
     private static ProfessorAlocacaoCommandResult Invalid(string message)
         => new(false, message, Error: ProfessorAlocacaoResultError.Validation);
