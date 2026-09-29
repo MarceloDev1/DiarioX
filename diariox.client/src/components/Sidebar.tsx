@@ -40,7 +40,7 @@ const globalAdminItems: MenuItem[] = [
 
 const menuItems: MenuItem[] = [
     { id: 'home', label: 'Home', icon: FiHome },
-    { id: 'cadastro', label: 'Cadastro', icon: FiBriefcase, submenu: [
+    { id: 'cadastro', label: 'Cadastros', icon: FiBriefcase, submenu: [
         { id: 'escolas', label: 'Escolas', icon: MdSchool },
         { id: 'modalidades-ensino', label: 'Modalidades', icon: FiBook },
         { id: 'etapas-ensino', label: 'Etapas', icon: FiLayers },
@@ -48,7 +48,7 @@ const menuItems: MenuItem[] = [
         { id: 'disciplinas', label: 'Disciplinas', icon: FiBook },
         { id: 'turmas', label: 'Turmas', icon: FiUsers },
     ] },
-    { id: 'professor', label: 'Professoress', icon: FiUsers, submenu: [
+    { id: 'professor', label: 'Professores', icon: FiUsers, submenu: [
         { id: 'professores', label: 'Cadastrar Professor', icon: FiUsers },
         { id: 'alocacao-professor', label: 'Alocar Professor', icon: MdManageAccounts },
     ] },
