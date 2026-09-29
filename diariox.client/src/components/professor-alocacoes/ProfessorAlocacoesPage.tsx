@@ -9,7 +9,6 @@ import { usePermissoes } from '../../hooks/usePermissoes';
 interface Professor {
     id: number;
     nome: string;
-    disciplinas: { id: number; nome: string }[];
 }
 
 interface AlocacaoListItem {
@@ -29,19 +28,40 @@ interface Disponibilidade {
     anoLetivoId: number;
     anoReferencia: number;
     turno: string;
+    escolaId: number;
+    escolaNome: string;
+    modalidadeEnsinoId: number;
+    modalidadeNome: string;
+    etapaEnsinoId: number;
+    etapaNome: string;
     disciplinas: { disciplinaId: number; disciplinaNome: string; alocacaoId: number | null; professorAtualNome: string | null }[];
 }
 
 interface GradeItem {
     turmaId: number;
     turmaNome: string;
-    anoReferencia: number;
+    escolaNome: string;
+    modalidadeNome: string;
+    etapaNome: string;
     turno: string;
     disciplinaId: number;
     disciplinaNome: string;
     substituirAlocacaoId: number | null;
     professorAtualNome: string | null;
 }
+
+interface SelectOption {
+    value: string;
+    label: string;
+}
+
+const uniqueOptions = (items: Disponibilidade[], value: (item: Disponibilidade) => number, label: (item: Disponibilidade) => string): SelectOption[] => {
+    const map = new Map<string, string>();
+    items.forEach(item => map.set(value(item).toString(), label(item)));
+    return [...map.entries()]
+        .map(([optionValue, optionLabel]) => ({ value: optionValue, label: optionLabel }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+};
 
 const turnoLabels: Record<string, string> = { MANHA: 'Manhã', TARDE: 'Tarde', NOITE: 'Noite', INTEGRAL: 'Integral' };
 
@@ -59,7 +79,11 @@ function ProfessorAlocacoesPage() {
     const [professores, setProfessores] = useState<Professor[]>([]);
     const [disponiveis, setDisponiveis] = useState<Disponibilidade[]>([]);
     const [professorId, setProfessorId] = useState('');
-    const [selecoes, setSelecoes] = useState<Record<number, number[]>>({});
+    const [escolaId, setEscolaId] = useState('');
+    const [modalidadeId, setModalidadeId] = useState('');
+    const [etapaId, setEtapaId] = useState('');
+    const [turmaId, setTurmaId] = useState('');
+    const [disciplinaId, setDisciplinaId] = useState('');
     const [grade, setGrade] = useState<GradeItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -111,17 +135,45 @@ function ProfessorAlocacoesPage() {
         && item.escolaNome.toLowerCase().includes(applied.escola)
         && item.turmaNome.toLowerCase().includes(applied.turma));
 
+    const resetForm = () => {
+        setProfessorId('');
+        setDisponiveis([]);
+        setEscolaId('');
+        setModalidadeId('');
+        setEtapaId('');
+        setTurmaId('');
+        setDisciplinaId('');
+        setGrade([]);
+    };
+
     const handleAlocar = () => {
         setSuccess(null);
         setError(null);
-        void loadDisponiveis('');
+        resetForm();
         setView('form');
     };
 
-    const handleVoltar = () => {
+    const handleCancelar = async () => {
+        if (professorId || grade.length > 0) {
+            const confirmed = await confirm({
+                title: 'Cancelar alocação',
+                variant: 'warning',
+                confirmLabel: 'Cancelar alocação',
+                message: (
+                    <>
+                        <p>Deseja cancelar a alocação de professor?</p>
+                        <p>{grade.length > 0
+                            ? 'As alocações da lista de conferência serão descartadas.'
+                            : 'Os dados informados serão descartados.'}</p>
+                    </>
+                ),
+            });
+            if (!confirmed) return;
+        }
+
         setError(null);
+        resetForm();
         setView('list');
-        void loadDisponiveis('');
     };
 
     const handleDelete = async (item: AlocacaoListItem) => {
@@ -157,16 +209,17 @@ function ProfessorAlocacoesPage() {
         }
     };
 
-    const loadDisponiveis = async (id: string) => {
+    const handleProfessorChange = async (id: string) => {
         setProfessorId(id);
-        setGrade([]);
-        setSelecoes({});
+        setEscolaId('');
+        setModalidadeId('');
+        setEtapaId('');
+        setTurmaId('');
+        setDisciplinaId('');
+        setDisponiveis([]);
         setSuccess(null);
         setError(null);
-        if (!id) {
-            setDisponiveis([]);
-            return;
-        }
+        if (!id) return;
 
         setLoading(true);
         try {
@@ -180,31 +233,70 @@ function ProfessorAlocacoesPage() {
         }
     };
 
-    const toggleDisciplina = (turmaId: number, disciplinaId: number) => {
-        setSelecoes(current => {
-            const atual = current[turmaId] ?? [];
-            const next = atual.includes(disciplinaId) ? atual.filter(id => id !== disciplinaId) : [...atual, disciplinaId];
-            return { ...current, [turmaId]: next };
-        });
+    const handleEscolaChange = (value: string) => {
+        setEscolaId(value);
+        setModalidadeId('');
+        setEtapaId('');
+        setTurmaId('');
+        setDisciplinaId('');
+    };
+
+    const handleModalidadeChange = (value: string) => {
+        setModalidadeId(value);
+        setEtapaId('');
+        setTurmaId('');
+        setDisciplinaId('');
+    };
+
+    const handleEtapaChange = (value: string) => {
+        setEtapaId(value);
+        setTurmaId('');
+        setDisciplinaId('');
+    };
+
+    const handleTurmaChange = (value: string) => {
+        setTurmaId(value);
+        setDisciplinaId('');
+    };
+
+    const professorSelecionado = professores.find(professor => professor.id.toString() === professorId);
+    const escolaOptions = uniqueOptions(disponiveis, item => item.escolaId, item => item.escolaNome);
+    const noEscola = disponiveis.filter(item => item.escolaId.toString() === escolaId);
+    const modalidadeOptions = uniqueOptions(noEscola, item => item.modalidadeEnsinoId, item => item.modalidadeNome);
+    const naModalidade = noEscola.filter(item => item.modalidadeEnsinoId.toString() === modalidadeId);
+    const etapaOptions = uniqueOptions(naModalidade, item => item.etapaEnsinoId, item => item.etapaNome);
+    const naEtapa = naModalidade.filter(item => item.etapaEnsinoId.toString() === etapaId);
+    const turmaOptions = uniqueOptions(naEtapa, item => item.turmaId, item => `${item.turmaNome} · ${item.anoReferencia} · ${turnoLabels[item.turno] ?? item.turno}`);
+    const turmaSelecionada = naEtapa.find(item => item.turmaId.toString() === turmaId);
+    const disciplinasDaTurma = (turmaSelecionada?.disciplinas ?? [])
+        .filter(disciplina => !grade.some(item => item.turmaId === turmaSelecionada?.turmaId && item.disciplinaId === disciplina.disciplinaId));
+
+    const jaAlocadoAoProfessor = (disciplina: { professorAtualNome: string | null }) =>
+        disciplina.professorAtualNome !== null && disciplina.professorAtualNome === professorSelecionado?.nome;
+
+    const disciplinaLabel = (disciplina: { disciplinaNome: string; professorAtualNome: string | null }) => {
+        if (jaAlocadoAoProfessor(disciplina)) return `${disciplina.disciplinaNome} (já alocado a este professor)`;
+        if (disciplina.professorAtualNome) return `${disciplina.disciplinaNome} (atual: ${disciplina.professorAtualNome})`;
+        return disciplina.disciplinaNome;
     };
 
     const addToGrade = () => {
-        const itens = disponiveis.flatMap(turma => (selecoes[turma.turmaId] ?? []).map(disciplinaId => {
-            const disciplina = turma.disciplinas.find(item => item.disciplinaId === disciplinaId);
-            return disciplina ? {
-                turmaId: turma.turmaId,
-                turmaNome: turma.turmaNome,
-                anoReferencia: turma.anoReferencia,
-                turno: turma.turno,
-                disciplinaId: disciplina.disciplinaId,
-                disciplinaNome: disciplina.disciplinaNome,
-                substituirAlocacaoId: disciplina.alocacaoId,
-                professorAtualNome: disciplina.professorAtualNome,
-            } : null;
-        }).filter((item): item is GradeItem => item !== null));
+        const disciplina = turmaSelecionada?.disciplinas.find(item => item.disciplinaId.toString() === disciplinaId);
+        if (!turmaSelecionada || !disciplina) return;
 
-        setGrade(current => [...current, ...itens.filter(item => !current.some(existing => existing.turmaId === item.turmaId && existing.disciplinaId === item.disciplinaId))]);
-        setSelecoes({});
+        setGrade(current => [...current, {
+            turmaId: turmaSelecionada.turmaId,
+            turmaNome: turmaSelecionada.turmaNome,
+            escolaNome: turmaSelecionada.escolaNome,
+            modalidadeNome: turmaSelecionada.modalidadeNome,
+            etapaNome: turmaSelecionada.etapaNome,
+            turno: turmaSelecionada.turno,
+            disciplinaId: disciplina.disciplinaId,
+            disciplinaNome: disciplina.disciplinaNome,
+            substituirAlocacaoId: disciplina.alocacaoId,
+            professorAtualNome: disciplina.professorAtualNome,
+        }]);
+        setDisciplinaId('');
     };
 
     const removeFromGrade = (item: GradeItem) =>
@@ -251,7 +343,7 @@ function ProfessorAlocacoesPage() {
             const data = await response.json() as { message?: string };
             if (!response.ok) throw new Error(data.message ?? 'Falha ao confirmar alocação.');
             setGrade([]);
-            await loadDisponiveis('');
+            resetForm();
             await loadAlocacoes();
             setSuccess(data.message ?? 'Enturmação realizada com sucesso!');
             setView('list');
@@ -362,50 +454,76 @@ function ProfessorAlocacoesPage() {
                         <h2>Alocação de Professor</h2>
                         <p>Vincule professores habilitados às turmas e disciplinas do ano letivo.</p>
                     </div>
-                    <button type="button" className="btn btn-secondary" onClick={handleVoltar}>← Voltar</button>
                 </div>
                 <FeedbackMessage message={error} />
-                <FeedbackMessage message={success} type="success" />
                 <div className="cadastro-form escola-form">
                     <div className="form-field">
                         <label htmlFor="alocacao-professor">Professor</label>
-                        <select id="alocacao-professor" value={professorId} onChange={event => void loadDisponiveis(event.target.value)}>
+                        <select
+                            id="alocacao-professor"
+                            value={professorId}
+                            onChange={event => void handleProfessorChange(event.target.value)}
+                            disabled={saving || grade.length > 0}
+                            title={grade.length > 0 ? 'Remova as alocações da lista de conferência para trocar o professor.' : undefined}
+                        >
                             <option value="">Selecione um professor</option>
                             {professores.map(professor => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}
                         </select>
                     </div>
+
+                    <div className="form-field">
+                        <label htmlFor="alocacao-escola">Escola</label>
+                        <select id="alocacao-escola" value={escolaId} onChange={event => handleEscolaChange(event.target.value)} disabled={!professorId || loading || saving}>
+                            <option value="">Selecione uma escola</option>
+                            {escolaOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="form-field">
+                        <label htmlFor="alocacao-modalidade">Modalidade</label>
+                        <select id="alocacao-modalidade" value={modalidadeId} onChange={event => handleModalidadeChange(event.target.value)} disabled={!escolaId || saving}>
+                            <option value="">Selecione uma modalidade</option>
+                            {modalidadeOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="form-field">
+                        <label htmlFor="alocacao-etapa">Etapa</label>
+                        <select id="alocacao-etapa" value={etapaId} onChange={event => handleEtapaChange(event.target.value)} disabled={!modalidadeId || saving}>
+                            <option value="">Selecione uma etapa</option>
+                            {etapaOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="form-field">
+                        <label htmlFor="alocacao-turma">Turma</label>
+                        <select id="alocacao-turma" value={turmaId} onChange={event => handleTurmaChange(event.target.value)} disabled={!etapaId || saving}>
+                            <option value="">Selecione uma turma</option>
+                            {turmaOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="form-field">
+                        <label htmlFor="alocacao-disciplina">Disciplina</label>
+                        <select id="alocacao-disciplina" value={disciplinaId} onChange={event => setDisciplinaId(event.target.value)} disabled={!turmaId || saving}>
+                            <option value="">Selecione uma disciplina</option>
+                            {disciplinasDaTurma.map(disciplina => (
+                                <option key={disciplina.disciplinaId} value={disciplina.disciplinaId} disabled={jaAlocadoAoProfessor(disciplina)}>
+                                    {disciplinaLabel(disciplina)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {professorId && !loading && disponiveis.length === 0 && (
+                        <EmptyState emptyMessage="Nenhuma turma disponível para as habilitações e escolas cadastradas deste professor." />
+                    )}
+
+                    <div>
+                        <button type="button" onClick={addToGrade} disabled={!disciplinaId || saving}>Adicionar Alocação</button>
+                    </div>
                 </div>
             </section>
-
-            {professorId && (
-                <section className="content-card">
-                    <div className="section-header">
-                        <div>
-                            <h2>Turmas e Disciplinas disponíveis</h2>
-                            <p>Somente disciplinas habilitadas para o professor são exibidas.</p>
-                        </div>
-                        {can('alocacao-professor.criar') && <button className="btn btn-primary" type="button" onClick={addToGrade} disabled={loading || Object.values(selecoes).every(items => items.length === 0)}>Adicionar à Grade do Professor</button>}
-                    </div>
-                    {loading ? <div className="loading">Carregando turmas...</div> : disponiveis.length === 0 ? (
-                        <EmptyState emptyMessage="Nenhuma turma disponível para as habilitações cadastradas deste professor." />
-                    ) : (
-                        <div className="allocation-grid">
-                            {disponiveis.map(turma => (
-                                <fieldset className="allocation-group" key={turma.turmaId}>
-                                    <legend>{turma.turmaNome} · {turma.anoReferencia} · {turnoLabels[turma.turno] ?? turma.turno}</legend>
-                                    {turma.disciplinas.map(disciplina => (
-                                        <label className="allocation-option" key={disciplina.disciplinaId}>
-                                            <input type="checkbox" checked={(selecoes[turma.turmaId] ?? []).includes(disciplina.disciplinaId)} onChange={() => toggleDisciplina(turma.turmaId, disciplina.disciplinaId)} />
-                                            <span>{disciplina.disciplinaNome}</span>
-                                            {disciplina.professorAtualNome && <small>Professor atual: {disciplina.professorAtualNome}</small>}
-                                        </label>
-                                    ))}
-                                </fieldset>
-                            ))}
-                        </div>
-                    )}
-                </section>
-            )}
 
             <section className="content-card">
                 <div className="section-header">
@@ -413,13 +531,38 @@ function ProfessorAlocacoesPage() {
                         <h2>Tabela de conferência</h2>
                         <p>Revise os vínculos antes de confirmar a alocação.</p>
                     </div>
-                    {can('alocacao-professor.criar') && <button className="btn btn-primary" type="button" onClick={() => void confirmAllocation()} disabled={saving || !professorId || grade.length === 0}>Confirmar Alocação</button>}
+                    <div className="form-actions">
+                        <button className="btn btn-secondary" type="button" onClick={() => void handleCancelar()} disabled={saving}>Cancelar</button>
+                        {can('alocacao-professor.criar') && <button className="btn btn-primary" type="button" onClick={() => void confirmAllocation()} disabled={saving || !professorId || grade.length === 0}>Confirmar Alocação</button>}
+                    </div>
                 </div>
-                {grade.length === 0 ? <EmptyState emptyMessage="Nenhuma alocação adicionada à grade." /> : (
+                {grade.length === 0 ? <EmptyState emptyMessage="Nenhuma alocação adicionada à lista." /> : (
                     <div className="table-responsive">
                         <table className="data-table">
-                            <thead><tr><th>Turma</th><th>Ano</th><th>Turno</th><th>Disciplina</th><th>Ação</th></tr></thead>
-                            <tbody>{grade.map(item => <tr key={`${item.turmaId}-${item.disciplinaId}`}><td>{item.turmaNome}</td><td>{item.anoReferencia}</td><td>{turnoLabels[item.turno] ?? item.turno}</td><td>{item.disciplinaNome}</td><td><button className="table-action-button danger" type="button" onClick={() => removeFromGrade(item)}>Remover</button></td></tr>)}</tbody>
+                            <thead>
+                                <tr><th>Professor</th><th>Escola</th><th>Modalidade</th><th>Etapa</th><th>Turma</th><th>Disciplina</th><th>Turno</th><th>Ação</th></tr>
+                            </thead>
+                            <tbody>
+                                {grade.map(item => (
+                                    <tr key={`${item.turmaId}-${item.disciplinaId}`}>
+                                        <td>{professorSelecionado?.nome}</td>
+                                        <td>{item.escolaNome}</td>
+                                        <td>{item.modalidadeNome}</td>
+                                        <td>{item.etapaNome}</td>
+                                        <td>{item.turmaNome}</td>
+                                        <td>
+                                            {item.disciplinaNome}
+                                            {item.professorAtualNome && <small> — substitui {item.professorAtualNome}</small>}
+                                        </td>
+                                        <td>{turnoLabels[item.turno] ?? item.turno}</td>
+                                        <td>
+                                            <button className="table-action-button danger" type="button" onClick={() => removeFromGrade(item)} disabled={saving}>
+                                                Remover
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
                         </table>
                     </div>
                 )}

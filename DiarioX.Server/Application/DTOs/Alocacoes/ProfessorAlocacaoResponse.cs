@@ -23,6 +23,12 @@ public sealed record ProfessorAlocacaoDisponibilidadeResponse(
     int AnoLetivoId,
     int AnoReferencia,
     string Turno,
+    int EscolaId,
+    string EscolaNome,
+    int ModalidadeEnsinoId,
+    string ModalidadeNome,
+    int EtapaEnsinoId,
+    string EtapaNome,
     List<ProfessorAlocacaoDisciplinaResponse> Disciplinas
 );
 

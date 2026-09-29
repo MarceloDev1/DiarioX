@@ -53,6 +53,12 @@ public class ProfessorAlocacaoService : IProfessorAlocacaoService
                 turma.AnoLetivoId,
                 turma.AnoLetivo.AnoReferencia,
                 turma.Turno,
+                turma.EscolaId,
+                turma.Escola.Nome,
+                turma.ModalidadeEnsinoId,
+                turma.ModalidadeEnsino.Nome,
+                turma.EtapaEnsinoId,
+                turma.EtapaEnsino.Nome,
                 disciplinas
                     .Where(d => d.EtapasEnsino.Count == 0 || d.EtapasEnsino.Any(e => e.EtapaEnsinoId == turma.EtapaEnsinoId))
                     .Select(d =>
