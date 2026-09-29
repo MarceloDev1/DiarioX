@@ -46,6 +46,15 @@ public class ProfessorRepository : BaseRepository<Professor>, IProfessorReposito
                 p.Matricula != null && EF.Functions.ILike(p.Matricula, matricula));
     }
 
+    public override async Task UpdateAsync(Professor entity)
+    {
+        // A entidade vem de GetByIdAsync (AsNoTracking) com os vínculos carregados. Update() marcaria o grafo
+        // inteiro como Modified, inclusive vínculos já removidos por Remove*Async, e o SaveChanges falharia
+        // com DbUpdateConcurrencyException. Aqui só os campos do próprio professor são atualizados.
+        _context.Entry(entity).State = EntityState.Modified;
+        await _context.SaveChangesAsync();
+    }
+
     public override async Task<IEnumerable<Professor>> GetAllAsync()
     {
         return await _dbSet

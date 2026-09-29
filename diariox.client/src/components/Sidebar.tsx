@@ -48,11 +48,11 @@ const menuItems: MenuItem[] = [
         { id: 'disciplinas', label: 'Disciplinas', icon: FiBook },
         { id: 'turmas', label: 'Turmas', icon: FiUsers },
     ] },
-    { id: 'professor', label: 'Professor', icon: FiUsers, submenu: [
+    { id: 'professor', label: 'Professoress', icon: FiUsers, submenu: [
         { id: 'professores', label: 'Cadastrar Professor', icon: FiUsers },
         { id: 'alocacao-professor', label: 'Alocar Professor', icon: MdManageAccounts },
     ] },
-    { id: 'aluno', label: 'Aluno', icon: MdPeople, submenu: [
+    { id: 'aluno', label: 'Alunos', icon: MdPeople, submenu: [
         { id: 'alunos', label: 'Cadastrar Aluno', icon: MdPeople },
         { id: 'enturmar-aluno', label: 'Enturmar Aluno', icon: FiUserCheck },
         { id: 'remanejar-aluno', label: 'Remanejar Aluno', icon: FiRotateCcw },
