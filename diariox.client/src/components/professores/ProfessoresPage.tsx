@@ -6,6 +6,7 @@ import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import StatusPill from '../ui/StatusPill';
 import ConfirmDialog from '../ui/ConfirmDialog';
+import MultiSelectDropdown from '../ui/MultiSelectDropdown';
 import { usePermissoes } from '../../hooks/usePermissoes';
 
 type View = 'list' | 'form';
@@ -120,6 +121,11 @@ function ProfessoresPage() {
     const [situacaoUpdatingId, setSituacaoUpdatingId] = useState<number | null>(null);
     const [professorToDelete, setProfessorToDelete] = useState<Professor | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    const [filterNome, setFilterNome] = useState('');
+    const [filterCpf, setFilterCpf] = useState('');
+    const [filterMatricula, setFilterMatricula] = useState('');
+    const [applied, setApplied] = useState({ nome: '', cpf: '', matricula: '' });
 
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
     const [disciplinas, setDisciplinas] = useState<DisciplinaOption[]>([]);
@@ -325,6 +331,27 @@ function ProfessoresPage() {
         }
     };
 
+    const handleConsultar = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setApplied({
+            nome: filterNome.trim().toLowerCase(),
+            cpf: filterCpf.replace(/\D/g, ''),
+            matricula: filterMatricula.trim().toLowerCase(),
+        });
+    };
+
+    const handleLimparFiltros = () => {
+        setFilterNome('');
+        setFilterCpf('');
+        setFilterMatricula('');
+        setApplied({ nome: '', cpf: '', matricula: '' });
+    };
+
+    const filteredProfessores = professores.filter(professor =>
+        professor.nome.toLowerCase().includes(applied.nome)
+        && professor.cpf.replace(/\D/g, '').includes(applied.cpf)
+        && (professor.matricula ?? '').toLowerCase().includes(applied.matricula));
+
     const handleNewProfessor = () => {
         setEditingId(null);
         setForm(emptyForm);
@@ -346,6 +373,11 @@ function ProfessoresPage() {
         <div className="page-container">
             <div className="page-header">
                 <h1> Professores</h1>
+                {view === 'list' && can('professores.criar') && (
+                    <button className="btn btn-primary" onClick={handleNewProfessor}>
+                        ➕ Novo Professor
+                    </button>
+                )}
             </div>
 
             <FeedbackMessage message={error} type="error" />
@@ -354,18 +386,48 @@ function ProfessoresPage() {
 
             {view === 'list' ? (
                 <div className="list-view">
-                    <div className="list-header">
-                        {can('professores.criar') && (
-                            <button className="btn btn-primary" onClick={handleNewProfessor}>
-                                ➕ Novo Professor
-                            </button>
-                        )}
-                    </div>
+                    <form className="filter-bar" onSubmit={handleConsultar}>
+                        <div className="filter-field">
+                            <label htmlFor="filtro-nome">Nome</label>
+                            <input
+                                id="filtro-nome"
+                                type="text"
+                                value={filterNome}
+                                onChange={e => setFilterNome(e.target.value)}
+                                className="filter-input"
+                            />
+                        </div>
+                        <div className="filter-field">
+                            <label htmlFor="filtro-cpf">CPF</label>
+                            <input
+                                id="filtro-cpf"
+                                type="text"
+                                value={formatCpf(filterCpf)}
+                                onChange={e => setFilterCpf(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                                placeholder="000.000.000-00"
+                                className="filter-input"
+                            />
+                        </div>
+                        <div className="filter-field">
+                            <label htmlFor="filtro-matricula">Matrícula</label>
+                            <input
+                                id="filtro-matricula"
+                                type="text"
+                                value={filterMatricula}
+                                onChange={e => setFilterMatricula(e.target.value)}
+                                className="filter-input"
+                            />
+                        </div>
+                        <button type="submit" className="filter-button">Consultar</button>
+                        <button type="button" className="filter-button filter-button-static" onClick={handleLimparFiltros}>Limpar</button>
+                    </form>
 
                     {isLoading ? (
                         <div className="loading">Carregando professores...</div>
-                    ) : professores.length === 0 ? (
-                        <EmptyState emptyMessage="Nenhum professor cadastrado. Clique em 'Novo Professor' para começar." />
+                    ) : filteredProfessores.length === 0 ? (
+                        <EmptyState emptyMessage={professores.length === 0
+                            ? "Nenhum professor cadastrado. Clique em 'Novo Professor' para começar."
+                            : 'Nenhum professor encontrado. Tente ajustar os filtros.'} />
                     ) : (
                         <div className="table-container">
                             <table className="data-table">
@@ -381,7 +443,7 @@ function ProfessoresPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {professores.map(professor => (
+                                    {filteredProfessores.map(professor => (
                                         <tr key={professor.id}>
                                             <td>{professor.nome}</td>
                                             <td className="nowrap-cell">{professor.cpf}</td>
@@ -599,27 +661,18 @@ function ProfessoresPage() {
                                 </select>
                             </div>
 
-                            <div className="form-group form-field-full">
-                                <label>Escolas</label>
-                                <div className="checkbox-group">
-                                    {escolas.length === 0 ? (
-                                        <p className="no-options">Nenhuma escola disponível</p>
-                                    ) : (
-                                        escolas.map(escola => (
-                                            <label key={escola.id} className="checkbox-label">
-                                                <input
-                                                    type="checkbox"
-                                                    name="escolaIds"
-                                                    value={escola.id.toString()}
-                                                    checked={form.escolaIds.includes(escola.id.toString())}
-                                                    onChange={handleFieldChange}
-                                                    disabled={isSaving}
-                                                />
-                                                <span>{escola.nome}</span>
-                                            </label>
-                                        ))
-                                    )}
-                                </div>
+                            <div className="form-group">
+                                <label htmlFor="escolaIds">Escolas</label>
+                                <MultiSelectDropdown
+                                    id="escolaIds"
+                                    options={escolas.map(escola => ({ value: escola.id.toString(), label: escola.nome }))}
+                                    selected={form.escolaIds}
+                                    onChange={escolaIds => setForm(current => ({ ...current, escolaIds }))}
+                                    placeholder="Selecione as escolas"
+                                    searchPlaceholder="Pesquisar escolas..."
+                                    emptyMessage="Nenhuma escola disponível"
+                                    disabled={isSaving}
+                                />
                             </div>
                         </fieldset>
 
