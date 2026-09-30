@@ -93,6 +93,12 @@ const corRacaOpcoes = [
     { value: 'NAO_DECLARADA', label: 'Não declarada' },
 ];
 
+const statusOpcoes = [
+    { value: 'ATIVO', label: 'Ativo' },
+    { value: 'ATIVO_AGUARDANDO_ENTURMACAO', label: 'Aguardando Enturmação' },
+    { value: 'INATIVO', label: 'Inativo' },
+];
+
 const emptyForm: AlunoFormState = {
     nome: '',
     dataNascimento: '',
@@ -169,7 +175,8 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
     const [filterCpf, setFilterCpf] = useState('');
     const [filterMatricula, setFilterMatricula] = useState('');
     const [filterEscola, setFilterEscola] = useState('');
-    const [applied, setApplied] = useState({ nome: '', cpf: '', matricula: '', escola: '' });
+    const [filterStatus, setFilterStatus] = useState('');
+    const [applied, setApplied] = useState({ nome: '', cpf: '', matricula: '', escola: '', status: '' });
 
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
 
@@ -449,6 +456,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
             cpf: filterCpf.replace(/\D/g, ''),
             matricula: filterMatricula.trim().toLowerCase(),
             escola: filterEscola.trim().toLowerCase(),
+            status: filterStatus,
         });
     };
 
@@ -457,14 +465,16 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         setFilterCpf('');
         setFilterMatricula('');
         setFilterEscola('');
-        setApplied({ nome: '', cpf: '', matricula: '', escola: '' });
+        setFilterStatus('');
+        setApplied({ nome: '', cpf: '', matricula: '', escola: '', status: '' });
     };
 
     const filteredAlunos = alunos.filter(aluno =>
         aluno.nome.toLowerCase().includes(applied.nome)
         && (aluno.cpfAluno ?? '').replace(/\D/g, '').includes(applied.cpf)
         && aluno.matricula.toLowerCase().includes(applied.matricula)
-        && aluno.escolaNome.toLowerCase().includes(applied.escola));
+        && aluno.escolaNome.toLowerCase().includes(applied.escola)
+        && (applied.status === '' || aluno.status === applied.status));
 
     return (
         <div className="page-container">
@@ -506,6 +516,13 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                         <div className="filter-field">
                             <label htmlFor="filtro-escola">Escola</label>
                             <input id="filtro-escola" type="text" className="filter-input" value={filterEscola} onChange={e => setFilterEscola(e.target.value)} />
+                        </div>
+                        <div className="filter-field">
+                            <label htmlFor="filtro-status">Status</label>
+                            <select id="filtro-status" className="filter-input" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                                <option value="">Todos</option>
+                                {statusOpcoes.map(opcao => <option key={opcao.value} value={opcao.value}>{opcao.label}</option>)}
+                            </select>
                         </div>
                         <button type="submit" className="filter-button">Consultar</button>
                         <button type="button" className="filter-button filter-button-static" onClick={handleLimparFiltros}>Limpar</button>

@@ -478,7 +478,7 @@ function ProfessorAlocacoesPage() {
             <section className="content-card">
                 <div className="section-header">
                     <div>
-                        <h2>Alocação de Professor</h2>
+                        <h2>Alocar de Professor</h2>
                         <p>Vincule professores habilitados às turmas e disciplinas do ano letivo.</p>
                     </div>
                 </div>

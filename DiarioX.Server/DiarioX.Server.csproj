@@ -20,6 +20,8 @@
       <Version>10.*-*</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
+    <!-- Fixa uma versão corrigida (GHSA-v5pm-xwqc-g5wc) da dependência transitiva do Swashbuckle/AspNetCore.OpenApi. -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
