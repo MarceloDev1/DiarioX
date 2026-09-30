@@ -152,3 +152,56 @@
 .multiselect-confirm:hover {
     background: #0b2747;
 }
+
+/* Formulários .cadastro-form estilizam todo "button" (fundo azul, texto branco): reafirma o visual do componente. */
+.multiselect .multiselect-trigger,
+.multiselect .multiselect-trigger:hover {
+    margin-top: 0;
+    padding: 0.7rem;
+    background: white;
+    color: #111827;
+    font-weight: 400;
+}
+
+.multiselect .multiselect-trigger.placeholder,
+.multiselect .multiselect-trigger.placeholder:hover {
+    color: #6b7280;
+}
+
+.multiselect .multiselect-trigger:disabled,
+.multiselect .multiselect-trigger:disabled:hover {
+    background: #f5f7fa;
+    color: #9aa5b5;
+    opacity: 1;
+}
+
+.multiselect .multiselect-search-clear,
+.multiselect .multiselect-search-clear:hover {
+    margin-top: 0;
+    padding: 0;
+    background: transparent;
+    color: #9aa5b5;
+    font-weight: 400;
+}
+
+.multiselect .multiselect-search-clear:not(:disabled):hover {
+    background: #eef3f9;
+    color: #0f3460;
+}
+
+.multiselect .multiselect-search-clear:disabled {
+    opacity: 0.45;
+}
+
+.multiselect .multiselect-confirm {
+    margin-top: 0;
+    border-radius: 0;
+    border-top: 1px solid #e0e8f0;
+    background: #eef3f9;
+    color: #0f3460;
+    font-weight: 600;
+}
+
+.multiselect .multiselect-confirm:hover {
+    background: #e2eaf5;
+}

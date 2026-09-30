@@ -14,7 +14,8 @@ public sealed record ProfessorAlocacaoResponse(
     bool Ativa,
     string EscolaNome,
     string ModalidadeNome,
-    string EtapaNome
+    string EtapaNome,
+    string TurmaIdentificador
 );
 
 public sealed record ProfessorAlocacaoDisponibilidadeResponse(
@@ -29,6 +30,7 @@ public sealed record ProfessorAlocacaoDisponibilidadeResponse(
     string ModalidadeNome,
     int EtapaEnsinoId,
     string EtapaNome,
+    string TurmaIdentificador,
     List<ProfessorAlocacaoDisciplinaResponse> Disciplinas
 );
 

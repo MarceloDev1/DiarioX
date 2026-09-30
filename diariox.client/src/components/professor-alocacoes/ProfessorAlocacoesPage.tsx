@@ -3,6 +3,7 @@ import { useConfirm } from '../../hooks/useConfirm';
 import { apiFetch } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
+import MultiSelectDropdown from '../ui/MultiSelectDropdown';
 import '../MainContent.css';
 import { usePermissoes } from '../../hooks/usePermissoes';
 
@@ -18,6 +19,7 @@ interface AlocacaoListItem {
     modalidadeNome: string;
     etapaNome: string;
     turmaNome: string;
+    turmaIdentificador: string;
     disciplinaNome: string;
     turno: string;
 }
@@ -34,12 +36,14 @@ interface Disponibilidade {
     modalidadeNome: string;
     etapaEnsinoId: number;
     etapaNome: string;
+    turmaIdentificador: string;
     disciplinas: { disciplinaId: number; disciplinaNome: string; alocacaoId: number | null; professorAtualNome: string | null }[];
 }
 
 interface GradeItem {
     turmaId: number;
     turmaNome: string;
+    turmaIdentificador: string;
     escolaNome: string;
     modalidadeNome: string;
     etapaNome: string;
@@ -82,8 +86,8 @@ function ProfessorAlocacoesPage() {
     const [escolaId, setEscolaId] = useState('');
     const [modalidadeId, setModalidadeId] = useState('');
     const [etapaId, setEtapaId] = useState('');
-    const [turmaId, setTurmaId] = useState('');
-    const [disciplinaId, setDisciplinaId] = useState('');
+    const [turmaIds, setTurmaIds] = useState<string[]>([]);
+    const [disciplinaIds, setDisciplinaIds] = useState<string[]>([]);
     const [grade, setGrade] = useState<GradeItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -133,7 +137,7 @@ function ProfessorAlocacoesPage() {
     const alocacoesFiltradas = alocacoes.filter(item =>
         item.professorNome.toLowerCase().includes(applied.professor)
         && item.escolaNome.toLowerCase().includes(applied.escola)
-        && item.turmaNome.toLowerCase().includes(applied.turma));
+        && item.turmaIdentificador.toLowerCase().includes(applied.turma));
 
     const resetForm = () => {
         setProfessorId('');
@@ -141,8 +145,8 @@ function ProfessorAlocacoesPage() {
         setEscolaId('');
         setModalidadeId('');
         setEtapaId('');
-        setTurmaId('');
-        setDisciplinaId('');
+        setTurmaIds([]);
+        setDisciplinaIds([]);
         setGrade([]);
     };
 
@@ -214,8 +218,8 @@ function ProfessorAlocacoesPage() {
         setEscolaId('');
         setModalidadeId('');
         setEtapaId('');
-        setTurmaId('');
-        setDisciplinaId('');
+        setTurmaIds([]);
+        setDisciplinaIds([]);
         setDisponiveis([]);
         setSuccess(null);
         setError(null);
@@ -237,26 +241,31 @@ function ProfessorAlocacoesPage() {
         setEscolaId(value);
         setModalidadeId('');
         setEtapaId('');
-        setTurmaId('');
-        setDisciplinaId('');
+        setTurmaIds([]);
+        setDisciplinaIds([]);
     };
 
     const handleModalidadeChange = (value: string) => {
         setModalidadeId(value);
         setEtapaId('');
-        setTurmaId('');
-        setDisciplinaId('');
+        setTurmaIds([]);
+        setDisciplinaIds([]);
     };
 
     const handleEtapaChange = (value: string) => {
         setEtapaId(value);
-        setTurmaId('');
-        setDisciplinaId('');
+        setTurmaIds([]);
+        setDisciplinaIds([]);
     };
 
-    const handleTurmaChange = (value: string) => {
-        setTurmaId(value);
-        setDisciplinaId('');
+    const handleTurmasChange = (ids: string[]) => {
+        setTurmaIds(ids);
+        // Mantém só as disciplinas que ainda são oferecidas em alguma das turmas selecionadas.
+        const ofertadas = new Set(
+            naEtapa
+                .filter(item => ids.includes(item.turmaId.toString()))
+                .flatMap(item => item.disciplinas.map(disciplina => disciplina.disciplinaId.toString())));
+        setDisciplinaIds(current => current.filter(id => ofertadas.has(id)));
     };
 
     const professorSelecionado = professores.find(professor => professor.id.toString() === professorId);
@@ -266,37 +275,50 @@ function ProfessorAlocacoesPage() {
     const naModalidade = noEscola.filter(item => item.modalidadeEnsinoId.toString() === modalidadeId);
     const etapaOptions = uniqueOptions(naModalidade, item => item.etapaEnsinoId, item => item.etapaNome);
     const naEtapa = naModalidade.filter(item => item.etapaEnsinoId.toString() === etapaId);
-    const turmaOptions = uniqueOptions(naEtapa, item => item.turmaId, item => `${item.turmaNome} · ${item.anoReferencia} · ${turnoLabels[item.turno] ?? item.turno}`);
-    const turmaSelecionada = naEtapa.find(item => item.turmaId.toString() === turmaId);
-    const disciplinasDaTurma = (turmaSelecionada?.disciplinas ?? [])
-        .filter(disciplina => !grade.some(item => item.turmaId === turmaSelecionada?.turmaId && item.disciplinaId === disciplina.disciplinaId));
-
-    const jaAlocadoAoProfessor = (disciplina: { professorAtualNome: string | null }) =>
-        disciplina.professorAtualNome !== null && disciplina.professorAtualNome === professorSelecionado?.nome;
-
-    const disciplinaLabel = (disciplina: { disciplinaNome: string; professorAtualNome: string | null }) => {
-        if (jaAlocadoAoProfessor(disciplina)) return `${disciplina.disciplinaNome} (já alocado a este professor)`;
-        if (disciplina.professorAtualNome) return `${disciplina.disciplinaNome} (atual: ${disciplina.professorAtualNome})`;
-        return disciplina.disciplinaNome;
-    };
+    const turmaOptions = uniqueOptions(naEtapa, item => item.turmaId, item => `${item.turmaIdentificador} · ${item.anoReferencia} · ${turnoLabels[item.turno] ?? item.turno}`);
+    const turmasSelecionadas = naEtapa.filter(item => turmaIds.includes(item.turmaId.toString()));
+    const disciplinaOptions: SelectOption[] = [...new Map(
+        turmasSelecionadas.flatMap(item => item.disciplinas).map(disciplina => [disciplina.disciplinaId.toString(), disciplina.disciplinaNome] as const),
+    ).entries()]
+        .map(([value, label]) => ({ value, label }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
 
     const addToGrade = () => {
-        const disciplina = turmaSelecionada?.disciplinas.find(item => item.disciplinaId.toString() === disciplinaId);
-        if (!turmaSelecionada || !disciplina) return;
+        const novos: GradeItem[] = [];
+        let ignorados = 0;
 
-        setGrade(current => [...current, {
-            turmaId: turmaSelecionada.turmaId,
-            turmaNome: turmaSelecionada.turmaNome,
-            escolaNome: turmaSelecionada.escolaNome,
-            modalidadeNome: turmaSelecionada.modalidadeNome,
-            etapaNome: turmaSelecionada.etapaNome,
-            turno: turmaSelecionada.turno,
-            disciplinaId: disciplina.disciplinaId,
-            disciplinaNome: disciplina.disciplinaNome,
-            substituirAlocacaoId: disciplina.alocacaoId,
-            professorAtualNome: disciplina.professorAtualNome,
-        }]);
-        setDisciplinaId('');
+        turmasSelecionadas.forEach(turma => {
+            disciplinaIds.forEach(disciplinaId => {
+                const disciplina = turma.disciplinas.find(item => item.disciplinaId.toString() === disciplinaId);
+                const jaNaLista = grade.some(item => item.turmaId === turma.turmaId && item.disciplinaId === Number(disciplinaId));
+                const jaDoProfessor = disciplina?.professorAtualNome !== null && disciplina?.professorAtualNome === professorSelecionado?.nome;
+
+                if (!disciplina || jaNaLista || jaDoProfessor) {
+                    ignorados += 1;
+                    return;
+                }
+
+                novos.push({
+                    turmaId: turma.turmaId,
+                    turmaNome: turma.turmaNome,
+                    turmaIdentificador: turma.turmaIdentificador,
+                    escolaNome: turma.escolaNome,
+                    modalidadeNome: turma.modalidadeNome,
+                    etapaNome: turma.etapaNome,
+                    turno: turma.turno,
+                    disciplinaId: disciplina.disciplinaId,
+                    disciplinaNome: disciplina.disciplinaNome,
+                    substituirAlocacaoId: disciplina.alocacaoId,
+                    professorAtualNome: disciplina.professorAtualNome,
+                });
+            });
+        });
+
+        setGrade(current => [...current, ...novos]);
+        setDisciplinaIds([]);
+        setError(ignorados > 0
+            ? `${ignorados} combinação(ões) de turma e disciplina não foram adicionadas: já estão na lista, já são deste professor ou a disciplina não é ofertada na turma.`
+            : null);
     };
 
     const removeFromGrade = (item: GradeItem) =>
@@ -419,7 +441,7 @@ function ProfessorAlocacoesPage() {
                                             <td>{item.escolaNome}</td>
                                             <td>{item.modalidadeNome}</td>
                                             <td>{item.etapaNome}</td>
-                                            <td>{item.turmaNome}</td>
+                                            <td>{item.turmaIdentificador}</td>
                                             <td>{item.disciplinaNome}</td>
                                             <td>{turnoLabels[item.turno] ?? item.turno}</td>
                                             <td>
@@ -497,22 +519,30 @@ function ProfessorAlocacoesPage() {
 
                     <div className="form-field">
                         <label htmlFor="alocacao-turma">Turma</label>
-                        <select id="alocacao-turma" value={turmaId} onChange={event => handleTurmaChange(event.target.value)} disabled={!etapaId || saving}>
-                            <option value="">Selecione uma turma</option>
-                            {turmaOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-                        </select>
+                        <MultiSelectDropdown
+                            id="alocacao-turma"
+                            options={turmaOptions}
+                            selected={turmaIds}
+                            onChange={handleTurmasChange}
+                            placeholder="Selecione as turmas"
+                            searchPlaceholder="Pesquisar turmas..."
+                            emptyMessage="Nenhuma turma disponível"
+                            disabled={!etapaId || saving}
+                        />
                     </div>
 
                     <div className="form-field">
                         <label htmlFor="alocacao-disciplina">Disciplina</label>
-                        <select id="alocacao-disciplina" value={disciplinaId} onChange={event => setDisciplinaId(event.target.value)} disabled={!turmaId || saving}>
-                            <option value="">Selecione uma disciplina</option>
-                            {disciplinasDaTurma.map(disciplina => (
-                                <option key={disciplina.disciplinaId} value={disciplina.disciplinaId} disabled={jaAlocadoAoProfessor(disciplina)}>
-                                    {disciplinaLabel(disciplina)}
-                                </option>
-                            ))}
-                        </select>
+                        <MultiSelectDropdown
+                            id="alocacao-disciplina"
+                            options={disciplinaOptions}
+                            selected={disciplinaIds}
+                            onChange={setDisciplinaIds}
+                            placeholder="Selecione as disciplinas"
+                            searchPlaceholder="Pesquisar disciplinas..."
+                            emptyMessage="Nenhuma disciplina disponível"
+                            disabled={turmaIds.length === 0 || saving}
+                        />
                     </div>
 
                     {professorId && !loading && disponiveis.length === 0 && (
@@ -520,7 +550,7 @@ function ProfessorAlocacoesPage() {
                     )}
 
                     <div>
-                        <button type="button" onClick={addToGrade} disabled={!disciplinaId || saving}>Adicionar Alocação</button>
+                        <button type="button" onClick={addToGrade} disabled={disciplinaIds.length === 0 || saving}>Adicionar Alocação</button>
                     </div>
                 </div>
             </section>
@@ -549,7 +579,7 @@ function ProfessorAlocacoesPage() {
                                         <td>{item.escolaNome}</td>
                                         <td>{item.modalidadeNome}</td>
                                         <td>{item.etapaNome}</td>
-                                        <td>{item.turmaNome}</td>
+                                        <td>{item.turmaIdentificador}</td>
                                         <td>
                                             {item.disciplinaNome}
                                             {item.professorAtualNome && <small> — substitui {item.professorAtualNome}</small>}

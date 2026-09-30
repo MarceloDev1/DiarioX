@@ -104,6 +104,7 @@ public class ProfessorAlocacoesApiTests : IClassFixture<TenancyApiFactory>
         Assert.Equal("Escola Sul", item.GetProperty("escolaNome").GetString());
         Assert.Equal("5º Ano", item.GetProperty("etapaNome").GetString());
         Assert.Equal("5º Ano A", item.GetProperty("turmaNome").GetString());
+        Assert.Equal("A", item.GetProperty("turmaIdentificador").GetString());
         Assert.Equal("Português", item.GetProperty("disciplinaNome").GetString());
         Assert.False(string.IsNullOrWhiteSpace(item.GetProperty("modalidadeNome").GetString()));
     }

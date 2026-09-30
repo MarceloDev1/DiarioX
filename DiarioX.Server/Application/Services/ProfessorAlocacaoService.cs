@@ -59,6 +59,7 @@ public class ProfessorAlocacaoService : IProfessorAlocacaoService
                 turma.ModalidadeEnsino.Nome,
                 turma.EtapaEnsinoId,
                 turma.EtapaEnsino.Nome,
+                turma.NomeIdentificador,
                 disciplinas
                     .Where(d => d.EtapasEnsino.Count == 0 || d.EtapasEnsino.Any(e => e.EtapaEnsinoId == turma.EtapaEnsinoId))
                     .Select(d =>
@@ -155,7 +156,8 @@ public class ProfessorAlocacaoService : IProfessorAlocacaoService
         => new(item.Id, item.ProfessorId, item.Professor.Nome, item.TurmaId, item.Turma.NomeCompleto,
             item.Turma.AnoLetivoId, item.Turma.AnoLetivo.AnoReferencia, item.Turma.Turno,
             item.DisciplinaId, item.Disciplina.Nome, item.Ativa,
-            item.Turma.Escola.Nome, item.Turma.ModalidadeEnsino.Nome, item.Turma.EtapaEnsino.Nome);
+            item.Turma.Escola.Nome, item.Turma.ModalidadeEnsino.Nome, item.Turma.EtapaEnsino.Nome,
+            item.Turma.NomeIdentificador);
 
     private static ProfessorAlocacaoCommandResult Invalid(string message)
         => new(false, message, Error: ProfessorAlocacaoResultError.Validation);
