@@ -165,6 +165,12 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
     const numeroInputRef = useRef<HTMLInputElement>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    const [filterNome, setFilterNome] = useState('');
+    const [filterCpf, setFilterCpf] = useState('');
+    const [filterMatricula, setFilterMatricula] = useState('');
+    const [filterEscola, setFilterEscola] = useState('');
+    const [applied, setApplied] = useState({ nome: '', cpf: '', matricula: '', escola: '' });
+
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
 
     useEffect(() => {
@@ -436,10 +442,39 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         setFieldErrors(emptyFieldErrors);
     };
 
+    const handleConsultar = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setApplied({
+            nome: filterNome.trim().toLowerCase(),
+            cpf: filterCpf.replace(/\D/g, ''),
+            matricula: filterMatricula.trim().toLowerCase(),
+            escola: filterEscola.trim().toLowerCase(),
+        });
+    };
+
+    const handleLimparFiltros = () => {
+        setFilterNome('');
+        setFilterCpf('');
+        setFilterMatricula('');
+        setFilterEscola('');
+        setApplied({ nome: '', cpf: '', matricula: '', escola: '' });
+    };
+
+    const filteredAlunos = alunos.filter(aluno =>
+        aluno.nome.toLowerCase().includes(applied.nome)
+        && (aluno.cpfAluno ?? '').replace(/\D/g, '').includes(applied.cpf)
+        && aluno.matricula.toLowerCase().includes(applied.matricula)
+        && aluno.escolaNome.toLowerCase().includes(applied.escola));
+
     return (
         <div className="page-container">
             <div className="page-header">
                 <h1> Alunos</h1>
+                {view === 'list' && can('alunos.criar') && (
+                    <button className="btn btn-primary" onClick={handleNewAluno}>
+                        ➕ Novo Aluno
+                    </button>
+                )}
             </div>
 
             <FeedbackMessage message={error} type="error" />
@@ -448,18 +483,40 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
 
             {view === 'list' ? (
                 <div className="list-view">
-                    <div className="list-header">
-                        {can('alunos.criar') && (
-                            <button className="btn btn-primary" onClick={handleNewAluno}>
-                                ➕ Novo Aluno
-                            </button>
-                        )}
-                    </div>
+                    <form className="filter-bar" onSubmit={handleConsultar}>
+                        <div className="filter-field">
+                            <label htmlFor="filtro-nome">Nome</label>
+                            <input id="filtro-nome" type="text" className="filter-input" value={filterNome} onChange={e => setFilterNome(e.target.value)} />
+                        </div>
+                        <div className="filter-field">
+                            <label htmlFor="filtro-cpf">CPF</label>
+                            <input
+                                id="filtro-cpf"
+                                type="text"
+                                className="filter-input"
+                                value={formatCpf(filterCpf)}
+                                onChange={e => setFilterCpf(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                                placeholder="000.000.000-00"
+                            />
+                        </div>
+                        <div className="filter-field">
+                            <label htmlFor="filtro-matricula">Matrícula</label>
+                            <input id="filtro-matricula" type="text" className="filter-input" value={filterMatricula} onChange={e => setFilterMatricula(e.target.value)} />
+                        </div>
+                        <div className="filter-field">
+                            <label htmlFor="filtro-escola">Escola</label>
+                            <input id="filtro-escola" type="text" className="filter-input" value={filterEscola} onChange={e => setFilterEscola(e.target.value)} />
+                        </div>
+                        <button type="submit" className="filter-button">Consultar</button>
+                        <button type="button" className="filter-button filter-button-static" onClick={handleLimparFiltros}>Limpar</button>
+                    </form>
 
                     {isLoading ? (
                         <div className="loading">Carregando alunos...</div>
-                    ) : alunos.length === 0 ? (
-                        <EmptyState emptyMessage="Nenhum aluno cadastrado. Clique em 'Novo Aluno' para começar." />
+                    ) : filteredAlunos.length === 0 ? (
+                        <EmptyState emptyMessage={alunos.length === 0
+                            ? "Nenhum aluno cadastrado. Clique em 'Novo Aluno' para começar."
+                            : 'Nenhum aluno encontrado. Tente ajustar os filtros.'} />
                     ) : (
                         <div className="table-container">
                             <table className="data-table">
@@ -476,7 +533,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {alunos.map(aluno => (
+                                    {filteredAlunos.map(aluno => (
                                         <tr key={aluno.id}>
                                             <td>{aluno.nome}</td>
                                             <td>{aluno.matricula}</td>
