@@ -904,6 +904,17 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                     Salvar e Enturmar
                                 </button>
                             )}
+                            {editingId !== null && can('alunos.editar')
+                                && alunos.find(aluno => aluno.id === editingId)?.status === 'ATIVO_AGUARDANDO_ENTURMACAO' && (
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    onClick={() => onEnturmar(editingId)}
+                                    disabled={isSaving}
+                                >
+                                    Enturmar Aluno
+                                </button>
+                            )}
                             <button type="button" className="btn btn-secondary" onClick={handleCancelar} disabled={isSaving}>
                                 Cancelar
                             </button>
