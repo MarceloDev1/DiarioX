@@ -189,7 +189,7 @@ function TurmasPage() {
         void load();
         void loadOptions();
         return () => { cancelled = true; };
-    }, []);
+    }, [load]);
 
     const handleFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = event.target;

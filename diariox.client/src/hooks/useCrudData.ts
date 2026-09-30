@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { apiFetch, readApiError } from '../utils/api';
 
 export function useCrudData<T extends { id: number }>(endpoint: string) {
@@ -7,7 +7,7 @@ export function useCrudData<T extends { id: number }>(endpoint: string) {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const load = async () => {
+    const load = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
@@ -20,7 +20,7 @@ export function useCrudData<T extends { id: number }>(endpoint: string) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [endpoint]);
 
     const save = async (editingId: number | null, body: unknown): Promise<T | null> => {
         setIsSaving(true);

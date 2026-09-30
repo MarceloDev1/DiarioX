@@ -68,7 +68,7 @@ function EtapasEnsinoPage() {
                 if (data) setModalidades(data.filter(m => m.status === 'ATIVO'));
             })
             .catch(() => { /* ignore */ });
-    }, []);
+    }, [load]);
 
     const handleConsultar = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();

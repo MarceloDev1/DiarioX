@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type SubmitEvent } from 'react';
 import { useConfirm } from '../../hooks/useConfirm';
 import { apiFetch } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
@@ -102,7 +102,6 @@ function ProfessorAlocacoesPage() {
     }, []);
 
     const loadAlocacoes = useCallback(async () => {
-        setListLoading(true);
         try {
             const response = await apiFetch('/api/professor-alocacoes');
             if (!response.ok) throw new Error('Falha ao carregar professores alocados.');
@@ -115,10 +114,16 @@ function ProfessorAlocacoesPage() {
     }, []);
 
     useEffect(() => {
-        void loadAlocacoes();
-    }, [loadAlocacoes]);
+        let cancelled = false;
+        void apiFetch('/api/professor-alocacoes')
+            .then(response => response.ok ? response.json() : Promise.reject(new Error('Falha ao carregar professores alocados.')))
+            .then(data => { if (!cancelled) setAlocacoes(data as AlocacaoListItem[]); })
+            .catch(reason => { if (!cancelled) setError(reason instanceof Error ? reason.message : 'Falha ao carregar professores alocados.'); })
+            .finally(() => { if (!cancelled) setListLoading(false); });
+        return () => { cancelled = true; };
+    }, []);
 
-    const handleConsultar = (event: FormEvent<HTMLFormElement>) => {
+    const handleConsultar = (event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         setApplied({
             professor: filterProfessor.trim().toLowerCase(),

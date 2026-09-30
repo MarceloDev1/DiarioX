@@ -60,7 +60,7 @@ function EscolasPage() {
 
     useEffect(() => {
         void load();
-    }, []);
+    }, [load]);
 
     const handleLimparFiltros = () => {
         setFilterNome('');

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type SubmitEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
 import { apiFetch, readApiError } from '../../utils/api';
 import { formatCpf, formatTelefone, formatCep } from '../../utils/formatters';
@@ -192,7 +192,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         void load();
         void loadEscolas();
         return () => { cancelled = true; };
-    }, []);
+    }, [load]);
 
     // Cancela uma consulta de CEP pendente ao sair da tela
     useEffect(() => () => cepRequestRef.current?.abort(), []);
@@ -341,7 +341,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         }
     };
 
-    const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const handleFormSubmit = (event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         void submitAluno(false);
     };
@@ -442,7 +442,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         setFieldErrors(emptyFieldErrors);
     };
 
-    const handleConsultar = (event: FormEvent<HTMLFormElement>) => {
+    const handleConsultar = (event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         setApplied({
             nome: filterNome.trim().toLowerCase(),

@@ -53,7 +53,7 @@ function ModalidadesEnsinoPage() {
 
     useEffect(() => {
         void load();
-    }, []);
+    }, [load]);
 
     const handleConsultar = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();

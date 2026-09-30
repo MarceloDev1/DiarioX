@@ -173,7 +173,7 @@ function ProfessoresPage() {
         void load();
         void loadOptions();
         return () => { cancelled = true; };
-    }, []);
+    }, [load]);
 
     const formatCpf = (cpf: string): string => {
         const numbers = cpf.replace(/\D/g, '');

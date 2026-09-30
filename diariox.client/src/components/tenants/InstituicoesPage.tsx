@@ -56,7 +56,7 @@ function InstituicoesPage() {
 
     useEffect(() => {
         void load();
-    }, []);
+    }, [load]);
 
     const filteredInstituicoes = instituicoes.filter(i => {
         if (!appliedNome) return true;
