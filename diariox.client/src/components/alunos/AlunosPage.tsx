@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent, type SubmitEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type SubmitEvent } from 'react';
 import { useCrudData } from '../../hooks/useCrudData';
 import { apiFetch, readApiError } from '../../utils/api';
 import { formatCpf, formatTelefone, formatCep } from '../../utils/formatters';
@@ -36,6 +36,18 @@ interface Aluno {
     createdAt: string;
     updatedAt: string | null;
 }
+
+type SortKey = 'nome' | 'matricula' | 'cpfAluno' | 'responsavelNome1' | 'responsavelTelefone1' | 'escolaNome' | 'status';
+
+const sortColumns: { key: SortKey; label: string }[] = [
+    { key: 'nome', label: 'Nome' },
+    { key: 'matricula', label: 'Matrícula' },
+    { key: 'cpfAluno', label: 'CPF do Aluno' },
+    { key: 'responsavelNome1', label: 'Responsável' },
+    { key: 'responsavelTelefone1', label: 'Telefone' },
+    { key: 'escolaNome', label: 'Escola' },
+    { key: 'status', label: 'Status' },
+];
 
 interface EscolaOption {
     id: number;
@@ -177,6 +189,8 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
     const [filterEscola, setFilterEscola] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
     const [applied, setApplied] = useState({ nome: '', cpf: '', matricula: '', escola: '', status: '' });
+
+    const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' } | null>(null);
 
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
 
@@ -476,6 +490,16 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         && aluno.escolaNome.toLowerCase().includes(applied.escola)
         && (applied.status === '' || aluno.status === applied.status));
 
+    const sortedAlunos = useMemo(() => {
+        if (!sort) return filteredAlunos;
+        const factor = sort.dir === 'asc' ? 1 : -1;
+        return [...filteredAlunos].sort((a, b) =>
+            factor * (a[sort.key] ?? '').localeCompare(b[sort.key] ?? '', 'pt-BR', { numeric: true, sensitivity: 'base' }));
+    }, [filteredAlunos, sort]);
+
+    const handleSort = (key: SortKey) =>
+        setSort(prev => prev?.key !== key ? { key, dir: 'asc' } : prev.dir === 'asc' ? { key, dir: 'desc' } : null);
+
     return (
         <div className="page-container">
             <div className="page-header">
@@ -539,25 +563,32 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                             <table className="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Nome</th>
-                                        <th>Matrícula</th>
-                                        <th>CPF do Aluno</th>
-                                        <th>Responsável</th>
-                                        <th>Telefone</th>
-                                        <th>Escola</th>
-                                        <th>Status</th>
+                                        {sortColumns.map(col => (
+                                            <th
+                                                key={col.key}
+                                                className="sortable-th"
+                                                aria-sort={sort?.key === col.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                                            >
+                                                <button type="button" className="sort-button" onClick={() => handleSort(col.key)}>
+                                                    {col.label}
+                                                    <span className="sort-indicator" aria-hidden="true">
+                                                        {sort?.key === col.key ? (sort.dir === 'asc' ? '▲' : '▼') : '↕'}
+                                                    </span>
+                                                </button>
+                                            </th>
+                                        ))}
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredAlunos.map(aluno => (
+                                    {sortedAlunos.map(aluno => (
                                         <tr key={aluno.id}>
                                             <td>{aluno.nome}</td>
                                             <td>{aluno.matricula}</td>
                                             <td className="nowrap-cell">{aluno.cpfAluno ? formatCpf(aluno.cpfAluno) : '—'}</td>
-                                            <td>{aluno.responsavelNome1}</td>
+                                            <td className="nowrap-cell">{aluno.responsavelNome1}</td>
                                             <td className="nowrap-cell">{formatTelefone(aluno.responsavelTelefone1)}</td>
-                                            <td>{aluno.escolaNome}</td>
+                                            <td className="nowrap-cell">{aluno.escolaNome}</td>
                                             <td>
                                                 <StatusPill
                                                     status={aluno.status as 'ATIVO' | 'INATIVO' | 'BLOQUEADO' | 'ATIVO_AGUARDANDO_ENTURMACAO'}

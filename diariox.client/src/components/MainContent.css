@@ -1189,3 +1189,26 @@ a.btn {
     margin-bottom: 0.5rem;
 }
 
+
+.sort-button {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-align: left;
+}
+
+.sort-indicator {
+    font-size: 0.7em;
+    opacity: 0.5;
+}
+
+.sortable-th[aria-sort='ascending'] .sort-indicator,
+.sortable-th[aria-sort='descending'] .sort-indicator {
+    opacity: 1;
+}
