@@ -22,7 +22,13 @@ public interface IAlunoTurmaRepository
     /// <summary>Enturma os alunos em uma única transação; retorna false (sem gravar nada) se faltarem vagas.</summary>
     Task<bool> EnturmarAsync(IReadOnlyCollection<int> alunoIds, int turmaId, DateOnly dataInicio);
 
-    Task RemanejarAsync(AlunoTurma vinculoOrigem, int turmaDestinoId, DateOnly dataMovimentacao);
+    /// <summary>
+    /// Em uma única transação, encerra as enturmações ativas dos alunos na turma de origem na véspera
+    /// da movimentação e cria as da turma de destino a partir dela. Retorna false (sem gravar nada) se
+    /// faltarem vagas no destino; lança InvalidOperationException se algum aluno não estiver mais na origem.
+    /// </summary>
+    Task<bool> RemanejarAsync(int turmaOrigemId, IReadOnlyCollection<int> alunoIds, int turmaDestinoId,
+        DateOnly dataMovimentacao, string? motivo);
 
     /// <summary>
     /// Encerra em uma única transação as enturmações ativas dos alunos na turma (o aluno deixa a turma

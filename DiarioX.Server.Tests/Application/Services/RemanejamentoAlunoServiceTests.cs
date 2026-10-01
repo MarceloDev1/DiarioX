@@ -65,7 +65,7 @@ public class RemanejamentoAlunoServiceTests
     {
         var (service, alunoTurmaRepository, turmaRepository) = BuildService();
         turmaRepository.Setup(x => x.GetByIdAsync(2)).ReturnsAsync(BuildTurma(2));
-        alunoTurmaRepository.Setup(x => x.HasVacancyAsync(2, It.IsAny<DateOnly>())).ReturnsAsync(false);
+        alunoTurmaRepository.Setup(x => x.GetOcupacaoMaximaAsync(2, It.IsAny<DateOnly>())).ReturnsAsync(30);
 
         var result = await service.RemanejarAsync(1, new RemanejamentoAlunoRequest
         {
@@ -76,7 +76,7 @@ public class RemanejamentoAlunoServiceTests
         Assert.False(result.Success);
         Assert.Equal(AlunoResultError.Conflict, result.Error);
         Assert.Equal("A turma de destino não possui vagas disponíveis para remanejamento.", result.Message);
-        alunoTurmaRepository.Verify(x => x.RemanejarAsync(It.IsAny<AlunoTurma>(), It.IsAny<int>(), It.IsAny<DateOnly>()), Times.Never);
+        alunoTurmaRepository.Verify(x => x.RemanejarAsync(It.IsAny<int>(), It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<int>(), It.IsAny<DateOnly>(), It.IsAny<string?>()), Times.Never);
     }
 
     [Fact]
@@ -86,17 +86,18 @@ public class RemanejamentoAlunoServiceTests
         var destino = BuildTurma(2);
         var data = DateOnly.FromDateTime(DateTime.Today);
         turmaRepository.Setup(x => x.GetByIdAsync(2)).ReturnsAsync(destino);
-        alunoTurmaRepository.Setup(x => x.HasVacancyAsync(2, data)).ReturnsAsync(true);
+        alunoTurmaRepository.Setup(x => x.RemanejarAsync(1, It.IsAny<IReadOnlyCollection<int>>(), 2, data, "Adequação de turno")).ReturnsAsync(true);
 
         var result = await service.RemanejarAsync(1, new RemanejamentoAlunoRequest
         {
             TurmaDestinoId = 2,
-            DataMovimentacao = data
+            DataMovimentacao = data,
+            Motivo = "  Adequação de turno  "
         });
 
         Assert.True(result.Success);
         Assert.Equal($"Aluno remanejado com sucesso para a turma {destino.NomeCompleto}!", result.Message);
-        alunoTurmaRepository.Verify(x => x.RemanejarAsync(It.IsAny<AlunoTurma>(), 2, data), Times.Once);
+        alunoTurmaRepository.Verify(x => x.RemanejarAsync(1, It.Is<IReadOnlyCollection<int>>(ids => ids.SequenceEqual(new[] { 1 })), 2, data, "Adequação de turno"), Times.Once);
     }
 
     [Fact]

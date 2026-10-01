@@ -165,6 +165,36 @@ public class AlunosController : ControllerBase
         return Ok(new { message = result.Message });
     }
 
+    /// <summary>
+    /// Remaneja vários alunos de uma mesma turma para outra turma (mesma escola, ano letivo e etapa).
+    /// </summary>
+    /// <remarks>
+    /// Tudo ou nada: se algum aluno não puder ser remanejado ou faltarem vagas no destino, nada é gravado.
+    /// Nesse caso, <c>falhas</c> lista os alunos com problema e o motivo de cada um.
+    /// </remarks>
+    [Permissao(Permissoes.Alunos.Editar)]
+    [HttpPost("remanejamentos")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RemanejarEmLote([FromBody] RemanejamentoLoteRequest request)
+    {
+        var result = await _remanejamentoAlunoService.RemanejarEmLoteAsync(request);
+        if (!result.Success)
+        {
+            var body = new { message = result.Message, falhas = result.Falhas ?? [] };
+            return result.Error switch
+            {
+                AlunoResultError.NotFound => NotFound(body),
+                AlunoResultError.Conflict => Conflict(body),
+                _ => BadRequest(body)
+            };
+        }
+
+        return Ok(new { message = result.Message });
+    }
+
     [Permissao(Permissoes.Alunos.Editar)]
     [HttpPost("{id:int}/enturmacoes")]
     [ProducesResponseType(StatusCodes.Status200OK)]

@@ -50,6 +50,21 @@ public class TurmasController : ControllerBase
     }
 
     /// <summary>
+    /// Turmas que podem receber alunos remanejados desta turma (mesma escola, ano letivo e etapa), com
+    /// vaga a partir da data informada (padrão: hoje).
+    /// </summary>
+    [Permissao(Permissoes.Alunos.Editar)]
+    [HttpGet("{id:int}/destinos-remanejamento")]
+    public async Task<IActionResult> GetDestinosRemanejamento([FromRoute] int id, [FromQuery] DateOnly? data)
+    {
+        var destinos = await _remanejamentoAlunoService.GetDestinosRemanejamentoAsync(id, data ?? DateOnly.FromDateTime(DateTime.Today));
+        if (destinos is null)
+            return NotFound(new { message = "Turma não encontrada." });
+
+        return Ok(destinos);
+    }
+
+    /// <summary>
     /// Alunos com enturmação ativa na turma, em ordem alfabética.
     /// </summary>
     [Permissao(Permissoes.Alunos.Visualizar)]

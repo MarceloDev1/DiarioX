@@ -196,41 +196,135 @@ public class RemanejamentoAlunoService : IRemanejamentoAlunoService
         if (vinculoOrigem.Aluno.Status == Aluno.StatusInativo)
             return Invalid("Não é possível remanejar um aluno inativo.");
 
-        var turmaDestino = await _turmaRepository.GetByIdAsync(request.TurmaDestinoId);
-        if (turmaDestino is null)
-            return new(false, "Turma de destino não encontrada.", AlunoResultError.NotFound);
+        var resultado = await RemanejarAsync(vinculoOrigem.Turma, [alunoId], new Dictionary<int, AlunoTurma> { [alunoId] = vinculoOrigem },
+            request.TurmaDestinoId, request.DataMovimentacao, request.Motivo);
+        return new(resultado.Success, resultado.Message, resultado.Error);
+    }
 
-        if (turmaDestino.Id == vinculoOrigem.TurmaId)
-            return Invalid("A turma de destino deve ser diferente da turma atual do aluno.");
+    /// <summary>
+    /// Remaneja vários alunos da mesma turma de origem para a mesma turma de destino. É tudo ou nada:
+    /// se algum aluno não puder ser remanejado ou faltarem vagas, nada é gravado.
+    /// </summary>
+    public async Task<RemanejamentoLoteResult> RemanejarEmLoteAsync(RemanejamentoLoteRequest request)
+    {
+        var alunoIds = request.AlunoIds.Distinct().ToList();
+        if (alunoIds.Count == 0 || alunoIds.Any(id => id <= 0))
+            return LoteRemanejamentoInvalido("Selecione ao menos um aluno para remanejar.");
 
-        if (turmaDestino.Status != Turma.StatusAtivo ||
-            turmaDestino.EscolaId != vinculoOrigem.Turma.EscolaId ||
-            turmaDestino.AnoLetivoId != vinculoOrigem.Turma.AnoLetivoId)
+        if (request.TurmaOrigemId <= 0 || request.TurmaDestinoId <= 0 || request.DataMovimentacao == default)
+            return LoteRemanejamentoInvalido("Por favor, informe a data da movimentação e a nova turma.");
+
+        var origem = await _turmaRepository.GetByIdAsync(request.TurmaOrigemId);
+        if (origem is null)
+            return new(false, "Turma de origem não encontrada.", AlunoResultError.NotFound);
+
+        var vinculos = (await _alunoTurmaRepository.GetAtivasByTurmaIdAsync(origem.Id)).ToDictionary(v => v.AlunoId);
+        return await RemanejarAsync(origem, alunoIds, vinculos, request.TurmaDestinoId, request.DataMovimentacao, request.Motivo);
+    }
+
+    /// <summary>
+    /// Turmas que podem receber alunos da turma de origem: ativas, da mesma escola, do mesmo ano letivo e da
+    /// mesma etapa, com vaga a partir da data. Nulo se a turma de origem não existir.
+    /// </summary>
+    public async Task<IReadOnlyList<TurmaDestinoResponse>?> GetDestinosRemanejamentoAsync(int turmaOrigemId, DateOnly data)
+    {
+        var origem = await _turmaRepository.GetByIdAsync(turmaOrigemId);
+        if (origem is null)
+            return null;
+
+        var destinos = new List<TurmaDestinoResponse>();
+        foreach (var turma in (await _turmaRepository.GetAllAsync()).Where(t => PodeReceber(origem, t)))
         {
-            return Invalid("A turma de destino deve pertencer à mesma escola e ao mesmo ano letivo da turma atual.");
+            var disponiveis = turma.VagasOfertadas - await _alunoTurmaRepository.GetOcupacaoMaximaAsync(turma.Id, data);
+            if (disponiveis > 0)
+                destinos.Add(new TurmaDestinoResponse(turma.Id, turma.NomeCompleto, turma.Turno, turma.VagasOfertadas, disponiveis));
         }
 
+        return destinos.OrderBy(d => d.NomeCompleto, StringComparer.CurrentCultureIgnoreCase).ToList();
+    }
+
+    private async Task<RemanejamentoLoteResult> RemanejarAsync(Turma origem, IReadOnlyList<int> alunoIds,
+        IReadOnlyDictionary<int, AlunoTurma> vinculos, int turmaDestinoId, DateOnly data, string? motivoInformado)
+    {
+        var motivo = string.IsNullOrWhiteSpace(motivoInformado) ? null : motivoInformado.Trim();
+        if (motivo?.Length > AlunoTurma.MaxObservacaoDesenturmacao)
+            return LoteRemanejamentoInvalido($"O motivo deve ter no máximo {AlunoTurma.MaxObservacaoDesenturmacao} caracteres.");
+
+        var destino = await _turmaRepository.GetByIdAsync(turmaDestinoId);
+        if (destino is null)
+            return new(false, "Turma de destino não encontrada.", AlunoResultError.NotFound);
+
+        if (destino.Id == origem.Id)
+            return LoteRemanejamentoInvalido("A turma de destino deve ser diferente da turma atual do aluno.");
+
+        if (!PodeReceber(origem, destino))
+            return LoteRemanejamentoInvalido("A turma de destino deve ser uma turma ativa da mesma escola, do mesmo ano letivo e da mesma etapa da turma atual.");
+
         var hoje = DateOnly.FromDateTime(DateTime.Today);
-        if (request.DataMovimentacao < vinculoOrigem.Turma.AnoLetivo.DataInicio || request.DataMovimentacao > hoje)
-            return Invalid("A data da movimentação deve estar entre o início do ano letivo e a data atual.");
+        if (data < origem.AnoLetivo.DataInicio || data > hoje)
+            return LoteRemanejamentoInvalido("A data da movimentação deve estar entre o início do ano letivo e a data atual.");
 
-        if (request.DataMovimentacao <= vinculoOrigem.DataInicio)
-            return Invalid("A data da movimentação deve ser posterior ao início da enturmação atual.");
+        var impedimentos = alunoIds
+            .Select(id => (Id: id, Impedimento: ImpedimentoDoRemanejamento(vinculos.GetValueOrDefault(id), data)))
+            .Where(x => x.Impedimento is not null)
+            .ToList();
 
-        if (!await _alunoTurmaRepository.HasVacancyAsync(turmaDestino.Id, request.DataMovimentacao))
-            return new(false, "A turma de destino não possui vagas disponíveis para remanejamento.", AlunoResultError.Conflict);
+        if (impedimentos.Count > 0)
+        {
+            var falhas = impedimentos.Select(x => new RemanejamentoFalha(x.Id, x.Impedimento!.Value.Curto)).ToList();
+            var message = alunoIds.Count == 1
+                ? impedimentos[0].Impedimento!.Value.Individual
+                : $"{(falhas.Count == 1 ? "1 aluno não pode ser remanejado" : $"{falhas.Count} alunos não podem ser remanejados")}. Nenhum remanejamento foi realizado.";
+            return new(false, message, AlunoResultError.Validation, falhas);
+        }
+
+        var disponiveis = destino.VagasOfertadas - await _alunoTurmaRepository.GetOcupacaoMaximaAsync(destino.Id, data);
+        if (alunoIds.Count > disponiveis)
+        {
+            var message = alunoIds.Count == 1 || disponiveis <= 0
+                ? "A turma de destino não possui vagas disponíveis para remanejamento."
+                : $"A turma de destino possui {(disponiveis == 1 ? "1 vaga disponível" : $"{disponiveis} vagas disponíveis")}, mas {alunoIds.Count} alunos foram selecionados.";
+            return new(false, message, AlunoResultError.Conflict);
+        }
 
         try
         {
-            await _alunoTurmaRepository.RemanejarAsync(vinculoOrigem, turmaDestino.Id, request.DataMovimentacao);
+            // A checagem é refeita com as turmas travadas: outra movimentação pode ter ocupado as vagas nesse meio-tempo.
+            if (!await _alunoTurmaRepository.RemanejarAsync(origem.Id, alunoIds, destino.Id, data, motivo))
+                return new(false, "A turma de destino não possui vagas disponíveis para remanejamento.", AlunoResultError.Conflict);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException exception)
         {
-            return new(false, "A turma de destino não possui vagas disponíveis para remanejamento.", AlunoResultError.Conflict);
+            return new(false, exception.Message, AlunoResultError.Conflict);
         }
 
-        return new(true, $"Aluno remanejado com sucesso para a turma {turmaDestino.NomeCompleto}!");
+        return new(true, alunoIds.Count == 1
+            ? $"Aluno remanejado com sucesso para a turma {destino.NomeCompleto}!"
+            : $"{alunoIds.Count} alunos remanejados com sucesso para a turma {destino.NomeCompleto}!");
     }
+
+    private static bool PodeReceber(Turma origem, Turma destino)
+        => destino.Id != origem.Id &&
+           destino.Status == Turma.StatusAtivo &&
+           destino.EscolaId == origem.EscolaId &&
+           destino.AnoLetivoId == origem.AnoLetivoId &&
+           destino.EtapaEnsinoId == origem.EtapaEnsinoId;
+
+    /// <summary>Motivo para a lista (curto) e para a mensagem de um aluno só (individual); nulo se pode ser remanejado.</summary>
+    private static (string Curto, string Individual)? ImpedimentoDoRemanejamento(AlunoTurma? vinculo, DateOnly data)
+    {
+        if (vinculo is null)
+            return ("Aluno não está enturmado nesta turma.", "O aluno não está enturmado na turma de origem.");
+        if (vinculo.Aluno.Status == Aluno.StatusInativo)
+            return ("Aluno inativo.", "Não é possível remanejar um aluno inativo.");
+        if (data <= vinculo.DataInicio)
+            return ($"Enturmado(a) em {vinculo.DataInicio:dd/MM/yyyy}; a movimentação deve ser posterior a essa data.",
+                "A data da movimentação deve ser posterior ao início da enturmação atual.");
+        return null;
+    }
+
+    private static RemanejamentoLoteResult LoteRemanejamentoInvalido(string message)
+        => new(false, message, AlunoResultError.Validation);
 
     public async Task<IReadOnlyList<AlunoEnturmadoResponse>?> GetAlunosEnturmadosAsync(int turmaId)
     {

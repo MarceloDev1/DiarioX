@@ -16,6 +16,9 @@ public class AlunoTurma : ITenantEntity
     /// <summary>Vínculo encerrado pela transferência do aluno (RF014); não é um motivo escolhido na desenturmação.</summary>
     public const string MotivoTransferencia = "TRANSFERENCIA";
 
+    /// <summary>Vínculo encerrado por remanejamento; o motivo digitado vai para a observação.</summary>
+    public const string MotivoRemanejamento = "REMANEJAMENTO";
+
     public const int MaxObservacaoDesenturmacao = 500;
 
     public int Id { get; set; }
@@ -33,7 +36,10 @@ public class AlunoTurma : ITenantEntity
     /// </summary>
     public DateOnly? DataFim { get; set; }
 
-    /// <summary>Preenchidos quando o vínculo é encerrado por desenturmação (RF013); nulos no remanejamento.</summary>
+    /// <summary>
+    /// Como o vínculo terminou: motivo da desenturmação (RF013), TRANSFERENCIA ou REMANEJAMENTO, com a
+    /// observação ou o motivo digitado. Nulos nos vínculos encerrados antes de existirem.
+    /// </summary>
     public string? MotivoDesenturmacao { get; set; }
     public string? ObservacaoDesenturmacao { get; set; }
 

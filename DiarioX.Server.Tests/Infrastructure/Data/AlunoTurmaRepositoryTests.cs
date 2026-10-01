@@ -165,6 +165,66 @@ public class AlunoTurmaRepositoryTests
     }
 
     [Fact]
+    public async Task RemanejarAsync_Lote_EncerraOrigemCriaDestinoEGravaOMotivo()
+    {
+        var database = Guid.NewGuid().ToString();
+        var origemId = Seed(database, vagas: 5, (new DateOnly(2026, 2, 1), null), (new DateOnly(2026, 2, 1), null));
+        int destinoId;
+        using (var context = CreateContext(database))
+        {
+            var destino = new Turma { AnoLetivoId = context.AnosLetivos.Single().Id, EscolaId = context.Escolas.Single().Id, NomeCompleto = "6º Ano B", VagasOfertadas = 2 };
+            context.Add(destino);
+            context.SaveChanges();
+            destinoId = destino.Id;
+        }
+        var data = new DateOnly(2026, 9, 30);
+
+        await using (var context = CreateContext(database))
+        {
+            var repository = new AlunoTurmaRepository(context);
+            var alunoIds = (await repository.GetAtivasByTurmaIdAsync(origemId)).Select(v => v.AlunoId).ToList();
+            Assert.True(await repository.RemanejarAsync(origemId, alunoIds, destinoId, data, "Equilíbrio de vagas"));
+        }
+
+        await using var verificacao = CreateContext(database);
+        var encerrados = verificacao.AlunosTurmas.Where(x => x.TurmaId == origemId).ToList();
+        Assert.All(encerrados, v =>
+        {
+            Assert.Equal(data.AddDays(-1), v.DataFim);
+            Assert.Equal(AlunoTurma.MotivoRemanejamento, v.MotivoDesenturmacao);
+            Assert.Equal("Equilíbrio de vagas", v.ObservacaoDesenturmacao);
+        });
+        var novos = verificacao.AlunosTurmas.Where(x => x.TurmaId == destinoId).ToList();
+        Assert.Equal(2, novos.Count);
+        Assert.All(novos, v => Assert.Equal((data, (DateOnly?)null), (v.DataInicio, v.DataFim)));
+    }
+
+    [Fact]
+    public async Task RemanejarAsync_LoteMaiorQueAsVagasDoDestino_NaoGravaNada()
+    {
+        var database = Guid.NewGuid().ToString();
+        var origemId = Seed(database, vagas: 5, (new DateOnly(2026, 2, 1), null), (new DateOnly(2026, 2, 1), null));
+        int destinoId;
+        using (var context = CreateContext(database))
+        {
+            var destino = new Turma { AnoLetivoId = context.AnosLetivos.Single().Id, EscolaId = context.Escolas.Single().Id, NomeCompleto = "6º Ano B", VagasOfertadas = 1 };
+            context.Add(destino);
+            context.SaveChanges();
+            destinoId = destino.Id;
+        }
+
+        await using (var context = CreateContext(database))
+        {
+            var repository = new AlunoTurmaRepository(context);
+            var alunoIds = (await repository.GetAtivasByTurmaIdAsync(origemId)).Select(v => v.AlunoId).ToList();
+            Assert.False(await repository.RemanejarAsync(origemId, alunoIds, destinoId, new DateOnly(2026, 9, 30), null));
+        }
+
+        await using var verificacao = CreateContext(database);
+        Assert.All(verificacao.AlunosTurmas, v => Assert.Equal((origemId, (DateOnly?)null), (v.TurmaId, v.DataFim)));
+    }
+
+    [Fact]
     public async Task GetAtivasAsync_ListaSoAsAtivasDasEscolasDoEscopo()
     {
         var database = Guid.NewGuid().ToString();

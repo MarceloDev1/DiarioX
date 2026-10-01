@@ -133,27 +133,49 @@ public class AlunoTurmaRepository : IAlunoTurmaRepository
         return true;
     }
 
-    public async Task RemanejarAsync(AlunoTurma vinculoOrigem, int turmaDestinoId, DateOnly dataMovimentacao)
+    public async Task<bool> RemanejarAsync(int turmaOrigemId, IReadOnlyCollection<int> alunoIds, int turmaDestinoId,
+        DateOnly dataMovimentacao, string? motivo)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();
-        var turmaDestino = await BloquearTurmaAsync(turmaDestinoId);
 
-        var origem = await _context.Set<AlunoTurma>()
-            .FirstAsync(x => x.Id == vinculoOrigem.Id && x.DataFim == null);
-
-        if (await GetOcupacaoMaximaAsync(turmaDestinoId, dataMovimentacao) >= turmaDestino.VagasOfertadas)
-            throw new InvalidOperationException("A turma de destino não possui vagas disponíveis para remanejamento.");
-
-        origem.DataFim = dataMovimentacao.AddDays(-1);
-        await _context.Set<AlunoTurma>().AddAsync(new AlunoTurma
+        // Trava as duas turmas, sempre na mesma ordem, para dois remanejamentos cruzados não se bloquearem.
+        Turma turmaDestino = null!;
+        foreach (var turmaId in new[] { turmaOrigemId, turmaDestinoId }.Order())
         {
-            AlunoId = origem.AlunoId,
-            TurmaId = turmaDestinoId,
-            DataInicio = dataMovimentacao,
-        });
+            var turma = await BloquearTurmaAsync(turmaId);
+            if (turmaId == turmaDestinoId)
+                turmaDestino = turma;
+        }
+
+        var vinculos = await _context.Set<AlunoTurma>()
+            .IgnoreQueryFilters([AppDbContext.FiltroEscola])
+            .Where(x => x.TurmaId == turmaOrigemId && x.DataFim == null && alunoIds.Contains(x.AlunoId))
+            .ToListAsync();
+
+        if (vinculos.Count != alunoIds.Count)
+            throw new InvalidOperationException(alunoIds.Count == 1
+                ? "O aluno não está mais enturmado na turma de origem. Atualize a tela e tente novamente."
+                : "Um ou mais alunos não estão mais enturmados na turma de origem. Atualize a tela e tente novamente.");
+
+        if (await GetOcupacaoMaximaAsync(turmaDestinoId, dataMovimentacao) + vinculos.Count > turmaDestino.VagasOfertadas)
+            return false;
+
+        foreach (var vinculo in vinculos)
+        {
+            vinculo.DataFim = dataMovimentacao.AddDays(-1);
+            vinculo.MotivoDesenturmacao = AlunoTurma.MotivoRemanejamento;
+            vinculo.ObservacaoDesenturmacao = motivo;
+            _context.Set<AlunoTurma>().Add(new AlunoTurma
+            {
+                AlunoId = vinculo.AlunoId,
+                TurmaId = turmaDestinoId,
+                DataInicio = dataMovimentacao,
+            });
+        }
 
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
+        return true;
     }
 
     public async Task DesenturmarAsync(int turmaId, IReadOnlyDictionary<int, string> statusPorAluno, DateOnly dataDesenturmacao,

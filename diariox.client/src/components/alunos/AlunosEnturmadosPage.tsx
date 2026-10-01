@@ -216,8 +216,8 @@ function AlunosEnturmadosPage({ onEnturmar }: AlunosEnturmadosPageProps) {
                                     <th>Aluno</th>
                                     <th>Escola</th>
                                     <th>Modalidade</th>
-                                    <th>Etapa</th>
-                                    <th>Turma</th>
+                                    <th className="nowrap-cell">Etapa</th>
+                                    <th className="nowrap-cell">Turma</th>
                                     <th>Turno</th>
                                     <th>Ações</th>
                                 </tr>

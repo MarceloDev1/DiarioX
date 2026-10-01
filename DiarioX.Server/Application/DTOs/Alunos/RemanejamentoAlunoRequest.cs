@@ -8,6 +8,24 @@ public sealed class RemanejamentoAlunoRequest
     public int TurmaDestinoId { get; set; }
 
     public DateOnly DataMovimentacao { get; set; }
+
+    /// <summary>Opcional; fica registrado no vínculo encerrado.</summary>
+    public string? Motivo { get; set; }
+}
+
+public sealed class RemanejamentoLoteRequest
+{
+    [Range(1, int.MaxValue)]
+    public int TurmaOrigemId { get; set; }
+
+    [Range(1, int.MaxValue)]
+    public int TurmaDestinoId { get; set; }
+
+    public DateOnly DataMovimentacao { get; set; }
+
+    public List<int> AlunoIds { get; set; } = [];
+
+    public string? Motivo { get; set; }
 }
 
 public sealed class EnturmacaoAlunoRequest
