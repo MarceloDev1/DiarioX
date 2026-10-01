@@ -11,10 +11,12 @@ namespace DiarioX.Server.API.Controllers;
 public class TurmasController : ControllerBase
 {
     private readonly ITurmaService _service;
+    private readonly IRemanejamentoAlunoService _remanejamentoAlunoService;
 
-    public TurmasController(ITurmaService service)
+    public TurmasController(ITurmaService service, IRemanejamentoAlunoService remanejamentoAlunoService)
     {
         _service = service;
+        _remanejamentoAlunoService = remanejamentoAlunoService;
     }
 
     [HttpGet]
@@ -32,6 +34,19 @@ public class TurmasController : ControllerBase
             return NotFound(new { message = "Turma não encontrada." });
 
         return Ok(turma);
+    }
+
+    /// <summary>
+    /// Vagas disponíveis para uma enturmação iniciada na data informada (padrão: hoje).
+    /// </summary>
+    [HttpGet("{id:int}/vagas")]
+    public async Task<IActionResult> GetVagas([FromRoute] int id, [FromQuery] DateOnly? data)
+    {
+        var vagas = await _remanejamentoAlunoService.GetVagasTurmaAsync(id, data ?? DateOnly.FromDateTime(DateTime.Today));
+        if (vagas is null)
+            return NotFound(new { message = "Turma não encontrada." });
+
+        return Ok(vagas);
     }
 
     [Permissao(Permissoes.Turmas.Criar)]

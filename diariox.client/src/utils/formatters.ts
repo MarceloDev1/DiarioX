@@ -31,3 +31,10 @@ export function formatCep(value: string) {
     const cep = value.replace(/\D/g, '').slice(0, 8);
     return cep.replace(/^(\d{5})(\d{1,3})$/, '$1-$2');
 }
+
+/** Data de hoje (yyyy-mm-dd) no fuso do usuário; toISOString usaria UTC e viraria o dia à noite. */
+export function hojeIso() {
+    const agora = new Date();
+    agora.setMinutes(agora.getMinutes() - agora.getTimezoneOffset());
+    return agora.toISOString().slice(0, 10);
+}

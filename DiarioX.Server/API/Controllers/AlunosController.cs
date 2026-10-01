@@ -185,6 +185,36 @@ public class AlunosController : ControllerBase
         return Ok(new { message = result.Message });
     }
 
+    /// <summary>
+    /// Enturma vários alunos na mesma turma de uma só vez.
+    /// </summary>
+    /// <remarks>
+    /// Tudo ou nada: se algum aluno não puder ser enturmado ou faltarem vagas, nenhum vínculo é gravado.
+    /// Nesse caso, <c>falhas</c> lista os alunos com problema e o motivo de cada um.
+    /// </remarks>
+    [Permissao(Permissoes.Alunos.Editar)]
+    [HttpPost("enturmacoes")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> EnturmarEmLote([FromBody] EnturmacaoLoteRequest request)
+    {
+        var result = await _remanejamentoAlunoService.EnturmarEmLoteAsync(request);
+        if (!result.Success)
+        {
+            var body = new { message = result.Message, falhas = result.Falhas ?? [] };
+            return result.Error switch
+            {
+                AlunoResultError.NotFound => NotFound(body),
+                AlunoResultError.Conflict => Conflict(body),
+                _ => BadRequest(body)
+            };
+        }
+
+        return Ok(new { message = result.Message });
+    }
+
     private IActionResult MapError(AlunoCommandResult result)
     {
         return result.Error switch

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, readApiError } from '../../utils/api';
+import { hojeIso } from '../../utils/formatters';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import '../MainContent.css';
@@ -39,7 +40,7 @@ function RemanejarAlunoPage() {
     const [alunoId, setAlunoId] = useState('');
     const [enturmacao, setEnturmacao] = useState<EnturmacaoAtiva | null>(null);
     const [turmaDestinoId, setTurmaDestinoId] = useState('');
-    const [dataMovimentacao, setDataMovimentacao] = useState(new Date().toISOString().slice(0, 10));
+    const [dataMovimentacao, setDataMovimentacao] = useState(hojeIso);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);

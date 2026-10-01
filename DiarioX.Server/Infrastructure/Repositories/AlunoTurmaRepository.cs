@@ -28,6 +28,15 @@ public class AlunoTurmaRepository : IAlunoTurmaRepository
             .FirstOrDefaultAsync(x => x.AlunoId == alunoId && x.DataFim == null);
     }
 
+    public async Task<IReadOnlyList<int>> GetAlunoIdsComEnturmacaoAtivaAsync(IReadOnlyCollection<int> alunoIds)
+    {
+        return await _context.Set<AlunoTurma>()
+            .IgnoreQueryFilters([AppDbContext.FiltroEscola])
+            .Where(x => alunoIds.Contains(x.AlunoId) && x.DataFim == null)
+            .Select(x => x.AlunoId)
+            .ToListAsync();
+    }
+
     public Task<bool> ExistsByAlunoIdAsync(int alunoId)
     {
         // O histórico em escolas fora do escopo do usuário também impede a exclusão do aluno.
@@ -40,52 +49,70 @@ public class AlunoTurmaRepository : IAlunoTurmaRepository
         if (turma is null)
             return false;
 
-        var ocupacao = await _context.Set<AlunoTurma>().CountAsync(x =>
-            x.TurmaId == turmaId &&
-            x.DataInicio <= dataMovimentacao &&
-            (x.DataFim == null || x.DataFim >= dataMovimentacao));
-
-        return ocupacao < turma.VagasOfertadas;
+        return await GetOcupacaoMaximaAsync(turmaId, dataMovimentacao) < turma.VagasOfertadas;
     }
 
-    public async Task EnturmarAsync(int alunoId, int turmaId, DateOnly dataInicio)
+    public async Task<int> GetOcupacaoMaximaAsync(int turmaId, DateOnly aPartirDe)
+    {
+        // Um vínculo iniciado em aPartirDe vale dali em diante. Se a data for retroativa, ele precisa
+        // caber também nas datas seguintes, quando outros alunos já podem ter entrado na turma: a
+        // ocupação só aumenta nos inícios de vínculo, então basta medi-la em aPartirDe e em cada um deles.
+        var periodos = await _context.Set<AlunoTurma>()
+            .AsNoTracking()
+            .Where(x => x.TurmaId == turmaId && (x.DataFim == null || x.DataFim >= aPartirDe))
+            .Select(x => new { x.DataInicio, x.DataFim })
+            .ToListAsync();
+
+        return periodos
+            .Select(p => p.DataInicio > aPartirDe ? p.DataInicio : aPartirDe)
+            .Distinct()
+            .Select(data => periodos.Count(p => p.DataInicio <= data && (p.DataFim == null || p.DataFim >= data)))
+            .DefaultIfEmpty(0)
+            .Max();
+    }
+
+    public async Task<bool> EnturmarAsync(IReadOnlyCollection<int> alunoIds, int turmaId, DateOnly dataInicio)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();
+        var turma = await BloquearTurmaAsync(turmaId);
 
-        var aluno = await _context.Set<Aluno>().FirstAsync(x => x.Id == alunoId);
-        var vinculoAtivo = await _context.Set<AlunoTurma>()
-            .IgnoreQueryFilters([AppDbContext.FiltroEscola])
-            .AnyAsync(x => x.AlunoId == alunoId && x.DataFim == null);
+        var alunos = await _context.Set<Aluno>().Where(x => alunoIds.Contains(x.Id)).ToListAsync();
+        if (alunos.Count != alunoIds.Count)
+            throw new InvalidOperationException("Um ou mais alunos não foram encontrados.");
 
-        if (vinculoAtivo)
-            throw new InvalidOperationException("O aluno já possui enturmação ativa.");
+        if ((await GetAlunoIdsComEnturmacaoAtivaAsync(alunoIds)).Count > 0)
+            throw new InvalidOperationException(alunoIds.Count == 1
+                ? "O aluno já possui enturmação ativa."
+                : "Um ou mais alunos já possuem enturmação ativa.");
 
-        _context.Set<AlunoTurma>().Add(new AlunoTurma
+        if (await GetOcupacaoMaximaAsync(turmaId, dataInicio) + alunoIds.Count > turma.VagasOfertadas)
+            return false;
+
+        foreach (var aluno in alunos)
         {
-            AlunoId = alunoId,
-            TurmaId = turmaId,
-            DataInicio = dataInicio,
-        });
+            _context.Set<AlunoTurma>().Add(new AlunoTurma
+            {
+                AlunoId = aluno.Id,
+                TurmaId = turmaId,
+                DataInicio = dataInicio,
+            });
+            aluno.Status = Aluno.StatusAtivo;
+        }
 
-        aluno.Status = Aluno.StatusAtivo;
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
+        return true;
     }
 
     public async Task RemanejarAsync(AlunoTurma vinculoOrigem, int turmaDestinoId, DateOnly dataMovimentacao)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();
+        var turmaDestino = await BloquearTurmaAsync(turmaDestinoId);
 
         var origem = await _context.Set<AlunoTurma>()
             .FirstAsync(x => x.Id == vinculoOrigem.Id && x.DataFim == null);
 
-        var turmaDestino = await _context.Turmas.FirstAsync(x => x.Id == turmaDestinoId);
-        var ocupacao = await _context.Set<AlunoTurma>().CountAsync(x =>
-            x.TurmaId == turmaDestinoId &&
-            x.DataInicio <= dataMovimentacao &&
-            (x.DataFim == null || x.DataFim >= dataMovimentacao));
-
-        if (ocupacao >= turmaDestino.VagasOfertadas)
+        if (await GetOcupacaoMaximaAsync(turmaDestinoId, dataMovimentacao) >= turmaDestino.VagasOfertadas)
             throw new InvalidOperationException("A turma de destino não possui vagas disponíveis para remanejamento.");
 
         origem.DataFim = dataMovimentacao.AddDays(-1);
@@ -98,5 +125,17 @@ public class AlunoTurmaRepository : IAlunoTurmaRepository
 
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
+    }
+
+    /// <summary>
+    /// Trava a linha da turma até o fim da transação, para que enturmações simultâneas na mesma
+    /// turma contem as vagas uma depois da outra, em vez de ambas passarem pela checagem.
+    /// </summary>
+    private async Task<Turma> BloquearTurmaAsync(int turmaId)
+    {
+        if (_context.Database.IsRelational())
+            await _context.Database.ExecuteSqlInterpolatedAsync($"SELECT id FROM turmas WHERE id = {turmaId} FOR UPDATE");
+
+        return await _context.Turmas.AsNoTracking().FirstAsync(x => x.Id == turmaId);
     }
 }

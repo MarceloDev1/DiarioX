@@ -19,6 +19,14 @@ public class AlunoRepository : BaseRepository<Aluno>, IAlunoRepository
             .FirstOrDefaultAsync(a => a.Id == id);
     }
 
+    public async Task<IReadOnlyList<Aluno>> GetByIdsAsync(IReadOnlyCollection<int> ids)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .Where(a => ids.Contains(a.Id))
+            .ToListAsync();
+    }
+
     public override async Task<IEnumerable<Aluno>> GetAllAsync()
     {
         return await _dbSet

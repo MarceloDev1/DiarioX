@@ -1,10 +1,13 @@
 using DiarioX.Server.Application.DTOs.Alunos;
+using DiarioX.Server.Application.DTOs.Turmas;
 
 namespace DiarioX.Server.Application.Interfaces;
 
 public interface IRemanejamentoAlunoService
 {
     Task<EnturmacaoAtivaResponse?> GetEnturmacaoAtivaAsync(int alunoId);
+    Task<VagasTurmaResponse?> GetVagasTurmaAsync(int turmaId, DateOnly data);
     Task<RemanejamentoAlunoResult> EnturmarAsync(int alunoId, EnturmacaoAlunoRequest request);
+    Task<EnturmacaoLoteResult> EnturmarEmLoteAsync(EnturmacaoLoteRequest request);
     Task<RemanejamentoAlunoResult> RemanejarAsync(int alunoId, RemanejamentoAlunoRequest request);
 }

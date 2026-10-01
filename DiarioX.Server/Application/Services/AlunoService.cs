@@ -100,6 +100,9 @@ public class AlunoService : IAlunoService
         aluno.Numero = normalized.Numero;
         aluno.Bairro = normalized.Bairro;
         aluno.EscolaId = normalized.EscolaId;
+        // A navegação veio do GetByIdAsync (AsNoTracking) apontando para a escola antiga;
+        // se ficar preenchida, o Update() a anexa e o EF sobrescreve EscolaId com o Id dela.
+        aluno.Escola = null!;
         aluno.UpdatedAt = DateTime.UtcNow;
         // RN02: Matricula (e Status) propositalmente não são reatribuídos aqui.
 

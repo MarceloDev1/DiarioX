@@ -5,6 +5,7 @@ namespace DiarioX.Server.Domain.Interfaces;
 public interface IAlunoRepository
 {
     Task<Aluno?> GetByIdAsync(int id);
+    Task<IReadOnlyList<Aluno>> GetByIdsAsync(IReadOnlyCollection<int> ids);
     Task<IEnumerable<Aluno>> GetAllAsync();
     Task<bool> ExistsByCpfAsync(string cpf, int? excludeId = null);
     Task<bool> ExistsByNomeDataNascimentoResponsavelAsync(string nome, DateTime dataNascimento, string responsavelNome1, int? excludeId = null);

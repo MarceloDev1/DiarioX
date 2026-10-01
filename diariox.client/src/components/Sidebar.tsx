@@ -54,7 +54,7 @@ const menuItems: MenuItem[] = [
     ] },
     { id: 'aluno', label: 'Alunos', icon: MdPeople, submenu: [
         { id: 'alunos', label: 'Cadastrar Aluno', icon: MdPeople },
-        { id: 'enturmar-aluno', label: 'Enturmar Aluno', icon: FiUserCheck },
+        { id: 'enturmar-aluno', label: 'Enturmar Alunos', icon: FiUserCheck },
         { id: 'remanejar-aluno', label: 'Remanejar Aluno', icon: FiRotateCcw },
     ] },
     { id: 'chamada', label: 'Chamada', icon: FiCheckSquare },

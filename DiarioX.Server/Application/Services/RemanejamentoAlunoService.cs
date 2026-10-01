@@ -1,4 +1,5 @@
 using DiarioX.Server.Application.DTOs.Alunos;
+using DiarioX.Server.Application.DTOs.Turmas;
 using DiarioX.Server.Application.Interfaces;
 using DiarioX.Server.Domain.Entities;
 using DiarioX.Server.Domain.Interfaces;
@@ -67,7 +68,8 @@ public class RemanejamentoAlunoService : IRemanejamentoAlunoService
 
         try
         {
-            await _alunoTurmaRepository.EnturmarAsync(alunoId, turma.Id, request.DataInicio);
+            if (!await _alunoTurmaRepository.EnturmarAsync([alunoId], turma.Id, request.DataInicio))
+                return new(false, "A turma não possui vagas disponíveis.", AlunoResultError.Conflict);
         }
         catch (InvalidOperationException exception)
         {
@@ -76,6 +78,103 @@ public class RemanejamentoAlunoService : IRemanejamentoAlunoService
 
         return new(true, $"Aluno enturmado com sucesso na turma {turma.NomeCompleto}!");
     }
+
+    public async Task<VagasTurmaResponse?> GetVagasTurmaAsync(int turmaId, DateOnly data)
+    {
+        var turma = await _turmaRepository.GetByIdAsync(turmaId);
+        if (turma is null)
+            return null;
+
+        var ocupadas = await _alunoTurmaRepository.GetOcupacaoMaximaAsync(turmaId, data);
+        return new VagasTurmaResponse(turmaId, data, turma.VagasOfertadas, ocupadas, Math.Max(0, turma.VagasOfertadas - ocupadas));
+    }
+
+    /// <summary>
+    /// Enturma vários alunos na mesma turma. É tudo ou nada: se algum aluno não puder ser enturmado
+    /// ou faltarem vagas, nenhum vínculo é gravado e a resposta aponta os alunos com problema.
+    /// </summary>
+    public async Task<EnturmacaoLoteResult> EnturmarEmLoteAsync(EnturmacaoLoteRequest request)
+    {
+        if (request.TurmaId <= 0 || request.DataInicio == default)
+            return LoteInvalido("Por favor, informe a data de início e a turma.");
+
+        var alunoIds = request.AlunoIds.Distinct().ToList();
+        if (alunoIds.Count == 0 || alunoIds.Any(id => id <= 0))
+            return LoteInvalido("Selecione ao menos um aluno para enturmar.");
+
+        var turma = await _turmaRepository.GetByIdAsync(request.TurmaId);
+        if (turma is null)
+            return new(false, "Turma não encontrada.", AlunoResultError.NotFound);
+
+        if (turma.Status != Turma.StatusAtivo)
+            return LoteInvalido("A turma deve estar ativa.");
+
+        var hoje = DateOnly.FromDateTime(DateTime.Today);
+        if (request.DataInicio < turma.AnoLetivo.DataInicio || request.DataInicio > hoje)
+            return LoteInvalido("A data de início deve estar entre o início do ano letivo e a data atual.");
+
+        var alunos = (await _alunoRepository.GetByIdsAsync(alunoIds)).ToDictionary(aluno => aluno.Id);
+        var jaEnturmados = (await _alunoTurmaRepository.GetAlunoIdsComEnturmacaoAtivaAsync(alunoIds)).ToHashSet();
+
+        var falhas = alunoIds
+            .Select(id => MotivoImpedimento(alunos.GetValueOrDefault(id), turma, jaEnturmados) is { } motivo
+                ? new EnturmacaoLoteFalha(id, motivo)
+                : null)
+            .OfType<EnturmacaoLoteFalha>()
+            .ToList();
+
+        if (falhas.Count > 0)
+        {
+            var impedidos = falhas.Count == 1 ? "1 aluno não pode ser enturmado" : $"{falhas.Count} alunos não podem ser enturmados";
+            return new(false, $"{impedidos} nesta turma. Nenhuma enturmação foi realizada.",
+                AlunoResultError.Validation, falhas);
+        }
+
+        var disponiveis = turma.VagasOfertadas - await _alunoTurmaRepository.GetOcupacaoMaximaAsync(turma.Id, request.DataInicio);
+        if (alunoIds.Count > disponiveis)
+            return new(false, VagasInsuficientes(disponiveis, alunoIds.Count), AlunoResultError.Conflict);
+
+        try
+        {
+            // A checagem é refeita com a turma travada: outra enturmação pode ter ocupado as vagas nesse meio-tempo.
+            if (!await _alunoTurmaRepository.EnturmarAsync(alunoIds, turma.Id, request.DataInicio))
+                return new(false, "As vagas da turma foram ocupadas por outra enturmação. Atualize a tela e tente novamente.",
+                    AlunoResultError.Conflict);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return LoteInvalido(exception.Message);
+        }
+
+        return new(true, alunoIds.Count == 1
+            ? $"1 aluno enturmado com sucesso na turma {turma.NomeCompleto}!"
+            : $"{alunoIds.Count} alunos enturmados com sucesso na turma {turma.NomeCompleto}!");
+    }
+
+    private static string? MotivoImpedimento(Aluno? aluno, Turma turma, HashSet<int> jaEnturmados)
+    {
+        if (aluno is null)
+            return "Aluno não encontrado.";
+        if (aluno.Status == Aluno.StatusInativo)
+            return "Aluno inativo.";
+        if (jaEnturmados.Contains(aluno.Id))
+            return "Aluno já possui enturmação ativa.";
+        if (aluno.EscolaId != turma.EscolaId)
+            return "Aluno pertence a outra escola.";
+        return null;
+    }
+
+    private static string VagasInsuficientes(int disponiveis, int selecionados)
+    {
+        if (disponiveis <= 0)
+            return "A turma não possui vagas disponíveis.";
+
+        var vagas = disponiveis == 1 ? "1 vaga disponível" : $"{disponiveis} vagas disponíveis";
+        return $"A turma possui {vagas}, mas {selecionados} alunos foram selecionados.";
+    }
+
+    private static EnturmacaoLoteResult LoteInvalido(string message)
+        => new(false, message, AlunoResultError.Validation);
 
     public async Task<RemanejamentoAlunoResult> RemanejarAsync(int alunoId, RemanejamentoAlunoRequest request)
     {

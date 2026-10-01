@@ -17,3 +17,13 @@ public sealed class EnturmacaoAlunoRequest
 
     public DateOnly DataInicio { get; set; }
 }
+
+public sealed class EnturmacaoLoteRequest
+{
+    [Range(1, int.MaxValue)]
+    public int TurmaId { get; set; }
+
+    public DateOnly DataInicio { get; set; }
+
+    public List<int> AlunoIds { get; set; } = [];
+}
