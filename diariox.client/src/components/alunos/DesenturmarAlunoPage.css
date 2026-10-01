@@ -1,0 +1,34 @@
+/* Campos dentro da modal de confirmação da desenturmação. */
+.desenturmacao-campos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin-top: 1rem;
+}
+
+.desenturmacao-campos select,
+.desenturmacao-campos textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    color: #1f2937;
+    font: inherit;
+    font-size: 0.95rem;
+}
+
+.desenturmacao-campos textarea {
+    resize: vertical;
+    min-height: 4.5rem;
+}
+
+.desenturmacao-campos select[aria-invalid="true"] {
+    border-color: #b4233a;
+    background: #fff9f9;
+}
+
+.desenturmacao-campos .field-error {
+    margin: 0;
+}

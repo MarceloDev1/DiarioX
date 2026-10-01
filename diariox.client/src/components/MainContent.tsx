@@ -13,6 +13,7 @@ import AlunosPage from './alunos/AlunosPage';
 import EnturmarAlunoPage from './alunos/EnturmarAlunoPage';
 import ProfessorAlocacoesPage from './professor-alocacoes/ProfessorAlocacoesPage';
 import RemanejarAlunoPage from './alunos/RemanejarAlunoPage';
+import DesenturmarAlunoPage from './alunos/DesenturmarAlunoPage';
 import InstituicoesPage from './tenants/InstituicoesPage';
 import PermissoesPage from './configuracoes/PermissoesPage';
 import ChamadaPage from './chamada/ChamadaPage';
@@ -70,6 +71,7 @@ function MainContent({ onNavigate }: MainContentProps) {
             <Route path="/alunos" element={<AlunosPage onEnturmar={alunoId => onNavigate('enturmar-aluno', alunoId)} />} />
             <Route path="/enturmar-aluno" element={<EnturmarAlunoRoute />} />
             <Route path="/remanejar-aluno" element={<RemanejarAlunoPage />} />
+            <Route path="/desenturmar-aluno" element={<DesenturmarAlunoPage />} />
             <Route path="/chamada" element={<ChamadaPage />} />
             <Route path="/relatorios" element={<RelatoriosPage />} />
             <Route path="/relatorios/:relatorioId" element={

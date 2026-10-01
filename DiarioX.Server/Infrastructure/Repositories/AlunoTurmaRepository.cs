@@ -28,6 +28,18 @@ public class AlunoTurmaRepository : IAlunoTurmaRepository
             .FirstOrDefaultAsync(x => x.AlunoId == alunoId && x.DataFim == null);
     }
 
+    public async Task<IReadOnlyList<AlunoTurma>> GetAtivasByTurmaIdAsync(int turmaId)
+    {
+        // Vale a escola da turma (já validada pelo chamador), não a do cadastro do aluno.
+        return await _context.Set<AlunoTurma>()
+            .IgnoreQueryFilters([AppDbContext.FiltroEscola])
+            .AsNoTracking()
+            .Include(x => x.Aluno)
+            .Where(x => x.TurmaId == turmaId && x.DataFim == null)
+            .OrderBy(x => x.Aluno.Nome)
+            .ToListAsync();
+    }
+
     public async Task<IReadOnlyList<int>> GetAlunoIdsComEnturmacaoAtivaAsync(IReadOnlyCollection<int> alunoIds)
     {
         return await _context.Set<AlunoTurma>()
@@ -122,6 +134,41 @@ public class AlunoTurmaRepository : IAlunoTurmaRepository
             TurmaId = turmaDestinoId,
             DataInicio = dataMovimentacao,
         });
+
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+    }
+
+    public async Task DesenturmarAsync(int turmaId, IReadOnlyDictionary<int, string> statusPorAluno, DateOnly dataDesenturmacao,
+        string motivo, string? observacao)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        await BloquearTurmaAsync(turmaId);
+
+        var alunoIds = statusPorAluno.Keys.ToList();
+        var vinculos = await _context.Set<AlunoTurma>()
+            .IgnoreQueryFilters([AppDbContext.FiltroEscola])
+            .Include(x => x.Aluno)
+            .Where(x => x.TurmaId == turmaId && x.DataFim == null && alunoIds.Contains(x.AlunoId))
+            .ToListAsync();
+
+        if (vinculos.Count != alunoIds.Count)
+            throw new InvalidOperationException(alunoIds.Count == 1
+                ? "O aluno não está mais enturmado nesta turma. Atualize a tela e tente novamente."
+                : "Um ou mais alunos não estão mais enturmados nesta turma. Atualize a tela e tente novamente.");
+
+        // A vaga fica livre já em dataDesenturmacao (RN03). Um vínculo que começaria nessa data (ou depois)
+        // termina na véspera do início: continua no histórico, com o motivo, sem valer para nenhum dia.
+        var ultimoDia = dataDesenturmacao.AddDays(-1);
+        foreach (var vinculo in vinculos)
+        {
+            var vesperaDoInicio = vinculo.DataInicio.AddDays(-1);
+            vinculo.DataFim = ultimoDia > vesperaDoInicio ? ultimoDia : vesperaDoInicio;
+            vinculo.MotivoDesenturmacao = motivo;
+            vinculo.ObservacaoDesenturmacao = observacao;
+            vinculo.Aluno.Status = statusPorAluno[vinculo.AlunoId];
+            vinculo.Aluno.UpdatedAt = DateTime.UtcNow;
+        }
 
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();

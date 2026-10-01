@@ -9,9 +9,10 @@ export const permissaoDaPagina: Record<string, string> = {
     'professores': 'professores.visualizar',
     'alocacao-professor': 'alocacao-professor.visualizar',
     'alunos': 'alunos.visualizar',
-    // Enturmar e remanejar alteram o aluno.
+    // Enturmar, remanejar e desenturmar alteram o aluno.
     'enturmar-aluno': 'alunos.editar',
     'remanejar-aluno': 'alunos.editar',
+    'desenturmar-aluno': 'alunos.editar',
     'chamada': 'chamada.visualizar',
     'relatorios': 'relatorios.visualizar',
     'usuarios': 'usuarios.visualizar',

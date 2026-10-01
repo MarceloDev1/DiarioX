@@ -37,6 +37,8 @@ public class ChamadaRepository : IChamadaRepository
             .AsNoTracking()
             .Include(at => at.Aluno)
             .Where(at => at.TurmaId == turmaId && at.DataInicio <= ate && (at.DataFim == null || at.DataFim >= de))
+            // Vínculo desfeito antes de começar (DataFim = DataInicio - 1) não vale para nenhuma data.
+            .Where(at => at.DataFim == null || at.DataFim >= at.DataInicio)
             .ToListAsync();
     }
 

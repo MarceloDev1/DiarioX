@@ -27,3 +27,17 @@ public sealed class EnturmacaoLoteRequest
 
     public List<int> AlunoIds { get; set; } = [];
 }
+
+public sealed class DesenturmacaoRequest
+{
+    [Range(1, int.MaxValue)]
+    public int TurmaId { get; set; }
+
+    public List<int> AlunoIds { get; set; } = [];
+
+    /// <summary>Um de <c>AlunoTurma.MotivosDesenturmacao</c>.</summary>
+    public string? Motivo { get; set; }
+
+    /// <summary>Obrigatória quando o motivo é OUTROS.</summary>
+    public string? Observacao { get; set; }
+}

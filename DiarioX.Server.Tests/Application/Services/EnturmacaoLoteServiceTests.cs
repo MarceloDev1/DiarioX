@@ -57,6 +57,20 @@ public class EnturmacaoLoteServiceTests
     }
 
     [Fact]
+    public async Task EnturmarEmLoteAsync_AlunoComObito_EhImpedido()
+    {
+        var (service, alunoRepository, alunoTurmaRepository) = BuildService();
+        alunoRepository.Setup(x => x.GetByIdsAsync(It.IsAny<IReadOnlyCollection<int>>()))
+            .ReturnsAsync([BuildAluno(1, status: Aluno.StatusInativoObito)]);
+
+        var result = await service.EnturmarEmLoteAsync(new EnturmacaoLoteRequest { TurmaId = 1, DataInicio = Hoje, AlunoIds = [1] });
+
+        Assert.False(result.Success);
+        Assert.Equal([new EnturmacaoLoteFalha(1, "Aluno inativo.")], result.Falhas);
+        VerifyNothingPersisted(alunoTurmaRepository);
+    }
+
+    [Fact]
     public async Task EnturmarEmLoteAsync_QuandoSelecionadosExcedemVagas_ReturnsConflict()
     {
         var (service, alunoRepository, alunoTurmaRepository) = BuildService();

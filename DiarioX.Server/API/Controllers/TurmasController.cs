@@ -49,6 +49,20 @@ public class TurmasController : ControllerBase
         return Ok(vagas);
     }
 
+    /// <summary>
+    /// Alunos com enturmação ativa na turma, em ordem alfabética.
+    /// </summary>
+    [Permissao(Permissoes.Alunos.Visualizar)]
+    [HttpGet("{id:int}/alunos")]
+    public async Task<IActionResult> GetAlunos([FromRoute] int id)
+    {
+        var alunos = await _remanejamentoAlunoService.GetAlunosEnturmadosAsync(id);
+        if (alunos is null)
+            return NotFound(new { message = "Turma não encontrada." });
+
+        return Ok(alunos);
+    }
+
     [Permissao(Permissoes.Turmas.Criar)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] TurmaRequest request)

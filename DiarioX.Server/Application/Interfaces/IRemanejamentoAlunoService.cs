@@ -10,4 +10,9 @@ public interface IRemanejamentoAlunoService
     Task<RemanejamentoAlunoResult> EnturmarAsync(int alunoId, EnturmacaoAlunoRequest request);
     Task<EnturmacaoLoteResult> EnturmarEmLoteAsync(EnturmacaoLoteRequest request);
     Task<RemanejamentoAlunoResult> RemanejarAsync(int alunoId, RemanejamentoAlunoRequest request);
+
+    /// <summary>Alunos com enturmação ativa na turma; nulo se a turma não existir.</summary>
+    Task<IReadOnlyList<AlunoEnturmadoResponse>?> GetAlunosEnturmadosAsync(int turmaId);
+
+    Task<DesenturmacaoResult> DesenturmarAsync(DesenturmacaoRequest request);
 }

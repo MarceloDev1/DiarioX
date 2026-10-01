@@ -79,6 +79,91 @@ public class AlunoTurmaRepositoryTests
         Assert.All(verificacao.Alunos, a => Assert.Equal(Aluno.StatusAtivoAguardandoEnturmacao, a.Status));
     }
 
+    [Fact]
+    public async Task DesenturmarAsync_EncerraVinculoGravaMotivoELiberaAVaga()
+    {
+        var database = Guid.NewGuid().ToString();
+        var turmaId = Seed(database, vagas: 2,
+            (new DateOnly(2026, 2, 1), null),
+            (new DateOnly(2026, 2, 1), null));
+        var hoje = new DateOnly(2026, 9, 30);
+
+        int desenturmadoId, outroId;
+        await using (var context = CreateContext(database))
+        {
+            var repository = new AlunoTurmaRepository(context);
+            var vinculos = await repository.GetAtivasByTurmaIdAsync(turmaId);
+            (desenturmadoId, outroId) = (vinculos[0].AlunoId, vinculos[1].AlunoId);
+            Assert.False(await repository.HasVacancyAsync(turmaId, hoje));
+
+            await repository.DesenturmarAsync(turmaId, new Dictionary<int, string> { [desenturmadoId] = Aluno.StatusNaoCompareceu },
+                hoje, AlunoTurma.MotivoNaoCompareceu, "Não compareceu desde a matrícula");
+        }
+
+        await using var verificacao = CreateContext(database);
+        var vinculo = verificacao.AlunosTurmas.Single(x => x.AlunoId == desenturmadoId);
+        Assert.Equal(hoje.AddDays(-1), vinculo.DataFim);
+        Assert.Equal(AlunoTurma.MotivoNaoCompareceu, vinculo.MotivoDesenturmacao);
+        Assert.Equal("Não compareceu desde a matrícula", vinculo.ObservacaoDesenturmacao);
+        Assert.Equal(Aluno.StatusNaoCompareceu, verificacao.Alunos.Single(a => a.Id == desenturmadoId).Status);
+
+        Assert.Null(verificacao.AlunosTurmas.Single(x => x.AlunoId == outroId).DataFim);
+        Assert.Equal(Aluno.StatusAtivo, verificacao.Alunos.Single(a => a.Id == outroId).Status);
+
+        var repositorio = new AlunoTurmaRepository(verificacao);
+        Assert.True(await repositorio.HasVacancyAsync(turmaId, hoje));
+        Assert.Single(await repositorio.GetAtivasByTurmaIdAsync(turmaId));
+    }
+
+    [Fact]
+    public async Task DesenturmarAsync_VinculoIniciadoNoMesmoDia_NaoValeParaNenhumaData()
+    {
+        var hoje = new DateOnly(2026, 9, 30);
+        var database = Guid.NewGuid().ToString();
+        var turmaId = Seed(database, vagas: 1, (hoje, null));
+
+        await using (var context = CreateContext(database))
+        {
+            var repository = new AlunoTurmaRepository(context);
+            var alunoId = (await repository.GetAtivasByTurmaIdAsync(turmaId)).Single().AlunoId;
+
+            await repository.DesenturmarAsync(turmaId, new Dictionary<int, string> { [alunoId] = Aluno.StatusAtivoAguardandoEnturmacao },
+                hoje, AlunoTurma.MotivoErroMatricula, null);
+        }
+
+        await using var verificacao = CreateContext(database);
+        var vinculo = verificacao.AlunosTurmas.Single();
+        Assert.Equal(hoje.AddDays(-1), vinculo.DataFim);
+        Assert.Equal(AlunoTurma.MotivoErroMatricula, vinculo.MotivoDesenturmacao);
+        Assert.Equal(0, await new AlunoTurmaRepository(verificacao).GetOcupacaoMaximaAsync(turmaId, hoje));
+    }
+
+    [Fact]
+    public async Task DesenturmarAsync_AlunoForaDaTurma_NaoGravaNada()
+    {
+        var database = Guid.NewGuid().ToString();
+        var turmaId = Seed(database, vagas: 2, (new DateOnly(2026, 2, 1), null));
+        var foraDaTurma = SeedAlunosAguardando(database, 1).Single();
+
+        await using (var context = CreateContext(database))
+        {
+            var repository = new AlunoTurmaRepository(context);
+            var enturmadoId = (await repository.GetAtivasByTurmaIdAsync(turmaId)).Single().AlunoId;
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => repository.DesenturmarAsync(turmaId,
+                new Dictionary<int, string>
+                {
+                    [enturmadoId] = Aluno.StatusAtivoAguardandoEnturmacao,
+                    [foraDaTurma] = Aluno.StatusAtivoAguardandoEnturmacao,
+                },
+                new DateOnly(2026, 9, 30), AlunoTurma.MotivoReestruturacaoInterna, null));
+        }
+
+        await using var verificacao = CreateContext(database);
+        Assert.Null(verificacao.AlunosTurmas.Single().DataFim);
+        Assert.Equal(Aluno.StatusAtivo, verificacao.Alunos.Single(a => a.Id != foraDaTurma).Status);
+    }
+
     private static int Seed(string database, int vagas, params (DateOnly Inicio, DateOnly? Fim)[] vinculos)
     {
         using var context = CreateContext(database);

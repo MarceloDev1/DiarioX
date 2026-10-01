@@ -46,7 +46,7 @@ public class RemanejamentoAlunoService : IRemanejamentoAlunoService
         if (aluno is null)
             return new(false, "Aluno não encontrado.", AlunoResultError.NotFound);
 
-        if (aluno.Status == Aluno.StatusInativo)
+        if (aluno.Status is Aluno.StatusInativo or Aluno.StatusInativoObito)
             return Invalid("Não é possível enturmar um aluno inativo.");
 
         if (await _alunoTurmaRepository.GetAtivaByAlunoIdAsync(alunoId) is not null)
@@ -155,7 +155,7 @@ public class RemanejamentoAlunoService : IRemanejamentoAlunoService
     {
         if (aluno is null)
             return "Aluno não encontrado.";
-        if (aluno.Status == Aluno.StatusInativo)
+        if (aluno.Status is Aluno.StatusInativo or Aluno.StatusInativoObito)
             return "Aluno inativo.";
         if (jaEnturmados.Contains(aluno.Id))
             return "Aluno já possui enturmação ativa.";
@@ -223,6 +223,91 @@ public class RemanejamentoAlunoService : IRemanejamentoAlunoService
 
         return new(true, $"Aluno remanejado com sucesso para a turma {turmaDestino.NomeCompleto}!");
     }
+
+    public async Task<IReadOnlyList<AlunoEnturmadoResponse>?> GetAlunosEnturmadosAsync(int turmaId)
+    {
+        if (await _turmaRepository.GetByIdAsync(turmaId) is null)
+            return null;
+
+        return (await _alunoTurmaRepository.GetAtivasByTurmaIdAsync(turmaId))
+            .Select(v => new AlunoEnturmadoResponse(v.AlunoId, v.Aluno.Matricula, v.Aluno.Nome, v.Aluno.Status, v.DataInicio))
+            .ToList();
+    }
+
+    /// <summary>
+    /// RF013: retira alunos da turma a partir de hoje, liberando as vagas, e muda o status de cada um
+    /// conforme o motivo. É tudo ou nada: se algum aluno não estiver enturmado na turma, nada é gravado.
+    /// Os lançamentos do diário (chamadas) não são tocados.
+    /// </summary>
+    public async Task<DesenturmacaoResult> DesenturmarAsync(DesenturmacaoRequest request)
+    {
+        var alunoIds = request.AlunoIds.Distinct().ToList();
+        if (alunoIds.Count == 0 || alunoIds.Any(id => id <= 0))
+            return DesenturmacaoInvalida("Selecione ao menos um aluno para realizar a desenturmação.");
+
+        var motivo = (request.Motivo ?? string.Empty).Trim().ToUpperInvariant();
+        if (motivo.Length == 0)
+            return DesenturmacaoInvalida("Por favor, selecione o motivo da desenturmação para continuar.");
+
+        if (!AlunoTurma.MotivosDesenturmacao.Contains(motivo))
+            return DesenturmacaoInvalida("Motivo da desenturmação inválido.");
+
+        var observacao = string.IsNullOrWhiteSpace(request.Observacao) ? null : request.Observacao.Trim();
+        if (motivo == AlunoTurma.MotivoOutros && observacao is null)
+            return DesenturmacaoInvalida("Informe a observação/justificativa quando o motivo for \"Outros\".");
+
+        if (observacao?.Length > AlunoTurma.MaxObservacaoDesenturmacao)
+            return DesenturmacaoInvalida($"A observação deve ter no máximo {AlunoTurma.MaxObservacaoDesenturmacao} caracteres.");
+
+        var turma = await _turmaRepository.GetByIdAsync(request.TurmaId);
+        if (turma is null)
+            return new(false, "Turma não encontrada.", AlunoResultError.NotFound);
+
+        var enturmados = (await _alunoTurmaRepository.GetAtivasByTurmaIdAsync(turma.Id)).ToDictionary(v => v.AlunoId, v => v.Aluno);
+        var falhas = alunoIds
+            .Where(id => !enturmados.ContainsKey(id))
+            .Select(id => new DesenturmacaoFalha(id, "Aluno não está enturmado nesta turma."))
+            .ToList();
+
+        if (falhas.Count > 0)
+        {
+            var impedidos = falhas.Count == 1 ? "1 aluno não está enturmado" : $"{falhas.Count} alunos não estão enturmados";
+            return new(false, $"{impedidos} nesta turma. Nenhuma desenturmação foi realizada.",
+                AlunoResultError.Validation, falhas);
+        }
+
+        var statusPorAluno = alunoIds.ToDictionary(id => id, id => StatusAposDesenturmacao(enturmados[id], motivo));
+
+        try
+        {
+            await _alunoTurmaRepository.DesenturmarAsync(turma.Id, statusPorAluno, DateOnly.FromDateTime(DateTime.Today),
+                motivo, observacao);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return new(false, exception.Message, AlunoResultError.Conflict);
+        }
+
+        if (alunoIds.Count > 1 && alunoIds.Count == enturmados.Count)
+            return new(true, "Todos os alunos da turma foram desenturmados com sucesso!");
+
+        return new(true, alunoIds.Count == 1
+            ? "Aluno desenturmado com sucesso!"
+            : $"{alunoIds.Count} alunos desenturmados com sucesso!");
+    }
+
+    /// <summary>RN01: o motivo define o status do aluno ao sair da turma.</summary>
+    private static string StatusAposDesenturmacao(Aluno aluno, string motivo) => motivo switch
+    {
+        AlunoTurma.MotivoFalecimento => Aluno.StatusInativoObito,
+        AlunoTurma.MotivoNaoCompareceu => Aluno.StatusNaoCompareceu,
+        // Reestruturação, erro de matrícula e outros: volta a aguardar enturmação. Aluno inativado
+        // continua inativo; a desenturmação não o reativa.
+        _ => aluno.Status == Aluno.StatusInativo ? Aluno.StatusInativo : Aluno.StatusAtivoAguardandoEnturmacao,
+    };
+
+    private static DesenturmacaoResult DesenturmacaoInvalida(string message)
+        => new(false, message, AlunoResultError.Validation);
 
     private static RemanejamentoAlunoResult Invalid(string message)
         => new(false, message, AlunoResultError.Validation);

@@ -215,6 +215,38 @@ public class AlunosController : ControllerBase
         return Ok(new { message = result.Message });
     }
 
+    /// <summary>
+    /// Desenturma um ou mais alunos da mesma turma (RF013).
+    /// </summary>
+    /// <remarks>
+    /// Encerra a enturmação a partir de hoje, liberando as vagas, e muda o status do aluno conforme o motivo:
+    /// REESTRUTURACAO_INTERNA, ERRO_MATRICULA_ENTURMACAO e OUTROS voltam para ATIVO_AGUARDANDO_ENTURMACAO;
+    /// NAO_COMPARECEU vira NAO_COMPARECEU; FALECIMENTO vira INATIVO_OBITO. A observação é obrigatória para OUTROS.
+    /// Tudo ou nada: se algum aluno não estiver enturmado na turma, nada é gravado e <c>falhas</c> aponta quais.
+    /// </remarks>
+    [Permissao(Permissoes.Alunos.Editar)]
+    [HttpPost("desenturmacoes")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Desenturmar([FromBody] DesenturmacaoRequest request)
+    {
+        var result = await _remanejamentoAlunoService.DesenturmarAsync(request);
+        if (!result.Success)
+        {
+            var body = new { message = result.Message, falhas = result.Falhas ?? [] };
+            return result.Error switch
+            {
+                AlunoResultError.NotFound => NotFound(body),
+                AlunoResultError.Conflict => Conflict(body),
+                _ => BadRequest(body)
+            };
+        }
+
+        return Ok(new { message = result.Message });
+    }
+
     private IActionResult MapError(AlunoCommandResult result)
     {
         return result.Error switch

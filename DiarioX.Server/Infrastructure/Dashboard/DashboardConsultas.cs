@@ -42,8 +42,11 @@ public class DashboardConsultas : IDashboardConsultas
 
         var registros = RegistrosDoPeriodo(p.FrequenciaDe, hoje, p.ProfessorId);
         var presencas = registros.Where(r => r.Situacao == ChamadaAluno.SituacaoPresente);
+        // Desenturmado por não comparecimento ou óbito deixa de entrar na contagem de faltas (RF013 RN01).
         var infrequentes = registros
-            .Where(r => r.Aluno.Status != Aluno.StatusInativo)
+            .Where(r => r.Aluno.Status != Aluno.StatusInativo &&
+                        r.Aluno.Status != Aluno.StatusInativoObito &&
+                        r.Aluno.Status != Aluno.StatusNaoCompareceu)
             .GroupBy(r => r.AlunoId)
             .Select(g => new
             {

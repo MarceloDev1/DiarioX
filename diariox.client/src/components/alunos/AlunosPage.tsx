@@ -6,7 +6,8 @@ import { validateCpf } from '../../utils/validators';
 import { buscarEnderecoPorCep, formatEnderecoCep } from '../../utils/cep';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
-import StatusPill from '../ui/StatusPill';
+import StatusPill, { type Status } from '../ui/StatusPill';
+import { podeAtivarAluno, rotuloStatusAluno, statusAlunoOpcoes } from './statusAluno';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { usePermissoes } from '../../hooks/usePermissoes';
 
@@ -103,12 +104,6 @@ const corRacaOpcoes = [
     { value: 'AMARELA', label: 'Amarela' },
     { value: 'INDIGENA', label: 'Indígena' },
     { value: 'NAO_DECLARADA', label: 'Não declarada' },
-];
-
-const statusOpcoes = [
-    { value: 'ATIVO', label: 'Ativo' },
-    { value: 'ATIVO_AGUARDANDO_ENTURMACAO', label: 'Aguardando Enturmação' },
-    { value: 'INATIVO', label: 'Inativo' },
 ];
 
 const emptyForm: AlunoFormState = {
@@ -417,7 +412,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         if (!alunoToToggle) return;
 
         const aluno = alunoToToggle;
-        const inativar = aluno.status !== 'INATIVO';
+        const inativar = !podeAtivarAluno(aluno.status);
 
         setSuccessMessage(null);
         setLocalError(null);
@@ -442,7 +437,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
     };
 
     const handleCancelToggleStatus = useCallback(() => setAlunoToToggle(null), []);
-    const inativandoAluno = alunoToToggle?.status !== 'INATIVO';
+    const inativandoAluno = !podeAtivarAluno(alunoToToggle?.status ?? '');
 
     const handleNewAluno = () => {
         resetCepLookup();
@@ -545,7 +540,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                             <label htmlFor="filtro-status">Status</label>
                             <select id="filtro-status" className="filter-input" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                                 <option value="">Todos</option>
-                                {statusOpcoes.map(opcao => <option key={opcao.value} value={opcao.value}>{opcao.label}</option>)}
+                                {statusAlunoOpcoes.map(opcao => <option key={opcao.value} value={opcao.value}>{opcao.label}</option>)}
                             </select>
                         </div>
                         <button type="submit" className="filter-button">Consultar</button>
@@ -590,22 +585,20 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                             <td className="nowrap-cell">{formatTelefone(aluno.responsavelTelefone1)}</td>
                                             <td className="nowrap-cell">{aluno.escolaNome}</td>
                                             <td>
-                                                <StatusPill
-                                                    status={aluno.status as 'ATIVO' | 'INATIVO' | 'BLOQUEADO' | 'ATIVO_AGUARDANDO_ENTURMACAO'}
-                                                    label={aluno.status === 'ATIVO_AGUARDANDO_ENTURMACAO' ? 'Aguardando Enturmação' : undefined}
-                                                />
+                                                <StatusPill status={aluno.status as Status} label={rotuloStatusAluno(aluno.status)} />
                                             </td>
                                             <td>
                                                 <div className="action-group vertical">
                                                     {can('alunos.editar') && <button type="button" className="table-action-button" onClick={() => handleEditClick(aluno)}>Editar</button>}
-                                                    {can('alunos.editar') && (
+                                                    {/* Óbito encerra a matrícula definitivamente: não há como ativar nem inativar. */}
+                                                    {can('alunos.editar') && aluno.status !== 'INATIVO_OBITO' && (
                                                         <button
                                                             type="button"
                                                             className="table-action-button"
                                                             onClick={() => setAlunoToToggle(aluno)}
                                                             disabled={statusUpdatingId === aluno.id}
                                                         >
-                                                            {aluno.status === 'INATIVO' ? 'Ativar' : 'Inativar'}
+                                                            {podeAtivarAluno(aluno.status) ? 'Ativar' : 'Inativar'}
                                                         </button>
                                                     )}
                                                     {can('alunos.excluir') && <button type="button" className="table-action-button danger" onClick={() => setAlunoToDelete(aluno)}>Excluir</button>}

@@ -9,7 +9,13 @@ public class AlunoTurmaConfiguration : IEntityTypeConfiguration<AlunoTurma>
     public void Configure(EntityTypeBuilder<AlunoTurma> builder)
     {
         builder.ToTable("alunos_turmas", table =>
-            table.HasCheckConstraint("CK_alunos_turmas_periodo", "data_fim IS NULL OR data_fim >= data_inicio"));
+        {
+            // data_fim = data_inicio - 1: vínculo desfeito no mesmo dia em que começaria (ver AlunoTurma.DataFim).
+            table.HasCheckConstraint("CK_alunos_turmas_periodo", "data_fim IS NULL OR data_fim >= data_inicio - 1");
+            table.HasCheckConstraint("CK_alunos_turmas_motivo_desenturmacao",
+                "motivo_desenturmacao IS NULL OR motivo_desenturmacao IN " +
+                "('REESTRUTURACAO_INTERNA', 'NAO_COMPARECEU', 'FALECIMENTO', 'ERRO_MATRICULA_ENTURMACAO', 'OUTROS')");
+        });
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasColumnName("id").UseIdentityByDefaultColumn();
@@ -17,6 +23,9 @@ public class AlunoTurmaConfiguration : IEntityTypeConfiguration<AlunoTurma>
         builder.Property(x => x.TurmaId).HasColumnName("turma_id").IsRequired();
         builder.Property(x => x.DataInicio).HasColumnName("data_inicio").HasColumnType("date").IsRequired();
         builder.Property(x => x.DataFim).HasColumnName("data_fim").HasColumnType("date");
+        builder.Property(x => x.MotivoDesenturmacao).HasColumnName("motivo_desenturmacao").HasMaxLength(40);
+        builder.Property(x => x.ObservacaoDesenturmacao).HasColumnName("observacao_desenturmacao")
+            .HasMaxLength(AlunoTurma.MaxObservacaoDesenturmacao);
         builder.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
 
         builder.HasOne(x => x.Aluno)

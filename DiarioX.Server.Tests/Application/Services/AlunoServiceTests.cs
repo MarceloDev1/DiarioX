@@ -331,6 +331,39 @@ public class AlunoServiceTests
         fixture.AlunoRepository.Verify(r => r.UpdateAsync(It.IsAny<Aluno>()), Times.Never);
     }
 
+    [Theory]
+    [InlineData("ATIVO")]
+    [InlineData("INATIVO")]
+    public async Task UpdateStatusAsync_WhenAlunoComObito_ReturnsValidationError(string status)
+    {
+        var fixture = BuildService();
+        var aluno = BuildAluno(5, "20260001");
+        aluno.Status = Aluno.StatusInativoObito;
+        fixture.AlunoRepository.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(aluno);
+
+        var result = await fixture.Service.UpdateStatusAsync(5, new AlunoStatusRequest { Status = status });
+
+        Assert.False(result.Success);
+        Assert.Equal(AlunoResultError.Validation, result.Error);
+        Assert.Equal(Aluno.StatusInativoObito, aluno.Status);
+        fixture.AlunoRepository.Verify(r => r.UpdateAsync(It.IsAny<Aluno>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_WhenAtivandoAlunoQueNaoCompareceu_SetsAguardandoEnturmacao()
+    {
+        var fixture = BuildService();
+        var aluno = BuildAluno(5, "20260001");
+        aluno.Status = Aluno.StatusNaoCompareceu;
+        fixture.AlunoRepository.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(aluno);
+        fixture.AlunoTurmaRepository.Setup(r => r.GetAtivaByAlunoIdAsync(5)).ReturnsAsync((AlunoTurma?)null);
+
+        var result = await fixture.Service.UpdateStatusAsync(5, new AlunoStatusRequest { Status = Aluno.StatusAtivo });
+
+        Assert.True(result.Success);
+        Assert.Equal(Aluno.StatusAtivoAguardandoEnturmacao, aluno.Status);
+    }
+
     [Fact]
     public async Task UpdateStatusAsync_WhenNotFound_ReturnsNotFound()
     {

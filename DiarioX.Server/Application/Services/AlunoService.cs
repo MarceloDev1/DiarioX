@@ -122,6 +122,10 @@ public class AlunoService : IAlunoService
         if (aluno is null)
             return NotFound("Aluno não encontrado.");
 
+        // RF013 RN01: o óbito encerra a matrícula definitivamente.
+        if (aluno.Status == Aluno.StatusInativoObito)
+            return Invalid("O aluno possui óbito registrado e a matrícula está encerrada; o status não pode ser alterado.");
+
         if (status == Aluno.StatusInativo)
         {
             aluno.Status = Aluno.StatusInativo;
