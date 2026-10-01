@@ -6,6 +6,7 @@ import EmptyState from '../ui/EmptyState';
 
 interface EnturmarAlunoPageProps {
     initialAlunoId: number | null;
+    onVoltar: () => void;
 }
 
 interface Aluno {
@@ -48,7 +49,7 @@ const normalizar = (texto: string) => texto.normalize('NFD').replace(/\p{Diacrit
 const plural = (quantidade: number, singular: string, pluralForma: string) =>
     `${quantidade} ${quantidade === 1 ? singular : pluralForma}`;
 
-function EnturmarAlunoPage({ initialAlunoId }: EnturmarAlunoPageProps) {
+function EnturmarAlunoPage({ initialAlunoId, onVoltar }: EnturmarAlunoPageProps) {
     const [alunos, setAlunos] = useState<Aluno[]>([]);
     const [turmas, setTurmas] = useState<Turma[]>([]);
     const [escolaId, setEscolaId] = useState('');
@@ -208,6 +209,9 @@ function EnturmarAlunoPage({ initialAlunoId }: EnturmarAlunoPageProps) {
                         <h2>Enturmar Alunos</h2>
                         <p>Escolha a turma e marque os alunos que aguardam enturmação. Todos são vinculados de uma só vez.</p>
                     </div>
+                    <button className="secondary-button" type="button" onClick={onVoltar}>
+                        ← Voltar para a lista
+                    </button>
                 </div>
 
                 <FeedbackMessage message={error} type="error" />

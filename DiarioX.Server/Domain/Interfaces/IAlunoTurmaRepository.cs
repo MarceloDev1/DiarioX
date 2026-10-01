@@ -9,6 +9,9 @@ public interface IAlunoTurmaRepository
     /// <summary>Enturmações ativas da turma, com o aluno. A turma deve ter sido validada pelo chamador.</summary>
     Task<IReadOnlyList<AlunoTurma>> GetAtivasByTurmaIdAsync(int turmaId);
 
+    /// <summary>Enturmações ativas nas turmas do escopo do usuário, com o aluno e a turma (escola, modalidade e etapa).</summary>
+    Task<IReadOnlyList<AlunoTurma>> GetAtivasAsync();
+
     Task<IReadOnlyList<int>> GetAlunoIdsComEnturmacaoAtivaAsync(IReadOnlyCollection<int> alunoIds);
     Task<bool> ExistsByAlunoIdAsync(int alunoId);
     Task<bool> HasVacancyAsync(int turmaId, DateOnly dataMovimentacao);

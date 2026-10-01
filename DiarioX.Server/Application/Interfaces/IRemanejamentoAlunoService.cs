@@ -14,5 +14,7 @@ public interface IRemanejamentoAlunoService
     /// <summary>Alunos com enturmação ativa na turma; nulo se a turma não existir.</summary>
     Task<IReadOnlyList<AlunoEnturmadoResponse>?> GetAlunosEnturmadosAsync(int turmaId);
 
+    Task<IReadOnlyList<EnturmacaoAtivaItemResponse>> GetEnturmacoesAtivasAsync();
+
     Task<DesenturmacaoResult> DesenturmarAsync(DesenturmacaoRequest request);
 }

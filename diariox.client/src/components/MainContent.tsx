@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Link, Route, Routes, useLocation, useSearchParams } from 'react-router';
+import { Link, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router';
 import './MainContent.css';
 import EscolasPage from './escolas/EscolasPage';
 import EtapasEnsinoPage from './etapas-ensino/EtapasEnsinoPage';
@@ -11,6 +11,7 @@ import DisciplinasPage from './disciplinas/DisciplinasPage';
 import ProfessoresPage from './professores/ProfessoresPage';
 import AlunosPage from './alunos/AlunosPage';
 import EnturmarAlunoPage from './alunos/EnturmarAlunoPage';
+import AlunosEnturmadosPage from './alunos/AlunosEnturmadosPage';
 import ProfessorAlocacoesPage from './professor-alocacoes/ProfessorAlocacoesPage';
 import RemanejarAlunoPage from './alunos/RemanejarAlunoPage';
 import DesenturmarAlunoPage from './alunos/DesenturmarAlunoPage';
@@ -35,9 +36,15 @@ interface MainContentProps {
 
 function EnturmarAlunoRoute() {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const alunoId = Number(searchParams.get('alunoId')) || null;
     // A key recria a página quando outro aluno é aberto a partir da lista.
-    return <EnturmarAlunoPage key={alunoId ?? 'novo'} initialAlunoId={alunoId} />;
+    return <EnturmarAlunoPage key={alunoId ?? 'novo'} initialAlunoId={alunoId} onVoltar={() => navigate('/enturmar-aluno')} />;
+}
+
+function AlunosEnturmadosRoute() {
+    const navigate = useNavigate();
+    return <AlunosEnturmadosPage onEnturmar={() => navigate('/enturmar-aluno/novo')} />;
 }
 
 function MainContent({ onNavigate }: MainContentProps) {
@@ -68,8 +75,9 @@ function MainContent({ onNavigate }: MainContentProps) {
             <Route path="/turmas" element={<TurmasPage />} />
             <Route path="/professores" element={<ProfessoresPage />} />
             <Route path="/alocacao-professor" element={<ProfessorAlocacoesPage />} />
-            <Route path="/alunos" element={<AlunosPage onEnturmar={alunoId => onNavigate('enturmar-aluno', alunoId)} />} />
-            <Route path="/enturmar-aluno" element={<EnturmarAlunoRoute />} />
+            <Route path="/alunos" element={<AlunosPage onEnturmar={alunoId => onNavigate('enturmar-aluno/novo', alunoId)} />} />
+            <Route path="/enturmar-aluno" element={<AlunosEnturmadosRoute />} />
+            <Route path="/enturmar-aluno/novo" element={<EnturmarAlunoRoute />} />
             <Route path="/remanejar-aluno" element={<RemanejarAlunoPage />} />
             <Route path="/desenturmar-aluno" element={<DesenturmarAlunoPage />} />
             <Route path="/chamada" element={<ChamadaPage />} />

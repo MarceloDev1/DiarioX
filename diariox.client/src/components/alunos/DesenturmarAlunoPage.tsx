@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { apiFetch, readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
-import ConfirmDialog from '../ui/ConfirmDialog';
 import StatusPill, { type Status } from '../ui/StatusPill';
 import { rotuloStatusAluno } from './statusAluno';
-import './DesenturmarAlunoPage.css';
+import DesenturmacaoDialog from './DesenturmacaoDialog';
+import { desenturmar } from './desenturmacao';
 
 interface Turma {
     id: number;
@@ -37,31 +37,6 @@ interface VagasTurma {
     disponiveis: number;
 }
 
-interface DesenturmacaoFalha {
-    alunoId: number;
-    motivo: string;
-}
-
-const MOTIVO_OUTROS = 'OUTROS';
-const MAX_OBSERVACAO = 500;
-
-const motivos = [
-    { value: 'REESTRUTURACAO_INTERNA', label: 'Reestruturação Interna' },
-    { value: 'NAO_COMPARECEU', label: 'Nunca Compareceu / Não Frequentou' },
-    { value: 'FALECIMENTO', label: 'Falecimento' },
-    { value: 'ERRO_MATRICULA_ENTURMACAO', label: 'Erro de Matrícula/Enturmação' },
-    { value: MOTIVO_OUTROS, label: 'Outros' },
-];
-
-// RN01: mostra o efeito do motivo antes da confirmação.
-const efeitoDoMotivo: Record<string, string> = {
-    REESTRUTURACAO_INTERNA: 'O aluno volta para "Aguardando Enturmação" e fica disponível para outra turma.',
-    ERRO_MATRICULA_ENTURMACAO: 'O aluno volta para "Aguardando Enturmação" e fica disponível para outra turma.',
-    OUTROS: 'O aluno volta para "Aguardando Enturmação" e fica disponível para outra turma.',
-    NAO_COMPARECEU: 'O aluno passa para "Não Compareceu" e deixa de contar faltas nesta turma.',
-    FALECIMENTO: 'O aluno passa para "Inativo - Óbito" e a matrícula é encerrada definitivamente.',
-};
-
 const plural = (quantidade: number, singular: string, pluralForma: string) =>
     `${quantidade} ${quantidade === 1 ? singular : pluralForma}`;
 
@@ -90,9 +65,6 @@ function DesenturmarAlunoPage() {
     const [success, setSuccess] = useState<string | null>(null);
 
     const [modalAberto, setModalAberto] = useState(false);
-    const [motivo, setMotivo] = useState('');
-    const [observacao, setObservacao] = useState('');
-    const [erroModal, setErroModal] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -189,73 +161,39 @@ function DesenturmarAlunoPage() {
         setSelecionados(todosSelecionados ? new Set() : new Set(alunosDaTurma.map(aluno => aluno.alunoId)));
     };
 
-    const abrirModal = () => {
-        setMotivo('');
-        setObservacao('');
-        setErroModal(null);
-        setModalAberto(true);
-    };
-
     const desenturmarSelecionados = () => {
         limparMensagens();
         if (quantidadeSelecionada === 0) {
             setError('Selecione ao menos um aluno para realizar a desenturmação.');
             return;
         }
-        abrirModal();
+        setModalAberto(true);
     };
 
     const desenturmarTurmaInteira = () => {
         limparMensagens();
         setSelecionados(new Set(alunosDaTurma.map(aluno => aluno.alunoId)));
-        abrirModal();
+        setModalAberto(true);
     };
 
-    // Estável: o ConfirmDialog refaz o foco inicial quando onCancel muda.
     const fecharModal = useCallback(() => setModalAberto(false), []);
 
-    const confirmarDesenturmacao = async () => {
-        if (!motivo) {
-            setErroModal('Por favor, selecione o motivo da desenturmação para continuar.');
-            return;
-        }
-        if (motivo === MOTIVO_OUTROS && !observacao.trim()) {
-            setErroModal('Informe a observação/justificativa quando o motivo for "Outros".');
-            return;
-        }
-
+    const confirmarDesenturmacao = async (motivo: string, observacao: string | null) => {
         setSaving(true);
-        setErroModal(null);
         limparMensagens();
 
-        try {
-            const response = await apiFetch('/api/alunos/desenturmacoes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    turmaId: Number(turmaId),
-                    alunoIds: idsSelecionados,
-                    motivo,
-                    observacao: observacao.trim() || null,
-                }),
-            });
-
-            if (!response.ok) {
-                const payload = (await response.clone().json().catch(() => null)) as { falhas?: DesenturmacaoFalha[] } | null;
-                setFalhas(Object.fromEntries((payload?.falhas ?? []).map(falha => [falha.alunoId, falha.motivo])));
-                throw new Error(await readApiError(response));
-            }
-
-            const result = (await response.json()) as { message: string };
-            setSuccess(result.message);
+        const resultado = await desenturmar(Number(turmaId), idsSelecionados, motivo, observacao);
+        if (resultado.ok) {
+            setSuccess(resultado.message);
             setSelecionados(new Set());
-        } catch (reason) {
-            setError(reason instanceof Error ? reason.message : 'Falha ao realizar a desenturmação.');
-        } finally {
-            setSaving(false);
-            setModalAberto(false);
-            setVersao(atual => atual + 1);
+        } else {
+            setError(resultado.message);
+            setFalhas(resultado.falhas);
         }
+
+        setSaving(false);
+        setModalAberto(false);
+        setVersao(atual => atual + 1);
     };
 
     const alunosSelecionados = alunosDaTurma.filter(aluno => selecionados.has(aluno.alunoId));
@@ -473,75 +411,16 @@ function DesenturmarAlunoPage() {
 
             {!loading && turmas.length === 0 && <EmptyState emptyMessage="Nenhuma turma cadastrada." />}
 
-            <ConfirmDialog
-                open={modalAberto}
-                title={emLote ? 'Desenturmar turma inteira' : quantidadeSelecionada === 1 ? 'Desenturmar aluno' : 'Desenturmar alunos'}
-                variant="warning"
-                confirmLabel={emLote ? 'Confirmar Desenturmação em Lote' : 'Confirmar Desenturmação'}
-                isLoading={saving}
-                onConfirm={() => void confirmarDesenturmacao()}
-                onCancel={fecharModal}
-            >
-                <p>
-                    {emLote ? (
-                        <>Todos os <strong>{alunosDaTurma.length} alunos</strong> serão retirados da turma</>
-                    ) : quantidadeSelecionada === 1 ? (
-                        <><strong>{alunosSelecionados[0]?.nome}</strong> será retirado(a) da turma</>
-                    ) : (
-                        <><strong>{quantidadeSelecionada} alunos</strong> serão retirados da turma</>
-                    )}{' '}
-                    <strong>{turmaSelecionada?.nomeCompleto}</strong> a partir de hoje. Frequências e notas já lançadas são mantidas.
-                </p>
-                {!emLote && quantidadeSelecionada > 1 && quantidadeSelecionada <= 5 && (
-                    <ul className="confirm-dialog-list">
-                        {alunosSelecionados.map(aluno => <li key={aluno.alunoId}>{aluno.nome}</li>)}
-                    </ul>
-                )}
-
-                <div className="desenturmacao-campos">
-                    <div className="form-field">
-                        <label htmlFor="desenturmacao-motivo">
-                            Motivo da Desenturmação <span className="required">*</span>
-                        </label>
-                        <select
-                            id="desenturmacao-motivo"
-                            value={motivo}
-                            disabled={saving}
-                            aria-invalid={erroModal !== null && !motivo}
-                            onChange={event => {
-                                setMotivo(event.target.value);
-                                setErroModal(null);
-                            }}
-                        >
-                            <option value="">Selecione o motivo</option>
-                            {motivos.map(opcao => <option key={opcao.value} value={opcao.value}>{opcao.label}</option>)}
-                        </select>
-                        {motivo && <span className="field-hint">{efeitoDoMotivo[motivo]}</span>}
-                    </div>
-
-                    <div className="form-field">
-                        <label htmlFor="desenturmacao-observacao">
-                            Observação / Justificativa{' '}
-                            {motivo === MOTIVO_OUTROS
-                                ? <span className="required">*</span>
-                                : <span className="label-optional">(opcional)</span>}
-                        </label>
-                        <textarea
-                            id="desenturmacao-observacao"
-                            rows={3}
-                            maxLength={MAX_OBSERVACAO}
-                            value={observacao}
-                            disabled={saving}
-                            onChange={event => {
-                                setObservacao(event.target.value);
-                                setErroModal(null);
-                            }}
-                        />
-                    </div>
-
-                    {erroModal && <p className="field-error" role="alert">{erroModal}</p>}
-                </div>
-            </ConfirmDialog>
+            {modalAberto && (
+                <DesenturmacaoDialog
+                    turmaNome={turmaSelecionada?.nomeCompleto ?? ''}
+                    alunos={alunosSelecionados}
+                    emLote={emLote}
+                    isLoading={saving}
+                    onConfirm={(motivo, observacao) => void confirmarDesenturmacao(motivo, observacao)}
+                    onCancel={fecharModal}
+                />
+            )}
         </div>
     );
 }

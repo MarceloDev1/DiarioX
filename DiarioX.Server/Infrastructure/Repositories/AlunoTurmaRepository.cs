@@ -40,6 +40,23 @@ public class AlunoTurmaRepository : IAlunoTurmaRepository
             .ToListAsync();
     }
 
+    public async Task<IReadOnlyList<AlunoTurma>> GetAtivasAsync()
+    {
+        // O escopo vale pela escola da turma; o filtro padrão também esconderia o aluno cujo cadastro
+        // aponta para outra escola, e o vínculo ficaria fora da lista.
+        return await _context.Set<AlunoTurma>()
+            .IgnoreQueryFilters([AppDbContext.FiltroEscola])
+            .AsNoTracking()
+            .Include(x => x.Aluno)
+            .Include(x => x.Turma).ThenInclude(x => x.Escola)
+            .Include(x => x.Turma).ThenInclude(x => x.ModalidadeEnsino)
+            .Include(x => x.Turma).ThenInclude(x => x.EtapaEnsino)
+            .Where(x => x.DataFim == null &&
+                        (!_context.EscopoPorEscola || _context.EscolasPermitidas.Contains(x.Turma.EscolaId)))
+            .OrderBy(x => x.Aluno.Nome)
+            .ToListAsync();
+    }
+
     public async Task<IReadOnlyList<int>> GetAlunoIdsComEnturmacaoAtivaAsync(IReadOnlyCollection<int> alunoIds)
     {
         return await _context.Set<AlunoTurma>()

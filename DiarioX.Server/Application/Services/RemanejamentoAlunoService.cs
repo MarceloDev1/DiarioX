@@ -234,6 +234,28 @@ public class RemanejamentoAlunoService : IRemanejamentoAlunoService
             .ToList();
     }
 
+    public async Task<IReadOnlyList<EnturmacaoAtivaItemResponse>> GetEnturmacoesAtivasAsync()
+    {
+        return (await _alunoTurmaRepository.GetAtivasAsync())
+            .Select(v => new EnturmacaoAtivaItemResponse(
+                v.AlunoId,
+                v.Aluno.Matricula,
+                v.Aluno.Nome,
+                v.Aluno.Status,
+                v.DataInicio,
+                v.TurmaId,
+                v.Turma.NomeIdentificador,
+                v.Turma.NomeCompleto,
+                v.Turma.EscolaId,
+                v.Turma.Escola.Nome,
+                v.Turma.ModalidadeEnsinoId,
+                v.Turma.ModalidadeEnsino.Nome,
+                v.Turma.EtapaEnsinoId,
+                v.Turma.EtapaEnsino.Nome,
+                v.Turma.Turno))
+            .ToList();
+    }
+
     /// <summary>
     /// RF013: retira alunos da turma a partir de hoje, liberando as vagas, e muda o status de cada um
     /// conforme o motivo. É tudo ou nada: se algum aluno não estiver enturmado na turma, nada é gravado.

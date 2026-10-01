@@ -186,6 +186,17 @@ public class AlunosController : ControllerBase
     }
 
     /// <summary>
+    /// Lista os alunos com enturmação ativa, com escola, modalidade, etapa, turma e turno.
+    /// </summary>
+    [Permissao(Permissoes.Alunos.Visualizar)]
+    [HttpGet("enturmacoes")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetEnturmacoesAtivas()
+    {
+        return Ok(await _remanejamentoAlunoService.GetEnturmacoesAtivasAsync());
+    }
+
+    /// <summary>
     /// Enturma vários alunos na mesma turma de uma só vez.
     /// </summary>
     /// <remarks>

@@ -164,6 +164,46 @@ public class AlunoTurmaRepositoryTests
         Assert.Equal(Aluno.StatusAtivo, verificacao.Alunos.Single(a => a.Id != foraDaTurma).Status);
     }
 
+    [Fact]
+    public async Task GetAtivasAsync_ListaSoAsAtivasDasEscolasDoEscopo()
+    {
+        var database = Guid.NewGuid().ToString();
+        int norteId;
+        using (var context = CreateContext(database))
+        {
+            context.Tenants.Add(new Tenant { Id = TenantId, Nome = "Instituição", Slug = "inst" });
+            var norte = new Escola { Nome = "Escola Norte", Cnpj = "1", Status = Escola.StatusAtivo };
+            var sul = new Escola { Nome = "Escola Sul", Cnpj = "2", Status = Escola.StatusAtivo };
+            var ano = new AnoLetivo { AnoReferencia = 2026, DataInicio = new DateOnly(2026, 2, 1), DataTermino = new DateOnly(2026, 12, 15) };
+            var modalidade = new ModalidadeEnsino { Nome = "Fundamental", Sigla = "EF" };
+            var etapa = new EtapaEnsino { ModalidadeEnsino = modalidade, Nome = "1º Ano", Sigla = "1A" };
+            Turma NovaTurma(Escola escola) => new()
+            {
+                AnoLetivo = ano, Escola = escola, ModalidadeEnsino = modalidade, EtapaEnsino = etapa,
+                NomeIdentificador = "A", NomeCompleto = $"1º Ano A {escola.Nome}", VagasOfertadas = 10,
+            };
+            var turmaNorte = NovaTurma(norte);
+            var turmaSul = NovaTurma(sul);
+
+            // Na Escola Norte: um ativo (cadastrado na Escola Sul) e um já desenturmado.
+            context.AddRange(
+                new AlunoTurma { Aluno = new Aluno { Matricula = "1", Nome = "Ativo Norte", Escola = sul }, Turma = turmaNorte, DataInicio = new DateOnly(2026, 2, 1) },
+                new AlunoTurma { Aluno = new Aluno { Matricula = "2", Nome = "Saiu Norte", Escola = norte }, Turma = turmaNorte, DataInicio = new DateOnly(2026, 2, 1), DataFim = new DateOnly(2026, 3, 1) },
+                new AlunoTurma { Aluno = new Aluno { Matricula = "3", Nome = "Ativo Sul", Escola = sul }, Turma = turmaSul, DataInicio = new DateOnly(2026, 2, 1) });
+            context.SaveChanges();
+            norteId = norte.Id;
+        }
+
+        await using var escopoNorte = CreateContext(database, escolaIds: [norteId]);
+        var ativas = await new AlunoTurmaRepository(escopoNorte).GetAtivasAsync();
+
+        var vinculo = Assert.Single(ativas);
+        Assert.Equal("Ativo Norte", vinculo.Aluno.Nome);
+        Assert.Equal("Escola Norte", vinculo.Turma.Escola.Nome);
+        Assert.Equal("Fundamental", vinculo.Turma.ModalidadeEnsino.Nome);
+        Assert.Equal("1º Ano", vinculo.Turma.EtapaEnsino.Nome);
+    }
+
     private static int Seed(string database, int vagas, params (DateOnly Inicio, DateOnly? Fim)[] vinculos)
     {
         using var context = CreateContext(database);
@@ -197,7 +237,7 @@ public class AlunoTurmaRepositoryTests
         return alunos.Select(a => a.Id).ToList();
     }
 
-    private static AppDbContext CreateContext(string database)
+    private static AppDbContext CreateContext(string database, IReadOnlyList<int>? escolaIds = null)
     {
         // O banco em memória não tem transações; aqui só interessa o efeito final da gravação.
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -205,12 +245,13 @@ public class AlunoTurmaRepositoryTests
             .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
-        return new AppDbContext(options, new FixedTenantContext(TenantId));
+        return new AppDbContext(options, new FixedTenantContext(TenantId, escolaIds));
     }
 
-    private sealed class FixedTenantContext(int? tenantId) : ITenantContext
+    private sealed class FixedTenantContext(int? tenantId, IReadOnlyList<int>? escolaIds) : ITenantContext
     {
         public int? TenantId { get; } = tenantId;
         public string? TenantSlug => TenantId?.ToString();
+        public IReadOnlyList<int>? EscolaIds { get; } = escolaIds;
     }
 }
