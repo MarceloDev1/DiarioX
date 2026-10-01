@@ -13,6 +13,9 @@ public class AlunoTurma : ITenantEntity
         MotivoReestruturacaoInterna, MotivoNaoCompareceu, MotivoFalecimento, MotivoErroMatricula, MotivoOutros,
     };
 
+    /// <summary>Vínculo encerrado pela transferência do aluno (RF014); não é um motivo escolhido na desenturmação.</summary>
+    public const string MotivoTransferencia = "TRANSFERENCIA";
+
     public const int MaxObservacaoDesenturmacao = 500;
 
     public int Id { get; set; }

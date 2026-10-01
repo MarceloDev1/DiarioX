@@ -6,6 +6,7 @@ export const statusAlunoOpcoes: { value: Status; label: string }[] = [
     { value: 'NAO_COMPARECEU', label: 'Não Compareceu' },
     { value: 'INATIVO', label: 'Inativo' },
     { value: 'INATIVO_OBITO', label: 'Inativo - Óbito' },
+    { value: 'TRANSFERIDO', label: 'Transferido' },
 ];
 
 /** Rótulo para o StatusPill; ATIVO e INATIVO aparecem pelo próprio código, como nas demais telas. */
@@ -14,5 +15,5 @@ export function rotuloStatusAluno(status: string): string | undefined {
     return statusAlunoOpcoes.find(opcao => opcao.value === status)?.label;
 }
 
-/** Aluno fora de turma que pode voltar a ser ativado pela tela de Alunos. O óbito é definitivo (RF013). */
-export const podeAtivarAluno = (status: string) => status === 'INATIVO' || status === 'NAO_COMPARECEU';
+/** Aluno fora de turma que pode voltar a ser ativado pela tela de Alunos (o transferido, readmitido). O óbito é definitivo (RF013). */
+export const podeAtivarAluno = (status: string) => status === 'INATIVO' || status === 'NAO_COMPARECEU' || status === 'TRANSFERIDO';

@@ -1,4 +1,4 @@
-export type Status = 'ATIVO' | 'INATIVO' | 'BLOQUEADO' | 'ATIVO_AGUARDANDO_ENTURMACAO' | 'NAO_COMPARECEU' | 'INATIVO_OBITO';
+export type Status = 'ATIVO' | 'INATIVO' | 'BLOQUEADO' | 'ATIVO_AGUARDANDO_ENTURMACAO' | 'NAO_COMPARECEU' | 'INATIVO_OBITO' | 'TRANSFERIDO';
 
 const statusClass: Record<Status, string> = {
     ATIVO: 'status-active',
@@ -7,6 +7,7 @@ const statusClass: Record<Status, string> = {
     ATIVO_AGUARDANDO_ENTURMACAO: 'status-active',
     NAO_COMPARECEU: 'status-blocked',
     INATIVO_OBITO: 'status-inactive',
+    TRANSFERIDO: 'status-inactive',
 };
 
 interface StatusPillProps {

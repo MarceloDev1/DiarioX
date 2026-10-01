@@ -14,7 +14,7 @@ public class AlunoTurmaConfiguration : IEntityTypeConfiguration<AlunoTurma>
             table.HasCheckConstraint("CK_alunos_turmas_periodo", "data_fim IS NULL OR data_fim >= data_inicio - 1");
             table.HasCheckConstraint("CK_alunos_turmas_motivo_desenturmacao",
                 "motivo_desenturmacao IS NULL OR motivo_desenturmacao IN " +
-                "('REESTRUTURACAO_INTERNA', 'NAO_COMPARECEU', 'FALECIMENTO', 'ERRO_MATRICULA_ENTURMACAO', 'OUTROS')");
+                "('REESTRUTURACAO_INTERNA', 'NAO_COMPARECEU', 'FALECIMENTO', 'ERRO_MATRICULA_ENTURMACAO', 'OUTROS', 'TRANSFERENCIA')");
         });
 
         builder.HasKey(x => x.Id);

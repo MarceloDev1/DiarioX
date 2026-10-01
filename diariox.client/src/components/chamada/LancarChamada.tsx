@@ -114,7 +114,9 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
     const handleTodosPresentes = () => {
         setRascunho(atual => atual && {
             ...atual,
-            registros: Object.fromEntries(Object.keys(atual.registros).map(id => [id, { situacao: 'PRESENTE', justificativa: '' }])),
+            // Registro de aluno transferido é congelado (RF014) e fica como está.
+            registros: Object.fromEntries(Object.entries(atual.registros).map(([id, registro]) =>
+                [id, chamada?.alunos.find(a => String(a.alunoId) === id)?.transferido ? registro : { situacao: 'PRESENTE', justificativa: '' }])),
         });
     };
 
@@ -304,7 +306,14 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
                                                 <tr key={aluno.alunoId} className={`chamada-linha-${registro.situacao.toLowerCase()}`}>
                                                     <td>{index + 1}</td>
                                                     <td className="nowrap-cell">{aluno.matricula}</td>
-                                                    <td>{aluno.nome}</td>
+                                                    <td>
+                                                        {aluno.nome}
+                                                        {aluno.transferido && (
+                                                            <span className="status-pill status-inactive" style={{ marginLeft: '0.5rem' }} title="Aluno transferido: o registro não pode ser alterado.">
+                                                                Transferido
+                                                            </span>
+                                                        )}
+                                                    </td>
                                                     <td>
                                                         <div className="situacao-toggle" role="radiogroup" aria-label={`Situação de ${aluno.nome}`}>
                                                             {situacoes.map(s => (
@@ -316,7 +325,7 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
                                                                     title={s.label}
                                                                     className={`situacao-btn situacao-${s.value.toLowerCase()}${registro.situacao === s.value ? ' active' : ''}`}
                                                                     onClick={() => setRegistro(aluno.alunoId, { situacao: s.value })}
-                                                                    disabled={somenteLeitura}
+                                                                    disabled={somenteLeitura || aluno.transferido}
                                                                 >
                                                                     {s.sigla}
                                                                 </button>
@@ -333,7 +342,7 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
                                                                 aria-label={`Justificativa da falta de ${aluno.nome}`}
                                                                 value={registro.justificativa}
                                                                 onChange={e => setRegistro(aluno.alunoId, { justificativa: e.target.value })}
-                                                                disabled={somenteLeitura}
+                                                                disabled={somenteLeitura || aluno.transferido}
                                                             />
                                                         )}
                                                     </td>

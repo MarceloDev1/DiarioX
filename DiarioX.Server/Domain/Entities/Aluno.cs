@@ -10,6 +10,9 @@ public class Aluno : ITenantEntity
     public const string StatusNaoCompareceu = "NAO_COMPARECEU";
     public const string StatusInativoObito = "INATIVO_OBITO";
 
+    // RF014: saída definitiva para outra instituição.
+    public const string StatusTransferido = "TRANSFERIDO";
+
     public const string SexoMasculino = "MASCULINO";
     public const string SexoFeminino = "FEMININO";
 

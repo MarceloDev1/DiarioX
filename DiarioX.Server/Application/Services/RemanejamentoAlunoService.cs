@@ -8,6 +8,9 @@ namespace DiarioX.Server.Application.Services;
 
 public class RemanejamentoAlunoService : IRemanejamentoAlunoService
 {
+    private const string AlunoTransferido =
+        "Não é possível enturmar um aluno transferido. Para readmiti-lo, ative-o na tela de Alunos.";
+
     private readonly IAlunoRepository _alunoRepository;
     private readonly IAlunoTurmaRepository _alunoTurmaRepository;
     private readonly ITurmaRepository _turmaRepository;
@@ -48,6 +51,9 @@ public class RemanejamentoAlunoService : IRemanejamentoAlunoService
 
         if (aluno.Status is Aluno.StatusInativo or Aluno.StatusInativoObito)
             return Invalid("Não é possível enturmar um aluno inativo.");
+
+        if (aluno.Status == Aluno.StatusTransferido)
+            return Invalid(AlunoTransferido);
 
         if (await _alunoTurmaRepository.GetAtivaByAlunoIdAsync(alunoId) is not null)
             return Invalid("O aluno já possui enturmação ativa.");
@@ -157,6 +163,8 @@ public class RemanejamentoAlunoService : IRemanejamentoAlunoService
             return "Aluno não encontrado.";
         if (aluno.Status is Aluno.StatusInativo or Aluno.StatusInativoObito)
             return "Aluno inativo.";
+        if (aluno.Status == Aluno.StatusTransferido)
+            return "Aluno transferido.";
         if (jaEnturmados.Contains(aluno.Id))
             return "Aluno já possui enturmação ativa.";
         if (aluno.EscolaId != turma.EscolaId)

@@ -69,7 +69,8 @@ public class AlunoStatusPersistenceTests
     }
 
     private static AlunoService CreateService(AppDbContext context)
-        => new(new AlunoRepository(context), new EscolaRepository(context), new AlunoTurmaRepository(context));
+        => new(new AlunoRepository(context), new EscolaRepository(context), new AlunoTurmaRepository(context),
+            new TransferenciaRepository(context));
 
     private static AppDbContext CreateContext(string database)
     {

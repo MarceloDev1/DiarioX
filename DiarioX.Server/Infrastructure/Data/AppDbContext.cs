@@ -59,6 +59,7 @@ public class AppDbContext : DbContext
     public DbSet<AlunoTurma> AlunosTurmas => Set<AlunoTurma>();
     public DbSet<Chamada> Chamadas => Set<Chamada>();
     public DbSet<ChamadaAluno> ChamadasAlunos => Set<ChamadaAluno>();
+    public DbSet<Transferencia> Transferencias => Set<Transferencia>();
     public DbSet<PlanoAssinatura> PlanosAssinatura => Set<PlanoAssinatura>();
     public DbSet<Assinatura> Assinaturas => Set<Assinatura>();
     public DbSet<FaturaAssinatura> FaturasAssinatura => Set<FaturaAssinatura>();
@@ -91,6 +92,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AlunoTurmaConfiguration());
         modelBuilder.ApplyConfiguration(new ChamadaConfiguration());
         modelBuilder.ApplyConfiguration(new ChamadaAlunoConfiguration());
+        modelBuilder.ApplyConfiguration(new TransferenciaConfiguration());
         modelBuilder.ApplyConfiguration(new PlanoAssinaturaConfiguration());
         modelBuilder.ApplyConfiguration(new AssinaturaConfiguration());
         modelBuilder.ApplyConfiguration(new FaturaAssinaturaConfiguration());
@@ -166,6 +168,8 @@ public class AppDbContext : DbContext
             c => !EscopoPorEscola || EscolasPermitidas.Contains(c.Turma.EscolaId));
         modelBuilder.Entity<ChamadaAluno>().HasQueryFilter(FiltroEscola,
             r => !EscopoPorEscola || EscolasPermitidas.Contains(r.Chamada.Turma.EscolaId));
+        modelBuilder.Entity<Transferencia>().HasQueryFilter(FiltroEscola,
+            t => !EscopoPorEscola || EscolasPermitidas.Contains(t.EscolaOrigemId));
         modelBuilder.Entity<ProfessorAlocacao>().HasQueryFilter(FiltroEscola,
             pa => !EscopoPorEscola || EscolasPermitidas.Contains(pa.Turma.EscolaId));
         modelBuilder.Entity<ProfessorEscola>().HasQueryFilter(FiltroEscola,

@@ -330,6 +330,21 @@ public class ChamadaService : IChamadaService
         {
             var aluno = lista[item.AlunoId];
             var situacao = (item.Situacao ?? string.Empty).Trim().ToUpperInvariant();
+
+            // RF014 RN01: o que foi registrado até a transferência fica congelado. Só entra aqui quem já tem
+            // registro nesta chamada (transferidos não fazem parte da lista de enturmados).
+            if (aluno.Status == Aluno.StatusTransferido)
+            {
+                var congelado = chamadaExistente!.Registros.First(r => r.AlunoId == aluno.Id);
+                var mudou = situacao != congelado.Situacao ||
+                    (situacao == ChamadaAluno.SituacaoFaltaJustificada &&
+                     NormalizarConteudo(item.Justificativa) != NormalizarConteudo(congelado.Justificativa));
+                if (mudou)
+                    return (null, Invalid($"{aluno.Nome} foi transferido(a): a frequência registrada não pode ser alterada."));
+
+                registros.Add(new ChamadaAluno { AlunoId = aluno.Id, Situacao = congelado.Situacao, Justificativa = congelado.Justificativa });
+                continue;
+            }
             if (!ChamadaAluno.Situacoes.Contains(situacao))
                 return (null, Invalid($"Situação inválida para {aluno.Nome}. Use Presente, Falta ou Falta justificada."));
 
@@ -350,14 +365,15 @@ public class ChamadaService : IChamadaService
     }
 
     /// <summary>
-    /// Alunos da chamada na data: enturmados na turma naquele dia (sem os inativos) e, na edição,
-    /// também quem já tem registro nela (ex.: remanejado depois, com data retroativa).
+    /// Alunos da chamada na data: enturmados na turma naquele dia (sem os inativos e os transferidos) e,
+    /// na edição, também quem já tem registro nela (ex.: remanejado depois, com data retroativa).
     /// </summary>
     private async Task<Dictionary<int, Aluno>> GetListaDeAlunosAsync(int turmaId, DateOnly data, Chamada? chamada)
     {
+        // RF014 RN03: aluno transferido não recebe novos lançamentos, nem em chamadas retroativas.
         var enturmados = (await _chamadaRepository.GetEnturmacoesAsync(turmaId, data, data))
             .Select(e => e.Aluno)
-            .Where(a => a.Status != Aluno.StatusInativo);
+            .Where(a => a.Status != Aluno.StatusInativo && a.Status != Aluno.StatusTransferido);
 
         var registrados = chamada?.Registros.Select(r => r.Aluno) ?? [];
 
@@ -376,7 +392,8 @@ public class ChamadaService : IChamadaService
             .Select(a =>
             {
                 registros.TryGetValue(a.Id, out var registro);
-                return new ChamadaAlunoResponse(a.Id, a.Matricula, a.Nome, registro?.Situacao, registro?.Justificativa);
+                return new ChamadaAlunoResponse(a.Id, a.Matricula, a.Nome, registro?.Situacao, registro?.Justificativa,
+                    a.Status == Aluno.StatusTransferido);
             })
             .ToList();
 

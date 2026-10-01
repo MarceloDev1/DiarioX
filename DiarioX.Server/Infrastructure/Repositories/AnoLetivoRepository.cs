@@ -31,6 +31,15 @@ public class AnoLetivoRepository : IAnoLetivoRepository
             .FirstOrDefaultAsync(a => a.Id == id);
     }
 
+    public async Task<AnoLetivo?> GetVigenteAsync(DateOnly data)
+    {
+        return await _context.AnosLetivos
+            .AsNoTracking()
+            .Where(a => a.DataInicio <= data && a.DataTermino >= data)
+            .OrderByDescending(a => a.DataInicio)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<bool> ExistsByAnoReferenciaAsync(int anoReferencia, int? excludeId = null)
     {
         return await _context.AnosLetivos.AnyAsync(a =>

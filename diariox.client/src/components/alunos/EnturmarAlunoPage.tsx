@@ -23,8 +23,13 @@ interface Turma {
     escolaId: number;
     escolaNome: string;
     anoReferencia: number;
+    modalidadeEnsinoId: number;
+    modalidadeEnsinoNome: string;
+    etapaEnsinoId: number;
+    etapaEnsinoNome: string;
     nomeCompleto: string;
     turno: string;
+    turnoDescricao: string;
     status: string;
     vagasOfertadas: number;
 }
@@ -49,10 +54,19 @@ const normalizar = (texto: string) => texto.normalize('NFD').replace(/\p{Diacrit
 const plural = (quantidade: number, singular: string, pluralForma: string) =>
     `${quantidade} ${quantidade === 1 ? singular : pluralForma}`;
 
+/** Pares [id, nome] únicos, em ordem alfabética. */
+function opcoesUnicas(turmas: Turma[], id: (turma: Turma) => number | string, nome: (turma: Turma) => string) {
+    return [...new Map(turmas.map(turma => [String(id(turma)), nome(turma)])).entries()]
+        .sort(([, a], [, b]) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+}
+
 function EnturmarAlunoPage({ initialAlunoId, onVoltar }: EnturmarAlunoPageProps) {
     const [alunos, setAlunos] = useState<Aluno[]>([]);
     const [turmas, setTurmas] = useState<Turma[]>([]);
     const [escolaId, setEscolaId] = useState('');
+    const [modalidadeId, setModalidadeId] = useState('');
+    const [etapaId, setEtapaId] = useState('');
+    const [turno, setTurno] = useState('');
     const [turmaId, setTurmaId] = useState('');
     const [dataInicio, setDataInicio] = useState(hojeIso);
     const [busca, setBusca] = useState('');
@@ -111,7 +125,15 @@ function EnturmarAlunoPage({ initialAlunoId, onVoltar }: EnturmarAlunoPageProps)
         .map(turma => [turma.escolaId, turma.escolaNome])).entries()]
         .sort(([, a], [, b]) => a.localeCompare(b));
 
+    // Modalidade, etapa e turno só estreitam a lista de turmas; cada um oferece o que existe dentro dos anteriores.
     const turmasDaEscola = turmas.filter(turma => turma.status === 'ATIVO' && String(turma.escolaId) === escolaId);
+    const daModalidade = turmasDaEscola.filter(turma => !modalidadeId || String(turma.modalidadeEnsinoId) === modalidadeId);
+    const daEtapa = daModalidade.filter(turma => !etapaId || String(turma.etapaEnsinoId) === etapaId);
+    const turmasFiltradas = daEtapa.filter(turma => !turno || turma.turno === turno);
+
+    const modalidades = opcoesUnicas(turmasDaEscola, turma => turma.modalidadeEnsinoId, turma => turma.modalidadeEnsinoNome);
+    const etapas = opcoesUnicas(daModalidade, turma => turma.etapaEnsinoId, turma => turma.etapaEnsinoNome);
+    const turnos = opcoesUnicas(daEtapa, turma => turma.turno, turma => turma.turnoDescricao);
 
     const alunosAguardando = alunos.filter(aluno => aluno.status === STATUS_AGUARDANDO && String(aluno.escolaId) === escolaId);
     const termo = normalizar(busca.trim());
@@ -137,8 +159,20 @@ function EnturmarAlunoPage({ initialAlunoId, onVoltar }: EnturmarAlunoPageProps)
 
     const handleEscolaChange = (value: string) => {
         setEscolaId(value);
+        setModalidadeId('');
+        setEtapaId('');
+        setTurno('');
         setTurmaId('');
         setSelecionados(new Set());
+        limparMensagens();
+    };
+
+    // Ao mudar um filtro, os que dependem dele voltam ao início e a turma escolhida só fica se ainda
+    // estiver na lista.
+    const aplicarFiltro = (setter: (value: string) => void, value: string, manterTurma: (turma: Turma) => boolean) => {
+        setter(value);
+        const turma = turmas.find(item => String(item.id) === turmaId);
+        if (turma && !manterTurma(turma)) setTurmaId('');
         limparMensagens();
     };
 
@@ -234,6 +268,57 @@ function EnturmarAlunoPage({ initialAlunoId, onVoltar }: EnturmarAlunoPageProps)
                     </div>
 
                     <div className="form-field">
+                        <label htmlFor="enturmacao-modalidade">Modalidade</label>
+                        <select
+                            id="enturmacao-modalidade"
+                            value={modalidadeId}
+                            disabled={!escolaId || saving}
+                            onChange={event => {
+                                const value = event.target.value;
+                                setEtapaId('');
+                                setTurno('');
+                                aplicarFiltro(setModalidadeId, value, turma => !value || String(turma.modalidadeEnsinoId) === value);
+                            }}
+                        >
+                            <option value="">Selecione a modalidade</option>
+                            {modalidades.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="form-field">
+                        <label htmlFor="enturmacao-etapa">Etapa</label>
+                        <select
+                            id="enturmacao-etapa"
+                            value={etapaId}
+                            disabled={!escolaId || saving}
+                            onChange={event => {
+                                const value = event.target.value;
+                                setTurno('');
+                                aplicarFiltro(setEtapaId, value, turma => !value || String(turma.etapaEnsinoId) === value);
+                            }}
+                        >
+                            <option value="">Selecione a etapa</option>
+                            {etapas.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="form-field">
+                        <label htmlFor="enturmacao-turno">Turno</label>
+                        <select
+                            id="enturmacao-turno"
+                            value={turno}
+                            disabled={!escolaId || saving}
+                            onChange={event => {
+                                const value = event.target.value;
+                                aplicarFiltro(setTurno, value, turma => !value || turma.turno === value);
+                            }}
+                        >
+                            <option value="">Selecione o turno</option>
+                            {turnos.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="form-field">
                         <label htmlFor="enturmacao-data">Data de Início</label>
                         <input
                             id="enturmacao-data"
@@ -244,7 +329,7 @@ function EnturmarAlunoPage({ initialAlunoId, onVoltar }: EnturmarAlunoPageProps)
                         />
                     </div>
 
-                    <div className="form-field form-field-full">
+                    <div className="form-field">
                         <label htmlFor="enturmacao-turma">Turma</label>
                         <select
                             id="enturmacao-turma"
@@ -256,7 +341,7 @@ function EnturmarAlunoPage({ initialAlunoId, onVoltar }: EnturmarAlunoPageProps)
                             }}
                         >
                             <option value="">Selecione uma turma ativa</option>
-                            {turmasDaEscola.map(turma => (
+                            {turmasFiltradas.map(turma => (
                                 <option key={turma.id} value={turma.id}>
                                     {turma.nomeCompleto} ({turma.anoReferencia})
                                 </option>

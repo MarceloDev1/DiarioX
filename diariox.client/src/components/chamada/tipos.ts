@@ -30,6 +30,8 @@ export interface ChamadaAluno {
     nome: string;
     situacao: Situacao | null;
     justificativa: string | null;
+    /** RF014: aluno transferido; o registro fica congelado. */
+    transferido: boolean;
 }
 
 export interface Chamada {

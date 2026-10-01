@@ -382,7 +382,8 @@ public class AlunoServiceTests
         var escolaRepository = new Mock<IEscolaRepository>();
         var alunoTurmaRepository = new Mock<IAlunoTurmaRepository>();
 
-        var service = new AlunoService(alunoRepository.Object, escolaRepository.Object, alunoTurmaRepository.Object);
+        var service = new AlunoService(alunoRepository.Object, escolaRepository.Object, alunoTurmaRepository.Object,
+            new Mock<ITransferenciaRepository>().Object);
         return (service, alunoRepository, escolaRepository, alunoTurmaRepository);
     }
 

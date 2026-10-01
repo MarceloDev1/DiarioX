@@ -167,6 +167,56 @@ public class ChamadaServiceTests
         Assert.True(linhaBruno.AbaixoDoMinimo);
     }
 
+    [Fact]
+    public async Task Create_AlunoTransferido_NaoRecebeNovoLancamento()
+    {
+        var f = new Fixture();
+        f.Alunos[Fixture.BrunoId].Status = Aluno.StatusTransferido;
+        Chamada? gravada = null;
+        f.Chamadas.Setup(r => r.AddAsync(It.IsAny<Chamada>())).Callback<Chamada>(c => gravada = c).ReturnsAsync((Chamada c) => c);
+
+        var semBruno = await f.Service.CreateAsync(Gestao, f.Request(Fixture.MatematicaId, 1, (Fixture.AnaId, "PRESENTE", null)));
+        Assert.True(semBruno.Success, semBruno.Message);
+        Assert.Equal([Fixture.AnaId], gravada!.Registros.Select(r => r.AlunoId));
+
+        var comBruno = await f.Service.CreateAsync(Gestao, f.Request(Fixture.MatematicaId, 1,
+            (Fixture.AnaId, "PRESENTE", null), (Fixture.BrunoId, "PRESENTE", null)));
+        Assert.False(comBruno.Success);
+        Assert.Contains("não está enturmado", comBruno.Message);
+    }
+
+    [Fact]
+    public async Task Update_AlunoTransferido_RegistroFicaCongelado()
+    {
+        var f = new Fixture();
+        var bruno = f.Alunos[Fixture.BrunoId];
+        bruno.Status = Aluno.StatusTransferido;
+        var chamada = new Chamada
+        {
+            Id = 5, TurmaId = Fixture.TurmaId, DisciplinaId = Fixture.MatematicaId, Data = Hoje,
+            Registros =
+            [
+                new ChamadaAluno { AlunoId = Fixture.AnaId, Aluno = f.Alunos[Fixture.AnaId], Situacao = ChamadaAluno.SituacaoPresente },
+                new ChamadaAluno { AlunoId = Fixture.BrunoId, Aluno = bruno, Situacao = ChamadaAluno.SituacaoFalta },
+            ],
+        };
+        f.Chamadas.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(chamada);
+        IEnumerable<ChamadaAluno>? gravados = null;
+        f.Chamadas.Setup(r => r.UpdateAsync(chamada, It.IsAny<IEnumerable<ChamadaAluno>>()))
+            .Callback<Chamada, IEnumerable<ChamadaAluno>>((_, r) => gravados = r.ToList());
+
+        var alterandoBruno = await f.Service.UpdateAsync(Gestao, 5, f.Request(Fixture.MatematicaId, 1,
+            (Fixture.AnaId, "PRESENTE", null), (Fixture.BrunoId, "PRESENTE", null)));
+        Assert.False(alterandoBruno.Success);
+        Assert.Equal("Bruno Lima foi transferido(a): a frequência registrada não pode ser alterada.", alterandoBruno.Message);
+
+        var alterandoAna = await f.Service.UpdateAsync(Gestao, 5, f.Request(Fixture.MatematicaId, 1,
+            (Fixture.AnaId, "FALTA", null), (Fixture.BrunoId, "FALTA", null)));
+        Assert.True(alterandoAna.Success, alterandoAna.Message);
+        Assert.Equal(ChamadaAluno.SituacaoFalta, gravados!.Single(r => r.AlunoId == Fixture.AnaId).Situacao);
+        Assert.Equal(ChamadaAluno.SituacaoFalta, gravados!.Single(r => r.AlunoId == Fixture.BrunoId).Situacao);
+    }
+
     /// <summary>
     /// Turma "6º Ano A" com Ana e Bruno enturmados; grade com Matemática e História. O usuário 2 é
     /// professor alocado só em Matemática; o usuário 1 é da gestão (não é professor).

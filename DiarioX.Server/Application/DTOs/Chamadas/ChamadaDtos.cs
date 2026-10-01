@@ -25,7 +25,9 @@ public record ChamadaAlunoResponse(
     string Matricula,
     string Nome,
     string? Situacao,
-    string? Justificativa
+    string? Justificativa,
+    // RF014 RN01/RN03: o registro do aluno transferido fica congelado.
+    bool Transferido = false
 );
 
 /// <summary>Chamada de uma data: a existente (ChamadaId preenchido) ou a lista em branco para lançar.</summary>

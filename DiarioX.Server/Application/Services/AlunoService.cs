@@ -13,12 +13,15 @@ public class AlunoService : IAlunoService
     private readonly IAlunoRepository _alunoRepository;
     private readonly IEscolaRepository _escolaRepository;
     private readonly IAlunoTurmaRepository _alunoTurmaRepository;
+    private readonly ITransferenciaRepository _transferenciaRepository;
 
-    public AlunoService(IAlunoRepository alunoRepository, IEscolaRepository escolaRepository, IAlunoTurmaRepository alunoTurmaRepository)
+    public AlunoService(IAlunoRepository alunoRepository, IEscolaRepository escolaRepository, IAlunoTurmaRepository alunoTurmaRepository,
+        ITransferenciaRepository transferenciaRepository)
     {
         _alunoRepository = alunoRepository;
         _escolaRepository = escolaRepository;
         _alunoTurmaRepository = alunoTurmaRepository;
+        _transferenciaRepository = transferenciaRepository;
     }
 
     public async Task<AlunoCommandResult> GetByIdAsync(int id)
@@ -153,6 +156,10 @@ public class AlunoService : IAlunoService
         // O histórico de enturmação (atual ou passado) precisa ser preservado
         if (await _alunoTurmaRepository.ExistsByAlunoIdAsync(id))
             return Conflict("Este aluno possui histórico de enturmação e não pode ser excluído. Utilize a opção Inativar.");
+
+        // A Declaração de Transferência precisa continuar podendo ser emitida.
+        if (await _transferenciaRepository.ExistsByAlunoIdAsync(id))
+            return Conflict("Este aluno possui transferência registrada e não pode ser excluído.");
 
         await _alunoRepository.DeleteAsync(aluno);
         return new AlunoCommandResult(true, "Aluno removido com sucesso!");
