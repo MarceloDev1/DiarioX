@@ -380,6 +380,48 @@ public class EtapaEnsinoServiceTests
         repo.Verify(r => r.DeleteAsync(5), Times.Once);
     }
 
+    // ── RF017 RN02 – tipo de frequência ──────────────────────────────────────
+
+    [Theory]
+    [InlineData(null, EtapaEnsino.FrequenciaPorAula)]
+    [InlineData("", EtapaEnsino.FrequenciaPorAula)]
+    [InlineData("diaria", EtapaEnsino.FrequenciaDiaria)]
+    [InlineData(" POR_AULA ", EtapaEnsino.FrequenciaPorAula)]
+    public async Task CreateAsync_TipoFrequencia_NormalizaEUsaPorAulaComoPadrao(string? informado, string esperado)
+    {
+        var (service, repo, modalidadeRepo) = BuildService();
+        SetupModalidadeExists(modalidadeRepo);
+        SetupNoConflicts(repo);
+        EtapaEnsino? captured = null;
+        repo.Setup(r => r.AddAsync(It.IsAny<EtapaEnsino>()))
+            .Callback<EtapaEnsino>(e => captured = e)
+            .ReturnsAsync((EtapaEnsino e) => { e.Id = 10; return e; });
+        repo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(BuildEntity(10));
+        var request = BuildValidRequest();
+        request.TipoFrequencia = informado;
+
+        var result = await service.CreateAsync(request);
+
+        Assert.True(result.Success, result.Message);
+        Assert.Equal(esperado, captured!.TipoFrequencia);
+    }
+
+    [Fact]
+    public async Task CreateAsync_TipoFrequenciaInvalido_ReturnsValidationError()
+    {
+        var (service, repo, modalidadeRepo) = BuildService();
+        SetupModalidadeExists(modalidadeRepo);
+        SetupNoConflicts(repo);
+        var request = BuildValidRequest();
+        request.TipoFrequencia = "SEMANAL";
+
+        var result = await service.CreateAsync(request);
+
+        Assert.Equal(EtapaEnsinoResultError.Validation, result.Error);
+        Assert.Equal("Tipo de frequência inválido. Use POR_AULA ou DIARIA.", result.Message);
+        repo.Verify(r => r.AddAsync(It.IsAny<EtapaEnsino>()), Times.Never);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static (EtapaEnsinoService Service, Mock<IEtapaEnsinoRepository> Repo, Mock<IModalidadeEnsinoRepository> ModalidadeRepo) BuildService()

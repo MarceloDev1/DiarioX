@@ -17,10 +17,10 @@ public class ChamadaRepository : IChamadaRepository
     public Task<Chamada?> GetByIdAsync(int id)
         => Query().FirstOrDefaultAsync(c => c.Id == id);
 
-    public Task<Chamada?> GetAsync(int turmaId, int disciplinaId, DateOnly data)
+    public Task<Chamada?> GetAsync(int turmaId, int? disciplinaId, DateOnly data)
         => Query().FirstOrDefaultAsync(c => c.TurmaId == turmaId && c.DisciplinaId == disciplinaId && c.Data == data);
 
-    public async Task<IReadOnlyList<Chamada>> ListAsync(int turmaId, int disciplinaId, DateOnly? de = null, DateOnly? ate = null)
+    public async Task<IReadOnlyList<Chamada>> ListAsync(int turmaId, int? disciplinaId, DateOnly? de = null, DateOnly? ate = null)
     {
         var query = Query().Where(c => c.TurmaId == turmaId && c.DisciplinaId == disciplinaId);
         if (de is not null)

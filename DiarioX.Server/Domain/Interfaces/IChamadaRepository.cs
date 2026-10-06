@@ -5,10 +5,14 @@ namespace DiarioX.Server.Domain.Interfaces;
 public interface IChamadaRepository
 {
     Task<Chamada?> GetByIdAsync(int id);
-    Task<Chamada?> GetAsync(int turmaId, int disciplinaId, DateOnly data);
+    /// <summary>Chamada da turma/disciplina na data; <paramref name="disciplinaId"/> nulo é a chamada diária da turma.</summary>
+    Task<Chamada?> GetAsync(int turmaId, int? disciplinaId, DateOnly data);
 
-    /// <summary>Chamadas da turma/disciplina (com os registros), opcionalmente dentro de um intervalo de datas.</summary>
-    Task<IReadOnlyList<Chamada>> ListAsync(int turmaId, int disciplinaId, DateOnly? de = null, DateOnly? ate = null);
+    /// <summary>
+    /// Chamadas da turma/disciplina (com os registros), opcionalmente dentro de um intervalo de datas;
+    /// <paramref name="disciplinaId"/> nulo são as chamadas diárias da turma.
+    /// </summary>
+    Task<IReadOnlyList<Chamada>> ListAsync(int turmaId, int? disciplinaId, DateOnly? de = null, DateOnly? ate = null);
 
     /// <summary>Enturmações da turma que se sobrepõem ao intervalo (com o aluno).</summary>
     Task<IReadOnlyList<AlunoTurma>> GetEnturmacoesAsync(int turmaId, DateOnly de, DateOnly ate);

@@ -6,7 +6,9 @@ public record PeriodoAvaliativoResponse(
     string Nome,
     int Numero,
     DateOnly DataInicio,
-    DateOnly DataTermino
+    DateOnly DataTermino,
+    bool Encerrado = false,
+    DateTime? EncerradoEm = null
 );
 
 public record AnoLetivoResponse(

@@ -31,7 +31,7 @@ public class ChamadasController : ControllerBase
     /// <summary>Chamada da data (a registrada ou a lista de alunos em branco).</summary>
     [Permissao(Permissoes.Chamada.Visualizar)]
     [HttpGet("aula")]
-    public async Task<IActionResult> GetAula([FromQuery] int turmaId, [FromQuery] int disciplinaId, [FromQuery] DateOnly data)
+    public async Task<IActionResult> GetAula([FromQuery] int turmaId, [FromQuery] int? disciplinaId, [FromQuery] DateOnly data)
     {
         if (!User.TryGetUsuarioAtual(out var usuario))
             return Unauthorized();
@@ -42,7 +42,7 @@ public class ChamadasController : ControllerBase
     /// <summary>Histórico de chamadas da turma/disciplina.</summary>
     [Permissao(Permissoes.Chamada.Visualizar)]
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] int turmaId, [FromQuery] int disciplinaId)
+    public async Task<IActionResult> List([FromQuery] int turmaId, [FromQuery] int? disciplinaId)
     {
         if (!User.TryGetUsuarioAtual(out var usuario))
             return Unauthorized();
@@ -52,7 +52,7 @@ public class ChamadasController : ControllerBase
 
     [Permissao(Permissoes.Chamada.Visualizar)]
     [HttpGet("frequencia")]
-    public async Task<IActionResult> GetFrequencia([FromQuery] int turmaId, [FromQuery] int disciplinaId, [FromQuery] int? periodoId)
+    public async Task<IActionResult> GetFrequencia([FromQuery] int turmaId, [FromQuery] int? disciplinaId, [FromQuery] int? periodoId)
     {
         if (!User.TryGetUsuarioAtual(out var usuario))
             return Unauthorized();

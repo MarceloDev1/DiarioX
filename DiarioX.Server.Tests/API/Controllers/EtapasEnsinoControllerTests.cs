@@ -230,7 +230,8 @@ public class EtapasEnsinoControllerTests
         "3º Ano",
         "3ANO",
         3,
-        8
+        8,
+        "POR_AULA"
     );
 
     private static string? GetMessage(object? value)

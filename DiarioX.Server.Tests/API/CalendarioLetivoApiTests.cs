@@ -68,7 +68,7 @@ public class CalendarioLetivoApiTests : IClassFixture<TenancyApiFactory>
         Assert.Equal($"Calendário Letivo do Ano {Hoje.Year} configurado e publicado com sucesso!", publicado.GetProperty("message").GetString());
 
         const string mensagem =
-            "Não é possível realizar lançamentos nesta data. Evento cadastrado no Calendário Escolar: I Conselho de Classe - Dia Sem Aula.";
+            "Não é possível registrar frequência. Data configurada como I Conselho de Classe no Calendário Escolar.";
         var depois = await GetAula(client, dia);
         Assert.Equal(mensagem, depois.GetProperty("bloqueio").GetString());
 

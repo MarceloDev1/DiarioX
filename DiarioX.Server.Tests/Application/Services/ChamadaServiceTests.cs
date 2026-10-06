@@ -13,6 +13,7 @@ public class ChamadaServiceTests
     private static readonly DateOnly Hoje = DateOnly.FromDateTime(DateTime.Today);
     private static readonly UsuarioAtual Gestao = new(UsuarioId: 1, IsGlobalAdmin: false);
     private static readonly UsuarioAtual UsuarioProfessor = new(UsuarioId: 2, IsGlobalAdmin: false);
+    private static readonly UsuarioAtual OutroProfessor = new(UsuarioId: 3, IsGlobalAdmin: false);
 
     [Fact]
     public async Task GetTurmas_Professor_VeApenasSuasAlocacoes()
@@ -131,7 +132,7 @@ public class ChamadaServiceTests
         });
         f.Calendarios.Setup(r => r.GetPublicadosAsync(1, It.IsAny<int>())).ReturnsAsync([calendario]);
         const string mensagem =
-            "Não é possível realizar lançamentos nesta data. Evento cadastrado no Calendário Escolar: Conselho de Classe - Dia Sem Aula.";
+            "Não é possível registrar frequência. Data configurada como Conselho de Classe no Calendário Escolar.";
 
         var aula = await f.Service.GetAsync(UsuarioProfessor, Fixture.TurmaId, Fixture.MatematicaId, Hoje);
         var result = await f.Service.CreateAsync(UsuarioProfessor, f.Request(Fixture.MatematicaId));
@@ -240,6 +241,200 @@ public class ChamadaServiceTests
         Assert.Equal(ChamadaAluno.SituacaoFalta, gravados!.Single(r => r.AlunoId == Fixture.BrunoId).Situacao);
     }
 
+    // ---------- RF017 RN02: Anos Iniciais (frequência diária) x Anos Finais (por aula) ----------
+
+    [Fact]
+    public async Task Create_FrequenciaDiaria_GravaUmaChamadaPorDiaSemDisciplina()
+    {
+        var f = new Fixture(EtapaEnsino.FrequenciaDiaria);
+        Chamada? gravada = null;
+        f.Chamadas.Setup(r => r.AddAsync(It.IsAny<Chamada>())).Callback<Chamada>(c => gravada = c).ReturnsAsync((Chamada c) => c);
+        var request = f.Request(Fixture.MatematicaId, quantidadeAulas: 3);
+        request.DisciplinaId = null;
+
+        var result = await f.Service.CreateAsync(UsuarioProfessor, request);
+
+        Assert.True(result.Success, result.Message);
+        Assert.Null(gravada!.DisciplinaId);
+        Assert.Equal(1, gravada.QuantidadeAulas);
+    }
+
+    [Fact]
+    public async Task Create_FrequenciaDiaria_IgnoraDisciplinaInformada()
+    {
+        var f = new Fixture(EtapaEnsino.FrequenciaDiaria);
+        Chamada? gravada = null;
+        f.Chamadas.Setup(r => r.AddAsync(It.IsAny<Chamada>())).Callback<Chamada>(c => gravada = c).ReturnsAsync((Chamada c) => c);
+
+        var result = await f.Service.CreateAsync(Gestao, f.Request(Fixture.HistoriaId));
+
+        Assert.True(result.Success, result.Message);
+        Assert.Null(gravada!.DisciplinaId);
+    }
+
+    [Fact]
+    public async Task Create_FrequenciaDiaria_JaRegistradaNoDia_RetornaConflito()
+    {
+        var f = new Fixture(EtapaEnsino.FrequenciaDiaria);
+        f.Chamadas.Setup(r => r.GetAsync(Fixture.TurmaId, null, Hoje))
+            .ReturnsAsync(new Chamada { Id = 5, TurmaId = Fixture.TurmaId, Data = Hoje });
+
+        var result = await f.Service.CreateAsync(Gestao, f.Request(Fixture.MatematicaId));
+
+        Assert.Equal(ChamadaResultError.Conflict, result.Error);
+        Assert.Equal("Já existe uma chamada registrada para esta turma e data. Abra a chamada existente para alterá-la.", result.Message);
+    }
+
+    [Fact]
+    public async Task GetTurmas_FrequenciaDiaria_NaoListaDisciplinas_ESoParaProfessorDaTurma()
+    {
+        var f = new Fixture(EtapaEnsino.FrequenciaDiaria);
+
+        var daGestao = Assert.Single(await f.Service.GetTurmasAsync(Gestao));
+        var doProfessor = Assert.Single(await f.Service.GetTurmasAsync(UsuarioProfessor));
+        var deOutroProfessor = await f.Service.GetTurmasAsync(OutroProfessor);
+
+        Assert.Equal(EtapaEnsino.FrequenciaDiaria, daGestao.TipoFrequencia);
+        Assert.Empty(daGestao.Disciplinas);
+        Assert.Empty(doProfessor.Disciplinas);
+        Assert.Empty(deOutroProfessor);
+    }
+
+    [Fact]
+    public async Task Create_FrequenciaDiaria_ProfessorForaDaTurma_RetornaForbidden()
+    {
+        var f = new Fixture(EtapaEnsino.FrequenciaDiaria);
+
+        var result = await f.Service.CreateAsync(OutroProfessor, f.Request(Fixture.MatematicaId));
+
+        Assert.Equal(ChamadaResultError.Forbidden, result.Error);
+        f.Chamadas.Verify(r => r.AddAsync(It.IsAny<Chamada>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_FrequenciaPorAula_SemDisciplina_RetornaErro()
+    {
+        var f = new Fixture();
+        var request = f.Request(Fixture.MatematicaId);
+        request.DisciplinaId = null;
+
+        var result = await f.Service.CreateAsync(Gestao, request);
+
+        Assert.Equal(ChamadaResultError.Validation, result.Error);
+        Assert.Equal("Selecione a disciplina da chamada.", result.Message);
+    }
+
+    [Fact]
+    public async Task GetTurmas_FrequenciaPorAula_InformaOTipo()
+    {
+        var f = new Fixture();
+
+        var turma = Assert.Single(await f.Service.GetTurmasAsync(Gestao));
+
+        Assert.Equal(EtapaEnsino.FrequenciaPorAula, turma.TipoFrequencia);
+    }
+
+    // ---------- RF017 EX01: data sem aula ----------
+
+    [Fact]
+    public async Task Get_DataSemAulaSemChamada_NaoAbreAListaDeAlunos()
+    {
+        var f = new Fixture();
+        f.PublicarEventoSemAula(Hoje, "Recesso Escolar");
+
+        var aula = await f.Service.GetAsync(Gestao, Fixture.TurmaId, Fixture.MatematicaId, Hoje);
+
+        Assert.Equal("Não é possível registrar frequência. Data configurada como Recesso Escolar no Calendário Escolar.", aula.Value!.Bloqueio);
+        Assert.Empty(aula.Value.Alunos);
+    }
+
+    [Fact]
+    public async Task Get_FimDeSemanaComCalendarioPublicado_BloqueiaComOTextoDaFrequencia()
+    {
+        var f = new Fixture();
+        var sabado = Hoje;
+        while (sabado.DayOfWeek != DayOfWeek.Saturday) sabado = sabado.AddDays(-1);
+        f.Calendarios.Setup(r => r.GetPublicadosAsync(1, It.IsAny<int>()))
+            .ReturnsAsync([new CalendarioLetivo { Id = 1, PublicadoEm = DateTime.UtcNow }]);
+        f.AnoLetivo.DataInicio = sabado.AddDays(-30);
+
+        var aula = await f.Service.GetAsync(Gestao, Fixture.TurmaId, Fixture.MatematicaId, sabado);
+
+        Assert.Equal(
+            "Não é possível registrar frequência. Data configurada como sábado sem Dia Letivo Especial (Sábado Letivo) no Calendário Escolar.",
+            aula.Value!.Bloqueio);
+    }
+
+    // ---------- RF017 EX02: período encerrado ----------
+
+    private const string MensagemPeriodoEncerrado = "Este período letivo está encerrado para alterações. Contate a coordenação pedagógica.";
+
+    [Fact]
+    public async Task Create_PeriodoEncerrado_BloqueiaERecomendaACoordenacao()
+    {
+        var f = new Fixture();
+        f.EncerrarPeriodoQueContem(Hoje);
+
+        var result = await f.Service.CreateAsync(Gestao, f.Request(Fixture.MatematicaId));
+
+        Assert.False(result.Success);
+        Assert.Equal(ChamadaResultError.Validation, result.Error);
+        Assert.Equal(MensagemPeriodoEncerrado, result.Message);
+        f.Chamadas.Verify(r => r.AddAsync(It.IsAny<Chamada>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Update_PeriodoEncerrado_BloqueiaAAlteracao()
+    {
+        var f = new Fixture();
+        f.EncerrarPeriodoQueContem(Hoje);
+        var chamada = new Chamada { Id = 5, TurmaId = Fixture.TurmaId, DisciplinaId = Fixture.MatematicaId, Data = Hoje };
+        f.Chamadas.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(chamada);
+
+        var result = await f.Service.UpdateAsync(Gestao, 5, f.Request(Fixture.MatematicaId));
+
+        Assert.Equal(MensagemPeriodoEncerrado, result.Message);
+        f.Chamadas.Verify(r => r.UpdateAsync(It.IsAny<Chamada>(), It.IsAny<IEnumerable<ChamadaAluno>>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Delete_PeriodoEncerrado_BloqueiaAExclusao()
+    {
+        var f = new Fixture();
+        f.EncerrarPeriodoQueContem(Hoje);
+        var chamada = new Chamada { Id = 5, TurmaId = Fixture.TurmaId, DisciplinaId = Fixture.MatematicaId, Data = Hoje };
+        f.Chamadas.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(chamada);
+
+        var result = await f.Service.DeleteAsync(Gestao, 5);
+
+        Assert.Equal(MensagemPeriodoEncerrado, result.Message);
+        f.Chamadas.Verify(r => r.DeleteAsync(It.IsAny<Chamada>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Get_PeriodoEncerrado_AbreSoParaConsulta()
+    {
+        var f = new Fixture();
+        f.EncerrarPeriodoQueContem(Hoje);
+
+        var aula = await f.Service.GetAsync(Gestao, Fixture.TurmaId, Fixture.MatematicaId, Hoje);
+
+        Assert.True(aula.Value!.PeriodoEncerrado);
+        Assert.NotEmpty(aula.Value.Alunos);
+    }
+
+    [Fact]
+    public async Task Create_PeriodoEncerradoNaoContemAData_PermiteOLancamento()
+    {
+        var f = new Fixture();
+        f.EncerrarPeriodoQueContem(Hoje.AddDays(-40));
+        f.Chamadas.Setup(r => r.AddAsync(It.IsAny<Chamada>())).ReturnsAsync((Chamada c) => c);
+
+        var result = await f.Service.CreateAsync(Gestao, f.Request(Fixture.MatematicaId));
+
+        Assert.True(result.Success, result.Message);
+    }
+
     /// <summary>
     /// Turma "6º Ano A" com Ana e Bruno enturmados; grade com Matemática e História. O usuário 2 é
     /// professor alocado só em Matemática; o usuário 1 é da gestão (não é professor).
@@ -253,16 +448,20 @@ public class ChamadaServiceTests
         public Dictionary<int, Aluno> Alunos { get; }
         public ChamadaService Service { get; }
 
-        public Fixture()
+        public AnoLetivo AnoLetivo { get; }
+
+        public Fixture(string tipoFrequencia = EtapaEnsino.FrequenciaPorAula)
         {
             var anoLetivo = new AnoLetivo
             {
                 Id = 1, AnoReferencia = Hoje.Year,
                 DataInicio = Hoje.AddDays(-60), DataTermino = Hoje.AddDays(60),
             };
+            AnoLetivo = anoLetivo;
             var turma = new Turma
             {
                 Id = TurmaId, NomeCompleto = "6º Ano A", EtapaEnsinoId = EtapaId, Status = Turma.StatusAtivo,
+                EtapaEnsino = new EtapaEnsino { Id = EtapaId, TipoFrequencia = tipoFrequencia },
                 AnoLetivoId = 1, AnoLetivo = anoLetivo, Escola = new Escola { Nome = "Escola A" },
             };
             var matematica = Disciplina(MatematicaId, "Matemática");
@@ -285,17 +484,20 @@ public class ChamadaServiceTests
 
             var anos = new Mock<IAnoLetivoRepository>();
             anos.Setup(r => r.GetAllAsync()).ReturnsAsync([anoLetivo]);
+            anos.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(anoLetivo);
 
             var professores = new Mock<IProfessorRepository>();
             professores.Setup(r => r.GetByUsuarioIdAsync(UsuarioProfessor.UsuarioId)).ReturnsAsync(new Professor { Id = 7 });
+            professores.Setup(r => r.GetByUsuarioIdAsync(OutroProfessor.UsuarioId)).ReturnsAsync(new Professor { Id = 8 });
 
             var alocacoes = new Mock<IProfessorAlocacaoRepository>();
+            alocacoes.Setup(r => r.GetByProfessorIdAsync(8)).ReturnsAsync([]);
             alocacoes.Setup(r => r.GetByProfessorIdAsync(7))
                 .ReturnsAsync([new ProfessorAlocacao { ProfessorId = 7, TurmaId = TurmaId, DisciplinaId = MatematicaId }]);
 
             Chamadas.Setup(r => r.GetEnturmacoesAsync(TurmaId, It.IsAny<DateOnly>(), It.IsAny<DateOnly>()))
                 .ReturnsAsync(Alunos.Values.Select(a => new AlunoTurma { AlunoId = a.Id, Aluno = a, TurmaId = TurmaId }).ToList());
-            Chamadas.Setup(r => r.ListAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>()))
+            Chamadas.Setup(r => r.ListAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>()))
                 .ReturnsAsync([]);
             Chamadas.Setup(r => r.GetEmailsUsuariosAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, string>());
@@ -305,6 +507,26 @@ public class ChamadaServiceTests
             Service = new ChamadaService(Chamadas.Object, turmas.Object, disciplinas.Object, anos.Object,
                 professores.Object, alocacoes.Object, Calendarios.Object);
         }
+
+        /// <summary>Publica um calendário com o dia marcado como sem aula (feriado, recesso, conselho).</summary>
+        public void PublicarEventoSemAula(DateOnly data, string descricao)
+        {
+            var calendario = new CalendarioLetivo { Id = 1, PublicadoEm = DateTime.UtcNow };
+            calendario.Eventos.Add(new EventoCalendario
+            {
+                CalendarioLetivoId = 1, Data = data, Tipo = EventoCalendario.TipoConselhoClasse,
+                Descricao = descricao, ComAula = false,
+            });
+            Calendarios.Setup(r => r.GetPublicadosAsync(1, It.IsAny<int>())).ReturnsAsync([calendario]);
+        }
+
+        /// <summary>Marca como encerrado o período avaliativo (de 20 dias para cada lado) que contém a data.</summary>
+        public void EncerrarPeriodoQueContem(DateOnly data)
+            => AnoLetivo.Periodos.Add(new PeriodoAvaliativo
+            {
+                AnoLetivoId = AnoLetivo.Id, Nome = "1º Bimestre", Numero = 1, Encerrado = true,
+                DataInicio = data.AddDays(-20), DataTermino = data.AddDays(20),
+            });
 
         public ChamadaRequest Request(int disciplinaId, int quantidadeAulas = 1, params (int AlunoId, string Situacao, string? Justificativa)[] alunos)
         {

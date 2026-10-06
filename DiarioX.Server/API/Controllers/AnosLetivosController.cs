@@ -63,6 +63,24 @@ public class AnosLetivosController : ControllerBase
         return Ok(new { message = result.Message });
     }
 
+    /// <summary>Encerra o período avaliativo: o diário de classe deixa de aceitar alterações nele (RF017 EX02).</summary>
+    [Permissao(Permissoes.AnosLetivos.Editar)]
+    [HttpPost("{id:int}/periodos/{periodoId:int}/encerrar")]
+    public async Task<IActionResult> EncerrarPeriodo([FromRoute] int id, [FromRoute] int periodoId)
+    {
+        var result = await _service.DefinirPeriodoEncerradoAsync(id, periodoId, encerrado: true);
+        return result.Success ? Ok(result.AnoLetivo) : MapError(result);
+    }
+
+    /// <summary>Reabre o período avaliativo encerrado.</summary>
+    [Permissao(Permissoes.AnosLetivos.Editar)]
+    [HttpPost("{id:int}/periodos/{periodoId:int}/reabrir")]
+    public async Task<IActionResult> ReabrirPeriodo([FromRoute] int id, [FromRoute] int periodoId)
+    {
+        var result = await _service.DefinirPeriodoEncerradoAsync(id, periodoId, encerrado: false);
+        return result.Success ? Ok(result.AnoLetivo) : MapError(result);
+    }
+
     private IActionResult MapError(AnoLetivoCommandResult result) =>
         result.Error switch
         {

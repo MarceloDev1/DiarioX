@@ -69,6 +69,15 @@ public class AnoLetivoService : IAnoLetivoService
         var validation = await ValidateRequestAsync(request, id);
         if (!validation.Success) return validation;
 
+        // RF017 EX02: período encerrado não muda de datas nem de nome sem antes ser reaberto.
+        foreach (var encerrado in existing.Periodos.Where(p => p.Encerrado))
+        {
+            var novo = request.Periodos.FirstOrDefault(p => p.Numero == encerrado.Numero);
+            if (novo is null || novo.DataInicio != encerrado.DataInicio || novo.DataTermino != encerrado.DataTermino
+                || novo.Nome.Trim() != encerrado.Nome)
+                return Invalid($"O período \"{encerrado.Nome}\" está encerrado e não pode ser alterado. Reabra o período antes de editar.");
+        }
+
         var entity = new AnoLetivo
         {
             Id = id,
@@ -99,6 +108,31 @@ public class AnoLetivoService : IAnoLetivoService
         // Exclui a entidade carregada (já filtrada pela instituição) em vez de um stub só com o Id.
         await _repository.DeleteAsync(existing);
         return new AnoLetivoCommandResult(true, "Ano letivo excluído com sucesso.");
+    }
+
+    public async Task<AnoLetivoCommandResult> DefinirPeriodoEncerradoAsync(int anoLetivoId, int periodoId, bool encerrado)
+    {
+        var ano = await _repository.GetByIdAsync(anoLetivoId);
+        if (ano is null)
+            return new AnoLetivoCommandResult(false, "Ano letivo não encontrado.", Error: AnoLetivoResultError.NotFound);
+
+        var periodo = ano.Periodos.FirstOrDefault(p => p.Id == periodoId);
+        if (periodo is null)
+            return new AnoLetivoCommandResult(false, "Período avaliativo não encontrado.", Error: AnoLetivoResultError.NotFound);
+
+        if (periodo.Encerrado == encerrado)
+        {
+            return new AnoLetivoCommandResult(false,
+                encerrado ? "Este período já está encerrado." : "Este período já está aberto.",
+                Error: AnoLetivoResultError.Conflict);
+        }
+
+        await _repository.DefinirPeriodoEncerradoAsync(periodo, encerrado);
+
+        var atualizado = await _repository.GetByIdAsync(anoLetivoId);
+        return new AnoLetivoCommandResult(true,
+            encerrado ? $"{periodo.Nome} encerrado com sucesso." : $"{periodo.Nome} reaberto com sucesso.",
+            MapToResponse(atualizado!));
     }
 
     private async Task<AnoLetivoCommandResult> ValidateRequestAsync(AnoLetivoRequest request, int? excludeId)
@@ -147,7 +181,7 @@ public class AnoLetivoService : IAnoLetivoService
             a.DataTermino,
             a.TipoPeriodo,
             a.Periodos.OrderBy(p => p.Numero).Select(p =>
-                new PeriodoAvaliativoResponse(p.Id, p.AnoLetivoId, p.Nome, p.Numero, p.DataInicio, p.DataTermino)
+                new PeriodoAvaliativoResponse(p.Id, p.AnoLetivoId, p.Nome, p.Numero, p.DataInicio, p.DataTermino, p.Encerrado, p.EncerradoEm)
             ).ToList()
         );
 }

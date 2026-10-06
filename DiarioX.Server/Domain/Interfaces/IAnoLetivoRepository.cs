@@ -13,4 +13,7 @@ public interface IAnoLetivoRepository
     Task<AnoLetivo> AddAsync(AnoLetivo entity);
     Task UpdateAsync(AnoLetivo entity);
     Task DeleteAsync(AnoLetivo entity);
+
+    /// <summary>Encerra ou reabre o período avaliativo do ano letivo.</summary>
+    Task DefinirPeriodoEncerradoAsync(PeriodoAvaliativo periodo, bool encerrado);
 }

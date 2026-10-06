@@ -67,10 +67,13 @@ public class AnoLetivoRepository : IAnoLetivoRepository
         existing.DataTermino = entity.DataTermino;
         existing.TipoPeriodo = entity.TipoPeriodo;
 
+        // Os períodos são recriados; o encerramento (RF017 EX02) acompanha o número do período.
+        var anteriores = existing.Periodos.ToDictionary(p => p.Numero);
         _context.PeriodosAvaliativos.RemoveRange(existing.Periodos);
 
         foreach (var periodo in entity.Periodos)
         {
+            anteriores.TryGetValue(periodo.Numero, out var anterior);
             existing.Periodos.Add(new PeriodoAvaliativo
             {
                 AnoLetivoId = existing.Id,
@@ -78,9 +81,19 @@ public class AnoLetivoRepository : IAnoLetivoRepository
                 Numero = periodo.Numero,
                 DataInicio = periodo.DataInicio,
                 DataTermino = periodo.DataTermino,
+                Encerrado = anterior?.Encerrado ?? false,
+                EncerradoEm = anterior?.EncerradoEm,
             });
         }
 
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DefinirPeriodoEncerradoAsync(PeriodoAvaliativo periodo, bool encerrado)
+    {
+        var atual = await _context.PeriodosAvaliativos.FirstAsync(p => p.Id == periodo.Id);
+        atual.Encerrado = encerrado;
+        atual.EncerradoEm = encerrado ? DateTime.UtcNow : null;
         await _context.SaveChangesAsync();
     }
 

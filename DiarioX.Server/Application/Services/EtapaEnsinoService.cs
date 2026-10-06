@@ -42,6 +42,7 @@ public class EtapaEnsinoService : IEtapaEnsinoService
             Sigla = normalized.Sigla,
             OrdemCronologica = normalized.OrdemCronologica,
             IdadeRecomendada = normalized.IdadeRecomendada,
+            TipoFrequencia = normalized.TipoFrequencia!,
         };
 
         var created = await _repository.AddAsync(etapa);
@@ -65,6 +66,7 @@ public class EtapaEnsinoService : IEtapaEnsinoService
         etapa.Sigla = normalized.Sigla;
         etapa.OrdemCronologica = normalized.OrdemCronologica;
         etapa.IdadeRecomendada = normalized.IdadeRecomendada;
+        etapa.TipoFrequencia = normalized.TipoFrequencia!;
         etapa.ModalidadeEnsino = null!;
 
         await _repository.UpdateAsync(etapa);
@@ -100,6 +102,9 @@ public class EtapaEnsinoService : IEtapaEnsinoService
         if (request.IdadeRecomendada.HasValue && request.IdadeRecomendada.Value <= 0)
             return Invalid("Idade recomendada deve ser maior que zero.");
 
+        if (!EtapaEnsino.TiposFrequencia.Contains(request.TipoFrequencia!))
+            return Invalid("Tipo de frequência inválido. Use POR_AULA ou DIARIA.");
+
         var modalidade = await _modalidadeRepository.GetByIdAsync(request.ModalidadeEnsinoId);
         if (modalidade is null)
             return new EtapaEnsinoCommandResult(false, "Modalidade de ensino não encontrada.", Error: EtapaEnsinoResultError.NotFound);
@@ -125,6 +130,9 @@ public class EtapaEnsinoService : IEtapaEnsinoService
             Sigla = request.Sigla.Trim().ToUpperInvariant(),
             OrdemCronologica = request.OrdemCronologica,
             IdadeRecomendada = request.IdadeRecomendada,
+            TipoFrequencia = string.IsNullOrWhiteSpace(request.TipoFrequencia)
+                ? EtapaEnsino.FrequenciaPorAula
+                : request.TipoFrequencia.Trim().ToUpperInvariant(),
         };
     }
 
@@ -132,5 +140,5 @@ public class EtapaEnsinoService : IEtapaEnsinoService
         => new(false, message, Error: EtapaEnsinoResultError.Validation);
 
     private static EtapaEnsinoResponse MapToResponse(EtapaEnsino e)
-        => new(e.Id, e.ModalidadeEnsinoId, e.ModalidadeEnsino.Nome, e.Nome, e.Sigla, e.OrdemCronologica, e.IdadeRecomendada);
+        => new(e.Id, e.ModalidadeEnsinoId, e.ModalidadeEnsino.Nome, e.Nome, e.Sigla, e.OrdemCronologica, e.IdadeRecomendada, e.TipoFrequencia);
 }

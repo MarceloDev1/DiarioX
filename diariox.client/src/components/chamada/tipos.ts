@@ -1,5 +1,7 @@
 export type Situacao = 'PRESENTE' | 'FALTA' | 'FALTA_JUSTIFICADA';
 
+export type TipoFrequencia = 'POR_AULA' | 'DIARIA';
+
 export interface ChamadaDisciplina {
     id: number;
     nome: string;
@@ -10,6 +12,8 @@ export interface ChamadaPeriodo {
     nome: string;
     dataInicio: string;
     dataTermino: string;
+    /** RF017 EX02: período encerrado pela coordenação; a chamada dele só pode ser consultada. */
+    encerrado: boolean;
 }
 
 export interface ChamadaTurma {
@@ -22,6 +26,8 @@ export interface ChamadaTurma {
     anoLetivoTermino: string;
     disciplinas: ChamadaDisciplina[];
     periodos: ChamadaPeriodo[];
+    /** RF017 RN02: POR_AULA (por disciplina) ou DIARIA (uma por dia, sem disciplina). */
+    tipoFrequencia: TipoFrequencia;
 }
 
 export interface ChamadaAluno {
@@ -37,7 +43,8 @@ export interface ChamadaAluno {
 export interface Chamada {
     chamadaId: number | null;
     turmaId: number;
-    disciplinaId: number;
+    /** Nulo na frequência diária (Anos Iniciais). */
+    disciplinaId: number | null;
     data: string;
     quantidadeAulas: number;
     conteudo: string | null;
@@ -48,6 +55,8 @@ export interface Chamada {
     alunos: ChamadaAluno[];
     /** RF005A: motivo do bloqueio da data pelo Calendário Letivo; nulo = lançamentos permitidos. */
     bloqueio: string | null;
+    /** RF017 EX02: o período avaliativo da data está encerrado; só consulta. */
+    periodoEncerrado: boolean;
 }
 
 export interface ChamadaResumo {
@@ -105,4 +114,13 @@ export function formatarData(iso: string): string {
 
 export function formatarDataHora(iso: string): string {
     return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+export const MENSAGEM_PERIODO_ENCERRADO = 'Este período letivo está encerrado para alterações. Contate a coordenação pedagógica.';
+
+/** Parâmetros de consulta da chamada; a frequência diária não leva disciplina. */
+export function paramsDaChamada(turmaId: number, disciplinaId: number | null, extra: Record<string, string> = {}): URLSearchParams {
+    const params = new URLSearchParams({ turmaId: String(turmaId), ...extra });
+    if (disciplinaId !== null) params.set('disciplinaId', String(disciplinaId));
+    return params;
 }

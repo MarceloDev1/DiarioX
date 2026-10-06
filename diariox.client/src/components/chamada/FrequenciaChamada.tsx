@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { apiFetch, readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
-import { formatarData, type ChamadaTurma, type Frequencia } from './tipos';
+import { formatarData, paramsDaChamada, type ChamadaTurma, type Frequencia } from './tipos';
 
 interface FrequenciaChamadaProps {
     turma: ChamadaTurma;
-    disciplinaId: number;
+    disciplinaId: number | null;
 }
 
 const formatarPercentual = (valor: number) =>
@@ -26,7 +26,7 @@ function FrequenciaChamada({ turma, disciplinaId }: FrequenciaChamadaProps) {
 
         async function load() {
             try {
-                const params = new URLSearchParams({ turmaId: String(turma.turmaId), disciplinaId: String(disciplinaId) });
+                const params = paramsDaChamada(turma.turmaId, disciplinaId);
                 if (periodoId) params.set('periodoId', periodoId);
                 const response = await apiFetch(`/api/chamadas/frequencia?${params}`);
                 if (!response.ok) throw new Error(await readApiError(response));
