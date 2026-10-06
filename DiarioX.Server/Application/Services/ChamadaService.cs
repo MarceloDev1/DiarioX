@@ -1,4 +1,5 @@
 using DiarioX.Server.Application.Auth;
+using DiarioX.Server.Application.Calendario;
 using DiarioX.Server.Application.DTOs.Chamadas;
 using DiarioX.Server.Application.Interfaces;
 using DiarioX.Server.Domain.Entities;
@@ -20,6 +21,7 @@ public class ChamadaService : IChamadaService
     private readonly IAnoLetivoRepository _anoLetivoRepository;
     private readonly IProfessorRepository _professorRepository;
     private readonly IProfessorAlocacaoRepository _alocacaoRepository;
+    private readonly ICalendarioLetivoRepository _calendarioRepository;
 
     public ChamadaService(
         IChamadaRepository chamadaRepository,
@@ -27,7 +29,8 @@ public class ChamadaService : IChamadaService
         IDisciplinaRepository disciplinaRepository,
         IAnoLetivoRepository anoLetivoRepository,
         IProfessorRepository professorRepository,
-        IProfessorAlocacaoRepository alocacaoRepository)
+        IProfessorAlocacaoRepository alocacaoRepository,
+        ICalendarioLetivoRepository calendarioRepository)
     {
         _chamadaRepository = chamadaRepository;
         _turmaRepository = turmaRepository;
@@ -35,6 +38,7 @@ public class ChamadaService : IChamadaService
         _anoLetivoRepository = anoLetivoRepository;
         _professorRepository = professorRepository;
         _alocacaoRepository = alocacaoRepository;
+        _calendarioRepository = calendarioRepository;
     }
 
     public async Task<IEnumerable<ChamadaTurmaResponse>> GetTurmasAsync(UsuarioAtual usuario)
@@ -296,12 +300,20 @@ public class ChamadaService : IChamadaService
         return null;
     }
 
+    private async Task<string?> GetBloqueioAsync(Turma turma, DateOnly data)
+        => CalendarioEfetivo.MotivoBloqueio(data, await _calendarioRepository.GetPublicadosAsync(turma.AnoLetivoId, turma.EscolaId));
+
     private async Task<(List<ChamadaAluno>? Registros, ChamadaCommandResult? Erro)> ValidarDadosAsync(
         Turma turma, ChamadaRequest request, Chamada? chamadaExistente)
     {
         var erroData = ValidarData(turma, request.Data);
         if (erroData is not null)
             return (null, Invalid(erroData));
+
+        // RF005A RN01: dia sem aula no calendário publicado bloqueia a frequência e o conteúdo ministrado.
+        var bloqueio = await GetBloqueioAsync(turma, request.Data);
+        if (bloqueio is not null)
+            return (null, Invalid(bloqueio));
 
         if (request.QuantidadeAulas < 1 || request.QuantidadeAulas > Chamada.MaxQuantidadeAulas)
             return (null, Invalid($"A quantidade de aulas deve estar entre 1 e {Chamada.MaxQuantidadeAulas}."));
@@ -397,8 +409,9 @@ public class ChamadaService : IChamadaService
             })
             .ToList();
 
+        var bloqueio = await GetBloqueioAsync(turma, data);
         if (chamada is null)
-            return new ChamadaResponse(null, turma.Id, disciplinaId, data, 1, null, null, null, null, null, alunos);
+            return new ChamadaResponse(null, turma.Id, disciplinaId, data, 1, null, null, null, null, null, alunos, bloqueio);
 
         var emails = await _chamadaRepository.GetEmailsUsuariosAsync(
             new[] { chamada.RegistradoPorUsuarioId, chamada.AtualizadoPorUsuarioId ?? 0 }.Where(id => id > 0));
@@ -408,7 +421,8 @@ public class ChamadaService : IChamadaService
             emails.GetValueOrDefault(chamada.RegistradoPorUsuarioId), chamada.CreatedAt,
             chamada.AtualizadoPorUsuarioId is int atualizadoPor ? emails.GetValueOrDefault(atualizadoPor) : null,
             chamada.UpdatedAt,
-            alunos);
+            alunos,
+            bloqueio);
     }
 
     private static string? NormalizarConteudo(string? conteudo)

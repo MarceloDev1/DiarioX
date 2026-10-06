@@ -48,6 +48,8 @@ public class AppDbContext : DbContext
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<AnoLetivo> AnosLetivos => Set<AnoLetivo>();
     public DbSet<PeriodoAvaliativo> PeriodosAvaliativos => Set<PeriodoAvaliativo>();
+    public DbSet<CalendarioLetivo> CalendariosLetivos => Set<CalendarioLetivo>();
+    public DbSet<EventoCalendario> EventosCalendario => Set<EventoCalendario>();
     public DbSet<Turma> Turmas => Set<Turma>();
     public DbSet<Disciplina> Disciplinas => Set<Disciplina>();
     public DbSet<DisciplinaEtapaEnsino> DisciplinasEtapasEnsino => Set<DisciplinaEtapaEnsino>();
@@ -81,6 +83,8 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new PasswordResetTokenConfiguration());
         modelBuilder.ApplyConfiguration(new AnoLetivoConfiguration());
         modelBuilder.ApplyConfiguration(new PeriodoAvaliativoConfiguration());
+        modelBuilder.ApplyConfiguration(new CalendarioLetivoConfiguration());
+        modelBuilder.ApplyConfiguration(new EventoCalendarioConfiguration());
         modelBuilder.ApplyConfiguration(new TurmaConfiguration());
         modelBuilder.ApplyConfiguration(new DisciplinaConfiguration());
         modelBuilder.ApplyConfiguration(new DisciplinaEtapaEnsinoConfiguration());
@@ -170,6 +174,11 @@ public class AppDbContext : DbContext
             r => !EscopoPorEscola || EscolasPermitidas.Contains(r.Chamada.Turma.EscolaId));
         modelBuilder.Entity<Transferencia>().HasQueryFilter(FiltroEscola,
             t => !EscopoPorEscola || EscolasPermitidas.Contains(t.EscolaOrigemId));
+        // O calendário da rede (sem escola) vale para todas as escolas e aparece para todos.
+        modelBuilder.Entity<CalendarioLetivo>().HasQueryFilter(FiltroEscola,
+            c => !EscopoPorEscola || c.EscolaId == null || EscolasPermitidas.Contains(c.EscolaId.Value));
+        modelBuilder.Entity<EventoCalendario>().HasQueryFilter(FiltroEscola,
+            e => !EscopoPorEscola || e.CalendarioLetivo.EscolaId == null || EscolasPermitidas.Contains(e.CalendarioLetivo.EscolaId.Value));
         modelBuilder.Entity<ProfessorAlocacao>().HasQueryFilter(FiltroEscola,
             pa => !EscopoPorEscola || EscolasPermitidas.Contains(pa.Turma.EscolaId));
         modelBuilder.Entity<ProfessorEscola>().HasQueryFilter(FiltroEscola,

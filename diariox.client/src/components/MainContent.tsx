@@ -6,6 +6,7 @@ import EtapasEnsinoPage from './etapas-ensino/EtapasEnsinoPage';
 import ModalidadesEnsinoPage from './modalidades-ensino/ModalidadesEnsinoPage';
 import UsuariosPage from './usuarios/UsuariosPage';
 import AnosLetivosPage from './anos-letivos/AnosLetivosPage';
+import CalendarioLetivoPage from './calendario-letivo/CalendarioLetivoPage';
 import TurmasPage from './turmas/TurmasPage';
 import DisciplinasPage from './disciplinas/DisciplinasPage';
 import ProfessoresPage from './professores/ProfessoresPage';
@@ -72,6 +73,7 @@ function MainContent({ onNavigate }: MainContentProps) {
             <Route path="/modalidades-ensino" element={<ModalidadesEnsinoPage />} />
             <Route path="/etapas-ensino" element={<EtapasEnsinoPage />} />
             <Route path="/anos-letivos" element={<AnosLetivosPage />} />
+            <Route path="/calendario-letivo" element={<CalendarioLetivoPage />} />
             <Route path="/disciplinas" element={<DisciplinasPage />} />
             <Route path="/turmas" element={<TurmasPage />} />
             <Route path="/professores" element={<ProfessoresPage />} />

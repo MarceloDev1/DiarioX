@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { FiLock } from 'react-icons/fi';
 import { useConfirm } from '../../hooks/useConfirm';
 import { usePermissoes } from '../../hooks/usePermissoes';
 import { apiFetch, readApiError } from '../../utils/api';
@@ -79,7 +80,7 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
     const isLoading = !chamada && erroCarga?.data !== data;
     const isNova = chamada?.chamadaId === null;
     const podeSalvar = chamada ? (isNova ? can('chamada.criar') : can('chamada.editar')) : false;
-    const somenteLeitura = !podeSalvar || isSaving;
+    const somenteLeitura = !podeSalvar || isSaving || !!chamada?.bloqueio;
     const isDirty = !!chamada && !!rascunho && JSON.stringify(rascunho) !== JSON.stringify(rascunhoDe(chamada));
 
     const hoje = hojeIso();
@@ -238,6 +239,26 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
 
             {isLoading ? (
                 <div className="loading">Carregando chamada...</div>
+            ) : chamada?.bloqueio ? (
+                // RF005A RN01/EX01: dia sem aula no Calendário Letivo; o diário não abre nesta data.
+                <>
+                    <div className="aviso-financeiro aviso-bloqueio" role="alert">
+                        <span><FiLock aria-hidden="true" /> {chamada.bloqueio}</span>
+                    </div>
+                    {!isNova && (
+                        <p className="chamada-status">
+                            Há uma chamada registrada nesta data antes do bloqueio. Ela não pode ser alterada
+                            {can('chamada.excluir') ? ', mas pode ser excluída.' : '.'}
+                        </p>
+                    )}
+                    {!isNova && can('chamada.excluir') && (
+                        <div className="form-actions">
+                            <button type="button" className="btn btn-danger" onClick={handleExcluir} disabled={isSaving}>
+                                Excluir chamada
+                            </button>
+                        </div>
+                    )}
+                </>
             ) : chamada && rascunho && (
                 <>
                     <p className="chamada-status">

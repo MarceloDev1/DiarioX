@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './Sidebar.css';
 import type { IconType } from 'react-icons';
-import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiUserMinus, FiLogOut, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare, FiDollarSign, FiCreditCard, FiBarChart2 } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiUserMinus, FiLogOut, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare, FiDollarSign, FiCreditCard, FiBarChart2, FiCalendar } from 'react-icons/fi';
 import { MdSchool, MdPeople, MdManageAccounts } from 'react-icons/md';
 import { usePermissoes } from '../hooks/usePermissoes';
 import { permissaoDaPagina } from '../utils/permissoes';
@@ -45,6 +45,7 @@ const menuItems: MenuItem[] = [
         { id: 'modalidades-ensino', label: 'Modalidades', icon: FiBook },
         { id: 'etapas-ensino', label: 'Etapas', icon: FiLayers },
         { id: 'anos-letivos', label: 'Anos Letivos', icon: FiAward },
+        { id: 'calendario-letivo', label: 'Calendário Letivo', icon: FiCalendar },
         { id: 'disciplinas', label: 'Disciplinas', icon: FiBook },
         { id: 'turmas', label: 'Turmas', icon: FiUsers },
     ] },
