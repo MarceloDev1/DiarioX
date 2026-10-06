@@ -20,6 +20,17 @@ public class TransferenciasController : ControllerBase
         _service = service;
     }
 
+    /// <summary>
+    /// Lista os alunos transferidos, com escola de origem, modalidade, etapa, turma e turno.
+    /// </summary>
+    [Permissao(Permissoes.Alunos.Visualizar)]
+    [HttpGet("transferencias")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> List()
+    {
+        return Ok(await _service.ListAsync());
+    }
+
     /// <summary>Transferências do aluno, da mais recente para a mais antiga.</summary>
     [Permissao(Permissoes.Alunos.Visualizar)]
     [HttpGet("alunos/{alunoId:int}/transferencias")]

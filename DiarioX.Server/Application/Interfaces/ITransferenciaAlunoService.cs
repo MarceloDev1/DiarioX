@@ -5,6 +5,8 @@ namespace DiarioX.Server.Application.Interfaces;
 
 public interface ITransferenciaAlunoService
 {
+    /// <summary>Alunos transferidos, uma linha por transferência, da mais recente para a mais antiga.</summary>
+    Task<IReadOnlyList<TransferenciaListaItemResponse>> ListAsync();
     Task<IReadOnlyList<TransferenciaResponse>> GetByAlunoIdAsync(int alunoId);
     Task<TransferenciaResult> TransferirAsync(UsuarioAtual usuario, int alunoId, TransferenciaRequest request);
 

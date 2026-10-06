@@ -40,6 +40,26 @@ public class TransferenciaAlunoService : ITransferenciaAlunoService
         _declaracaoPdf = declaracaoPdf;
     }
 
+    public async Task<IReadOnlyList<TransferenciaListaItemResponse>> ListAsync()
+    {
+        return (await _transferenciaRepository.ListAsync()).Select(t => new TransferenciaListaItemResponse(
+            t.Id,
+            t.AlunoId,
+            t.Aluno.Matricula,
+            t.Aluno.Nome,
+            t.EscolaOrigemId,
+            t.EscolaOrigem.Nome,
+            t.Turma?.ModalidadeEnsinoId,
+            t.Turma?.ModalidadeEnsino.Nome,
+            t.Turma?.EtapaEnsinoId,
+            t.Turma?.EtapaEnsino.Nome,
+            t.TurmaId,
+            t.Turma?.NomeIdentificador,
+            t.Turma?.NomeCompleto,
+            t.Turma?.Turno,
+            t.DataTransferencia)).ToList();
+    }
+
     public async Task<IReadOnlyList<TransferenciaResponse>> GetByAlunoIdAsync(int alunoId)
     {
         return (await _transferenciaRepository.GetByAlunoIdAsync(alunoId)).Select(Map).ToList();

@@ -15,6 +15,12 @@ interface Aluno {
     status: string;
 }
 
+interface Escola {
+    id: number;
+    nome: string;
+    status: string;
+}
+
 interface EnturmacaoAtiva {
     turmaId: number;
     turmaNome: string;
@@ -37,9 +43,11 @@ interface Formulario {
     motivo: string;
 }
 
+const TIPO_ENTRE_ESCOLAS = 'ENTRE_ESCOLAS_DA_REDE';
+
 const tipos = [
     { value: 'OUTRA_REDE', label: 'Transferência para Outra Rede' },
-    { value: 'ENTRE_ESCOLAS_DA_REDE', label: 'Transferência Entre Escolas da Rede' },
+    { value: TIPO_ENTRE_ESCOLAS, label: 'Transferência Entre Escolas da Rede' },
     { value: 'MUDANCA_MUNICIPIO_ESTADO', label: 'Mudança de Município/Estado' },
 ];
 
@@ -60,9 +68,14 @@ const situacaoDaMatricula = (status: string) => status === 'ATIVO' ? 'Matriculad
 const baixarDeclaracao = (transferencia: Transferencia) =>
     baixarArquivo(`/api/transferencias/${transferencia.id}/declaracao`, 'declaracao-transferencia.pdf');
 
+interface TransferirAlunoPageProps {
+    onVoltar: () => void;
+}
+
 /** RF014: transferência externa (saída definitiva) do aluno, com a emissão da Declaração de Transferência. */
-function TransferirAlunoPage() {
+function TransferirAlunoPage({ onVoltar }: TransferirAlunoPageProps) {
     const [alunos, setAlunos] = useState<Aluno[]>([]);
+    const [escolas, setEscolas] = useState<Escola[]>([]);
     const [busca, setBusca] = useState('');
     const [aluno, setAluno] = useState<Aluno | null>(null);
     const [enturmacao, setEnturmacao] = useState<EnturmacaoAtiva | null>(null);
@@ -76,10 +89,12 @@ function TransferirAlunoPage() {
     const [success, setSuccess] = useState<string | null>(null);
 
     useEffect(() => {
-        void apiFetch('/api/alunos')
-            .then(async response => {
-                if (!response.ok) throw new Error(await readApiError(response));
-                setAlunos((await response.json()) as Aluno[]);
+        void Promise.all([apiFetch('/api/alunos'), apiFetch('/api/escolas')])
+            .then(async ([alunosResponse, escolasResponse]) => {
+                if (!alunosResponse.ok) throw new Error(await readApiError(alunosResponse));
+                if (!escolasResponse.ok) throw new Error(await readApiError(escolasResponse));
+                setAlunos((await alunosResponse.json()) as Aluno[]);
+                setEscolas(((await escolasResponse.json()) as Escola[]).filter(escola => escola.status === 'ATIVO'));
             })
             .catch(reason => setError(reason instanceof Error ? reason.message : 'Falha ao carregar os alunos.'))
             .finally(() => setLoading(false));
@@ -131,6 +146,15 @@ function TransferirAlunoPage() {
     };
 
     const alterar = (campo: keyof Formulario, valor: string) => setForm(atual => ({ ...atual, [campo]: valor }));
+
+    // Trocar o tipo troca o modo do campo (lista da rede x texto livre), então o destino digitado/escolhido não vale mais.
+    const alterarTipo = (tipo: string) => setForm(atual => ({ ...atual, tipo, escolaDestino: '' }));
+
+    const entreEscolasDaRede = form.tipo === TIPO_ENTRE_ESCOLAS;
+    // A escola de origem não é destino possível da transferência.
+    const escolasDestino = escolas
+        .filter(escola => escola.id !== aluno?.escolaId)
+        .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { numeric: true }));
 
     const confirmarTransferencia = async (event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -194,11 +218,16 @@ function TransferirAlunoPage() {
                         <h2>Transferência Externa</h2>
                         <p>Registre a saída definitiva do aluno para outra instituição e emita a Declaração de Transferência.</p>
                     </div>
-                    {aluno && (
-                        <button className="secondary-button" type="button" disabled={saving} onClick={voltarParaBusca}>
-                            ← Nova busca
+                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        {aluno && (
+                            <button className="secondary-button" type="button" disabled={saving} onClick={voltarParaBusca}>
+                                ← Nova busca
+                            </button>
+                        )}
+                        <button className="secondary-button" type="button" disabled={saving} onClick={onVoltar}>
+                            ← Voltar para a lista
                         </button>
-                    )}
+                    </div>
                 </div>
 
                 <FeedbackMessage message={error} type="error" />
@@ -367,7 +396,7 @@ function TransferirAlunoPage() {
                                     id="transferencia-tipo"
                                     value={form.tipo}
                                     disabled={saving}
-                                    onChange={event => alterar('tipo', event.target.value)}
+                                    onChange={event => alterarTipo(event.target.value)}
                                 >
                                     <option value="">Selecione o tipo</option>
                                     {tipos.map(tipo => <option key={tipo.value} value={tipo.value}>{tipo.label}</option>)}
@@ -378,15 +407,27 @@ function TransferirAlunoPage() {
                                 <label htmlFor="transferencia-destino">
                                     Escola de Destino <span className="required">*</span>
                                 </label>
-                                <input
-                                    id="transferencia-destino"
-                                    type="text"
-                                    maxLength={200}
-                                    placeholder="Nome da escola para onde o aluno irá"
-                                    value={form.escolaDestino}
-                                    disabled={saving}
-                                    onChange={event => alterar('escolaDestino', event.target.value)}
-                                />
+                                {entreEscolasDaRede ? (
+                                    <select
+                                        id="transferencia-destino"
+                                        value={form.escolaDestino}
+                                        disabled={saving}
+                                        onChange={event => alterar('escolaDestino', event.target.value)}
+                                    >
+                                        <option value="">Selecione a escola de destino</option>
+                                        {escolasDestino.map(escola => <option key={escola.id} value={escola.nome}>{escola.nome}</option>)}
+                                    </select>
+                                ) : (
+                                    <input
+                                        id="transferencia-destino"
+                                        type="text"
+                                        maxLength={200}
+                                        placeholder="Nome da escola para onde o aluno irá"
+                                        value={form.escolaDestino}
+                                        disabled={saving}
+                                        onChange={event => alterar('escolaDestino', event.target.value)}
+                                    />
+                                )}
                             </div>
 
                             <div className="form-field">

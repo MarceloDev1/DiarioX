@@ -17,6 +17,7 @@ import ProfessorAlocacoesPage from './professor-alocacoes/ProfessorAlocacoesPage
 import RemanejarAlunoPage from './alunos/RemanejarAlunoPage';
 import DesenturmarAlunoPage from './alunos/DesenturmarAlunoPage';
 import TransferirAlunoPage from './alunos/TransferirAlunoPage';
+import AlunosTransferidosPage from './alunos/AlunosTransferidosPage';
 import InstituicoesPage from './tenants/InstituicoesPage';
 import PermissoesPage from './configuracoes/PermissoesPage';
 import ChamadaPage from './chamada/ChamadaPage';
@@ -47,6 +48,16 @@ function EnturmarAlunoRoute() {
 function AlunosEnturmadosRoute() {
     const navigate = useNavigate();
     return <AlunosEnturmadosPage onEnturmar={() => navigate('/enturmar-aluno/novo')} />;
+}
+
+function AlunosTransferidosRoute() {
+    const navigate = useNavigate();
+    return <AlunosTransferidosPage onTransferir={() => navigate('/transferir-aluno/novo')} />;
+}
+
+function TransferirAlunoRoute() {
+    const navigate = useNavigate();
+    return <TransferirAlunoPage onVoltar={() => navigate('/transferir-aluno')} />;
 }
 
 function MainContent({ onNavigate }: MainContentProps) {
@@ -83,7 +94,8 @@ function MainContent({ onNavigate }: MainContentProps) {
             <Route path="/enturmar-aluno/novo" element={<EnturmarAlunoRoute />} />
             <Route path="/remanejar-aluno" element={<RemanejarAlunoPage />} />
             <Route path="/desenturmar-aluno" element={<DesenturmarAlunoPage />} />
-            <Route path="/transferir-aluno" element={<TransferirAlunoPage />} />
+            <Route path="/transferir-aluno" element={<AlunosTransferidosRoute />} />
+            <Route path="/transferir-aluno/novo" element={<TransferirAlunoRoute />} />
             <Route path="/chamada" element={<ChamadaPage />} />
             <Route path="/relatorios" element={<RelatoriosPage />} />
             <Route path="/relatorios/:relatorioId" element={

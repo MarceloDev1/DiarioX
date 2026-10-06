@@ -197,6 +197,52 @@ public class TransferenciaAlunoServiceTests
             d.EscolaTelefone == null)), Times.Once);
     }
 
+    [Fact]
+    public async Task ListAsync_MapeiaTurmaModalidadeEEtapa_EDeixaVazioQuemNaoTinhaTurma()
+    {
+        var f = new Fixture();
+        var escola = new Escola { Id = 6, Nome = "Escola 1" };
+        f.Transferencias.Setup(r => r.ListAsync()).ReturnsAsync(
+        [
+            new Transferencia
+            {
+                Id = 51, AlunoId = Fixture.AlunoId, Aluno = f.Aluno, EscolaOrigemId = escola.Id, EscolaOrigem = escola,
+                TurmaId = 10, DataTransferencia = Hoje,
+                Turma = new Turma
+                {
+                    Id = 10, NomeIdentificador = "A", NomeCompleto = "1º ANO A", Turno = Turma.TurnoManha,
+                    ModalidadeEnsinoId = 2, ModalidadeEnsino = new ModalidadeEnsino { Id = 2, Nome = "EDUCAÇÃO INFANTIL" },
+                    EtapaEnsinoId = 4, EtapaEnsino = new EtapaEnsino { Id = 4, Nome = "BERÇÁRIO" },
+                },
+            },
+            new Transferencia
+            {
+                Id = 52, AlunoId = 2, Aluno = new Aluno { Id = 2, Nome = "Aguardando", Matricula = "20260002" },
+                EscolaOrigemId = escola.Id, EscolaOrigem = escola, DataTransferencia = Hoje,
+            },
+        ]);
+
+        var lista = await f.Service.ListAsync();
+
+        Assert.Equal(2, lista.Count);
+        var enturmado = lista[0];
+        Assert.Equal(51, enturmado.Id);
+        Assert.Equal("20260001", enturmado.Matricula);
+        Assert.Equal("Carla Mendes", enturmado.AlunoNome);
+        Assert.Equal("Escola 1", enturmado.EscolaNome);
+        Assert.Equal("EDUCAÇÃO INFANTIL", enturmado.ModalidadeEnsinoNome);
+        Assert.Equal("BERÇÁRIO", enturmado.EtapaEnsinoNome);
+        Assert.Equal("A", enturmado.TurmaNomeIdentificador);
+        Assert.Equal(Turma.TurnoManha, enturmado.Turno);
+
+        var semTurma = lista[1];
+        Assert.Equal("Escola 1", semTurma.EscolaNome);
+        Assert.Null(semTurma.TurmaId);
+        Assert.Null(semTurma.ModalidadeEnsinoNome);
+        Assert.Null(semTurma.EtapaEnsinoNome);
+        Assert.Null(semTurma.Turno);
+    }
+
     private static TransferenciaRequest Request(
         DateOnly? data = null,
         string tipo = Transferencia.TipoOutraRede,

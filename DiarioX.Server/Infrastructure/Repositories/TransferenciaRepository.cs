@@ -19,6 +19,15 @@ public class TransferenciaRepository : ITransferenciaRepository
         return Query().FirstOrDefaultAsync(t => t.Id == id);
     }
 
+    public async Task<IReadOnlyList<Transferencia>> ListAsync()
+    {
+        return await Query()
+            .Include(t => t.Turma!.ModalidadeEnsino)
+            .Include(t => t.Turma!.EtapaEnsino)
+            .OrderByDescending(t => t.DataTransferencia).ThenByDescending(t => t.Id)
+            .ToListAsync();
+    }
+
     public async Task<IReadOnlyList<Transferencia>> GetByAlunoIdAsync(int alunoId)
     {
         return await Query()

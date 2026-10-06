@@ -29,6 +29,27 @@ public sealed record TransferenciaResponse(
     string? Motivo,
     DateTime CreatedAt);
 
+/// <summary>
+/// Linha da lista de alunos transferidos. Modalidade, etapa, turma e turno são nulos quando o aluno
+/// aguardava enturmação ao ser transferido.
+/// </summary>
+public sealed record TransferenciaListaItemResponse(
+    int Id,
+    int AlunoId,
+    string Matricula,
+    string AlunoNome,
+    int EscolaId,
+    string EscolaNome,
+    int? ModalidadeEnsinoId,
+    string? ModalidadeEnsinoNome,
+    int? EtapaEnsinoId,
+    string? EtapaEnsinoNome,
+    int? TurmaId,
+    string? TurmaNomeIdentificador,
+    string? TurmaNomeCompleto,
+    string? Turno,
+    DateOnly DataTransferencia);
+
 public sealed record TransferenciaResult(
     bool Success,
     string Message,
