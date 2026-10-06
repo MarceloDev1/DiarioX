@@ -34,6 +34,8 @@ public static class Permissoes
         new("modalidades-ensino", "Modalidades de Ensino", Crud),
         new("etapas-ensino", "Etapas de Ensino", Crud),
         new("anos-letivos", "Anos Letivos", Crud),
+        // Editar inclui publicar o calendário.
+        new("calendario-letivo", "Calendário Letivo", [Visualizar, Editar]),
         new("disciplinas", "Disciplinas", Crud),
         new("turmas", "Turmas", Crud),
         new("professores", "Professores", Crud),
@@ -80,6 +82,12 @@ public static class Permissoes
         public const string Criar = "anos-letivos.criar";
         public const string Editar = "anos-letivos.editar";
         public const string Excluir = "anos-letivos.excluir";
+    }
+
+    public static class CalendarioLetivo
+    {
+        public const string Visualizar = "calendario-letivo.visualizar";
+        public const string Editar = "calendario-letivo.editar";
     }
 
     public static class Disciplinas
@@ -178,7 +186,7 @@ public static class Permissoes
 
         if (Is(perfilNome, Perfil.Professor))
             return ["turmas.visualizar", "disciplinas.visualizar", Alunos.Visualizar,
-                Chamada.Visualizar, Chamada.Criar, Chamada.Editar];
+                Chamada.Visualizar, Chamada.Criar, Chamada.Editar, CalendarioLetivo.Visualizar];
 
         return [];
     }

@@ -4,6 +4,7 @@ export const permissaoDaPagina: Record<string, string> = {
     'modalidades-ensino': 'modalidades-ensino.visualizar',
     'etapas-ensino': 'etapas-ensino.visualizar',
     'anos-letivos': 'anos-letivos.visualizar',
+    'calendario-letivo': 'calendario-letivo.visualizar',
     'disciplinas': 'disciplinas.visualizar',
     'turmas': 'turmas.visualizar',
     'professores': 'professores.visualizar',

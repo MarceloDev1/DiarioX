@@ -1,0 +1,552 @@
+/* RF005A — Calendário Letivo. Cores da legenda (RN03): verde letivo, vermelho sem aula, azul períodos,
+   laranja conselho/plantão, amarelo sábado letivo, cinza fim de semana. */
+.cal-pagina {
+    --cal-letivo-bg: #e7f6ec;
+    --cal-letivo-fg: #17663b;
+    --cal-fds-bg: #eef0f3;
+    --cal-fds-fg: #8a94a6;
+    --cal-sem-aula-bg: #fde2e4;
+    --cal-sem-aula-fg: #9f1d2c;
+    --cal-pedagogico-bg: #ffe8cc;
+    --cal-pedagogico-fg: #9a3f07;
+    --cal-sabado-bg: #fef3c7;
+    --cal-sabado-fg: #854d0e;
+    --cal-selecao: #7c3aed;
+    text-align: left;
+}
+
+.cal-filtros {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+/* ---------- Resumo: contador (RN02) e status ---------- */
+
+.cal-resumo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.cal-contador {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid #f5d9a8;
+    border-radius: 10px;
+    background: #fffaf0;
+}
+
+.cal-contador-ok {
+    border-color: #b7e2c5;
+    background: #f3fbf6;
+}
+
+.cal-contador-numeros {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.cal-contador-numeros strong {
+    font-size: 1.9rem;
+    line-height: 1;
+    color: #0f3460;
+    font-variant-numeric: tabular-nums;
+}
+
+.cal-contador-numeros span {
+    color: #5b6475;
+    font-size: 0.9rem;
+}
+
+.cal-contador-barra {
+    height: 8px;
+    border-radius: 999px;
+    background: #ece4d4;
+    overflow: hidden;
+}
+
+.cal-contador-ok .cal-contador-barra {
+    background: #d6eedf;
+}
+
+.cal-contador-barra span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #d97706;
+    transition: width 0.25s ease;
+}
+
+.cal-contador-ok .cal-contador-barra span {
+    background: #1f8a4c;
+}
+
+.cal-contador-texto {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #7a4a06;
+}
+
+.cal-contador-ok .cal-contador-texto {
+    color: #17663b;
+}
+
+.cal-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid #e0e8f0;
+    border-radius: 10px;
+    background: #f9fbfd;
+}
+
+.cal-status-texto {
+    color: #5b6475;
+    font-size: 0.85rem;
+}
+
+/* ---------- Legenda ---------- */
+
+.cal-legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.82rem;
+    color: #44536b;
+}
+
+.cal-legenda-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.cal-cor {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-style: normal;
+}
+
+.cal-cor-letivo { background: var(--cal-letivo-bg); border: 1px solid #b7e2c5; }
+.cal-cor-fim-de-semana { background: var(--cal-fds-bg); border: 1px solid #d5dae2; }
+.cal-cor-sem-aula { background: var(--cal-sem-aula-bg); border: 1px solid #f3b4bc; }
+.cal-cor-pedagogico { background: var(--cal-pedagogico-bg); border: 1px solid #f6c48a; color: var(--cal-pedagogico-fg); }
+.cal-cor-sabado-letivo { background: var(--cal-sabado-bg); border: 1px solid #f2d675; }
+.cal-cor-periodo { height: 6px; border-radius: 999px; }
+
+.cal-legenda-icone {
+    color: var(--cal-sem-aula-fg);
+}
+
+/* ---------- Barra de visualização ---------- */
+
+.cal-barra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.cal-visao {
+    display: inline-flex;
+}
+
+.cal-navegacao {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: #0f3460;
+}
+
+.cal-navegacao strong {
+    min-width: 10rem;
+    text-align: center;
+}
+
+/* ---------- Grade ---------- */
+
+.cal-ano {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1.25rem 1.5rem;
+}
+
+.cal-mes-titulo {
+    margin: 0 0 0.4rem;
+    font-size: 0.95rem;
+    color: #0f3460;
+}
+
+.cal-mes-titulo span {
+    color: #8a97aa;
+    font-weight: 500;
+}
+
+.cal-grade {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+.cal-semana {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 3px;
+}
+
+.cal-cabecalho span {
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #5b6475;
+}
+
+.cal-cabecalho .cal-cabecalho-fds {
+    color: #a0a9b8;
+}
+
+.cal-dia {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    min-width: 0;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    overflow: hidden;
+    transition: box-shadow 0.12s, transform 0.12s;
+}
+
+.cal-dia:not(:disabled):hover {
+    box-shadow: 0 0 0 2px rgba(15, 52, 96, 0.35);
+}
+
+.cal-dia:focus-visible {
+    outline: 2px solid var(--cal-selecao);
+    outline-offset: 1px;
+}
+
+.cal-dia-vazio {
+    cursor: default;
+}
+
+.cal-dia-letivo { background: var(--cal-letivo-bg); color: var(--cal-letivo-fg); }
+.cal-dia-fim-de-semana { background: var(--cal-fds-bg); color: var(--cal-fds-fg); }
+.cal-dia-sem-aula { background: var(--cal-sem-aula-bg); color: var(--cal-sem-aula-fg); border-color: #f3b4bc; font-weight: 700; }
+.cal-dia-pedagogico { background: var(--cal-pedagogico-bg); color: var(--cal-pedagogico-fg); border-color: #f6c48a; font-weight: 700; }
+.cal-dia-sabado-letivo { background: var(--cal-sabado-bg); color: var(--cal-sabado-fg); border-color: #f2d675; font-weight: 700; }
+
+.cal-dia-fora {
+    background: repeating-linear-gradient(135deg, #f7f8fa, #f7f8fa 4px, #eef0f3 4px, #eef0f3 8px);
+    color: #c3cad6;
+    cursor: not-allowed;
+}
+
+/* Faixa azul do período (bimestre/trimestre/semestre) na base do dia. */
+.cal-dia[style*='--cal-periodo']::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--cal-periodo);
+}
+
+.cal-dia-herdado {
+    border-style: dashed;
+}
+
+/* Conselho/plantão sem aula: o ícone é o da categoria; um ponto vermelho indica o bloqueio. */
+.cal-dia-sem-aula-marca::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #c81e3a;
+}
+
+.cal-dia-hoje .cal-dia-numero {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    font-weight: 800;
+}
+
+.cal-dia-selecionado {
+    box-shadow: inset 0 0 0 2px var(--cal-selecao);
+    transform: scale(0.94);
+}
+
+.cal-dia-selecionado:not(:disabled):hover {
+    box-shadow: inset 0 0 0 2px var(--cal-selecao);
+}
+
+.cal-dia-icone {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 9px;
+    height: 9px;
+}
+
+/* Visão mensal: dias maiores, com o nome do evento. */
+.cal-mensal .cal-grade {
+    gap: 5px;
+}
+
+.cal-mensal .cal-semana {
+    gap: 5px;
+}
+
+.cal-mensal .cal-cabecalho span {
+    font-size: 0.82rem;
+}
+
+.cal-mensal .cal-dia {
+    aspect-ratio: auto;
+    min-height: 88px;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0.25rem;
+    padding: 0.4rem 0.45rem;
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.cal-mensal .cal-dia-numero {
+    align-self: flex-end;
+    font-weight: 700;
+}
+
+.cal-mensal .cal-dia-icone {
+    top: 0.5rem;
+    left: 0.5rem;
+    width: 14px;
+    height: 14px;
+}
+
+.cal-dia-texto {
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1.25;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    word-break: break-word;
+}
+
+.cal-dia-texto em {
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+.cal-mensal .cal-dia-selecionado {
+    transform: none;
+}
+
+/* ---------- Painel lateral ---------- */
+
+.cal-painel-fundo {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    justify-content: flex-end;
+    background: rgba(8, 18, 36, 0.25);
+    animation: cal-painel-fade 0.15s ease-out;
+}
+
+.cal-painel {
+    width: min(420px, 100%);
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: white;
+    box-shadow: -12px 0 40px rgba(8, 18, 36, 0.18);
+    text-align: left;
+    animation: cal-painel-entrada 0.18s ease-out;
+}
+
+.cal-painel-cabecalho {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.cal-painel-cabecalho h3 {
+    margin: 0 0 0.25rem;
+    color: #0f3460;
+    font-size: 1.15rem;
+}
+
+.cal-painel-cabecalho p {
+    color: #44536b;
+    font-size: 0.92rem;
+}
+
+.cal-painel-fechar {
+    display: inline-flex;
+    padding: 0.35rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #5b6475;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.cal-painel-fechar:hover {
+    background: #edf4fb;
+}
+
+.cal-painel-situacao {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 8px;
+    background: #f7fafc;
+    border: 1px solid #e0e8f0;
+    color: #2f3c53;
+    font-size: 0.88rem;
+}
+
+.cal-painel-herdado {
+    color: #26405f;
+    font-size: 0.82rem;
+}
+
+.cal-painel-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.cal-painel-form .form-group input[type='text'],
+.cal-painel-form .form-group input[type='date'] {
+    padding: 0.6rem 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 0.95rem;
+}
+
+.cal-painel-datas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.cal-painel-aula {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.cal-painel-aula legend {
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    color: #2f3c53;
+    font-size: 0.92rem;
+}
+
+.cal-opcao-aula {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #cfd8e3;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    cursor: pointer;
+}
+
+.cal-opcao-aula.ativa.cal-opcao-sim {
+    border-color: #1f8a4c;
+    background: #f3fbf6;
+    color: #17663b;
+}
+
+.cal-opcao-aula.ativa.cal-opcao-nao {
+    border-color: #c81e3a;
+    background: #fff5f6;
+    color: #9f1d2c;
+}
+
+.cal-painel-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+@keyframes cal-painel-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes cal-painel-entrada {
+    from { transform: translateX(24px); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cal-painel-fundo,
+    .cal-painel,
+    .cal-dia,
+    .cal-contador-barra span {
+        animation: none;
+        transition: none;
+    }
+}
+
+@media (max-width: 820px) {
+    .cal-filtros,
+    .cal-resumo {
+        grid-template-columns: 1fr;
+    }
+
+    .cal-mensal .cal-dia {
+        min-height: 64px;
+        padding: 0.3rem;
+    }
+
+    .cal-mensal .cal-dia-texto {
+        display: none;
+    }
+}

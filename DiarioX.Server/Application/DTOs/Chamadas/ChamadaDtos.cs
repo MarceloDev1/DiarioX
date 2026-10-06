@@ -42,7 +42,9 @@ public record ChamadaResponse(
     DateTime? RegistradoEm,
     string? AtualizadoPor,
     DateTime? AtualizadoEm,
-    IReadOnlyList<ChamadaAlunoResponse> Alunos
+    IReadOnlyList<ChamadaAlunoResponse> Alunos,
+    // RF005A EX01: motivo do bloqueio da data pelo Calendário Letivo; nulo = lançamentos permitidos.
+    string? Bloqueio = null
 );
 
 public class ChamadaAlunoRequest
