@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, readApiError } from '../../utils/api';
-import { hojeIso } from '../../utils/formatters';
+import { formatCpf, formatDataBr, hojeIso } from '../../utils/formatters';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 
@@ -13,6 +13,8 @@ interface Aluno {
     id: number;
     matricula: string;
     nome: string;
+    dataNascimento: string;
+    cpfAluno: string | null;
     escolaId: number;
     escolaNome: string;
     status: string;
@@ -403,12 +405,14 @@ function EnturmarAlunoPage({ initialAlunoId, onVoltar }: EnturmarAlunoPageProps)
                                             </th>
                                             <th>Matrícula</th>
                                             <th>Nome</th>
+                                            <th>Data de Nascimento</th>
+                                            <th>CPF</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {alunosVisiveis.length === 0 ? (
                                             <tr>
-                                                <td colSpan={3}>Nenhum aluno encontrado para "{busca}".</td>
+                                                <td colSpan={5}>Nenhum aluno encontrado para "{busca}".</td>
                                             </tr>
                                         ) : alunosVisiveis.map(aluno => (
                                             <tr key={aluno.id}>
@@ -428,6 +432,8 @@ function EnturmarAlunoPage({ initialAlunoId, onVoltar }: EnturmarAlunoPageProps)
                                                     {aluno.nome}
                                                     {falhas[aluno.id] && <div className="field-error">{falhas[aluno.id]}</div>}
                                                 </td>
+                                                <td className="nowrap-cell">{formatDataBr(aluno.dataNascimento)}</td>
+                                                <td className="nowrap-cell">{aluno.cpfAluno ? formatCpf(aluno.cpfAluno) : '—'}</td>
                                             </tr>
                                         ))}
                                     </tbody>

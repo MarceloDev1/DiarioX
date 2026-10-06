@@ -32,6 +32,12 @@ export function formatCep(value: string) {
     return cep.replace(/^(\d{5})(\d{1,3})$/, '$1-$2');
 }
 
+/** yyyy-mm-dd (com ou sem hora) para dd/mm/aaaa, sem passar por Date para não deslocar o dia pelo fuso. */
+export function formatDataBr(value: string) {
+    const [ano, mes, dia] = value.slice(0, 10).split('-');
+    return ano && mes && dia ? `${dia}/${mes}/${ano}` : value;
+}
+
 /** Data de hoje (yyyy-mm-dd) no fuso do usuário; toISOString usaria UTC e viraria o dia à noite. */
 export function hojeIso() {
     const agora = new Date();
