@@ -120,6 +120,29 @@ public class ChamadaServiceTests
     }
 
     [Fact]
+    public async Task Create_DiaSemAulaNoCalendarioPublicado_BloqueiaLancamento()
+    {
+        var f = new Fixture();
+        var calendario = new CalendarioLetivo { Id = 1, PublicadoEm = DateTime.UtcNow };
+        calendario.Eventos.Add(new EventoCalendario
+        {
+            CalendarioLetivoId = 1, Data = Hoje, Tipo = EventoCalendario.TipoConselhoClasse,
+            Descricao = "Conselho de Classe", ComAula = false,
+        });
+        f.Calendarios.Setup(r => r.GetPublicadosAsync(1, It.IsAny<int>())).ReturnsAsync([calendario]);
+        const string mensagem =
+            "Não é possível realizar lançamentos nesta data. Evento cadastrado no Calendário Escolar: Conselho de Classe - Dia Sem Aula.";
+
+        var aula = await f.Service.GetAsync(UsuarioProfessor, Fixture.TurmaId, Fixture.MatematicaId, Hoje);
+        var result = await f.Service.CreateAsync(UsuarioProfessor, f.Request(Fixture.MatematicaId));
+
+        Assert.Equal(mensagem, aula.Value!.Bloqueio);
+        Assert.False(result.Success);
+        Assert.Equal(mensagem, result.Message);
+        f.Chamadas.Verify(r => r.AddAsync(It.IsAny<Chamada>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Create_QuandoJaExisteChamadaNaData_RetornaConflito()
     {
         var f = new Fixture();
@@ -226,6 +249,7 @@ public class ChamadaServiceTests
         public const int TurmaId = 10, MatematicaId = 20, HistoriaId = 21, AnaId = 100, BrunoId = 101, EtapaId = 5;
 
         public Mock<IChamadaRepository> Chamadas { get; } = new();
+        public Mock<ICalendarioLetivoRepository> Calendarios { get; } = new();
         public Dictionary<int, Aluno> Alunos { get; }
         public ChamadaService Service { get; }
 
@@ -276,8 +300,10 @@ public class ChamadaServiceTests
             Chamadas.Setup(r => r.GetEmailsUsuariosAsync(It.IsAny<IEnumerable<int>>()))
                 .ReturnsAsync(new Dictionary<int, string>());
 
+            Calendarios.Setup(r => r.GetPublicadosAsync(It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync([]);
+
             Service = new ChamadaService(Chamadas.Object, turmas.Object, disciplinas.Object, anos.Object,
-                professores.Object, alocacoes.Object);
+                professores.Object, alocacoes.Object, Calendarios.Object);
         }
 
         public ChamadaRequest Request(int disciplinaId, int quantidadeAulas = 1, params (int AlunoId, string Situacao, string? Justificativa)[] alunos)

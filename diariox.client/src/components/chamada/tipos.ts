@@ -46,6 +46,8 @@ export interface Chamada {
     atualizadoPor: string | null;
     atualizadoEm: string | null;
     alunos: ChamadaAluno[];
+    /** RF005A: motivo do bloqueio da data pelo Calendário Letivo; nulo = lançamentos permitidos. */
+    bloqueio: string | null;
 }
 
 export interface ChamadaResumo {
