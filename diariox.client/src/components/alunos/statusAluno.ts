@@ -3,7 +3,7 @@ import type { Status } from '../ui/StatusPill';
 export const statusAlunoOpcoes: { value: Status; label: string }[] = [
     { value: 'ATIVO', label: 'Ativo' },
     { value: 'ATIVO_AGUARDANDO_ENTURMACAO', label: 'Aguardando Enturmação' },
-    { value: 'NAO_COMPARECEU', label: 'Não Compareceu' },
+    { value: 'NAO_COMPARECEU', label: 'Nunca Compareceu' },
     { value: 'INATIVO', label: 'Inativo' },
     { value: 'INATIVO_OBITO', label: 'Inativo - Óbito' },
     { value: 'TRANSFERIDO', label: 'Transferido' },

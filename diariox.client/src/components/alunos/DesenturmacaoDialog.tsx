@@ -18,7 +18,7 @@ const efeitoDoMotivo: Record<string, string> = {
     REESTRUTURACAO_INTERNA: 'O aluno volta para "Aguardando Enturmação" e fica disponível para outra turma.',
     ERRO_MATRICULA_ENTURMACAO: 'O aluno volta para "Aguardando Enturmação" e fica disponível para outra turma.',
     OUTROS: 'O aluno volta para "Aguardando Enturmação" e fica disponível para outra turma.',
-    NAO_COMPARECEU: 'O aluno passa para "Não Compareceu" e deixa de contar faltas nesta turma.',
+    NAO_COMPARECEU: 'O aluno passa para "Nunca Compareceu" e deixa de contar faltas nesta turma.',
     FALECIMENTO: 'O aluno passa para "Inativo - Óbito" e a matrícula é encerrada definitivamente.',
 };
 
