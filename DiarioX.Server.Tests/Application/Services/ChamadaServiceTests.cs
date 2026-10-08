@@ -58,14 +58,12 @@ public class ChamadaServiceTests
 
         var request = f.Request(Fixture.MatematicaId, quantidadeAulas: 2,
             (Fixture.AnaId, "PRESENTE", null), (Fixture.BrunoId, "falta_justificada", "Atestado médico"));
-        request.Conteudo = "  Frações  ";
 
         var result = await f.Service.CreateAsync(UsuarioProfessor, request);
 
         Assert.True(result.Success, result.Message);
         Assert.NotNull(gravada);
         Assert.Equal(2, gravada!.QuantidadeAulas);
-        Assert.Equal("Frações", gravada.Conteudo);
         Assert.Equal(UsuarioProfessor.UsuarioId, gravada.RegistradoPorUsuarioId);
         var bruno = gravada.Registros.Single(r => r.AlunoId == Fixture.BrunoId);
         Assert.Equal(ChamadaAluno.SituacaoFaltaJustificada, bruno.Situacao);

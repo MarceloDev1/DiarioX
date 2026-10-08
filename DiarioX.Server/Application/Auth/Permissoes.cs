@@ -43,6 +43,9 @@ public static class Permissoes
         // Enturmar e remanejar alteram a situação do aluno: exigem "alunos.editar".
         new("alunos", "Alunos", Crud),
         new("chamada", "Chamada", Crud),
+        new("conteudo-ministrado", "Conteúdo Ministrado", Crud),
+        // Catálogo de habilidades da BNCC usado nas sugestões do conteúdo ministrado.
+        new("habilidades-bncc", "Habilidades BNCC", Crud),
         // Cada relatório também exige ver o módulo dos dados que exibe (ex.: alunos.visualizar).
         new("relatorios", "Relatórios", [Visualizar]),
         new("usuarios", "Usuários", Crud),
@@ -136,6 +139,22 @@ public static class Permissoes
         public const string Excluir = "chamada.excluir";
     }
 
+    public static class ConteudoMinistrado
+    {
+        public const string Visualizar = "conteudo-ministrado.visualizar";
+        public const string Criar = "conteudo-ministrado.criar";
+        public const string Editar = "conteudo-ministrado.editar";
+        public const string Excluir = "conteudo-ministrado.excluir";
+    }
+
+    public static class HabilidadesBncc
+    {
+        public const string Visualizar = "habilidades-bncc.visualizar";
+        public const string Criar = "habilidades-bncc.criar";
+        public const string Editar = "habilidades-bncc.editar";
+        public const string Excluir = "habilidades-bncc.excluir";
+    }
+
     public static class Relatorios
     {
         public const string Visualizar = "relatorios.visualizar";
@@ -177,6 +196,7 @@ public static class Permissoes
                     Professores.Criar, Professores.Editar,
                     AlocacaoProfessor.Criar, AlocacaoProfessor.Excluir,
                     Chamada.Criar, Chamada.Editar,
+                    ConteudoMinistrado.Criar, ConteudoMinistrado.Editar,
                 ])
                 .ToList();
         }
@@ -186,7 +206,9 @@ public static class Permissoes
 
         if (Is(perfilNome, Perfil.Professor))
             return ["turmas.visualizar", "disciplinas.visualizar", Alunos.Visualizar,
-                Chamada.Visualizar, Chamada.Criar, Chamada.Editar, CalendarioLetivo.Visualizar];
+                Chamada.Visualizar, Chamada.Criar, Chamada.Editar, CalendarioLetivo.Visualizar,
+                ConteudoMinistrado.Visualizar, ConteudoMinistrado.Criar, ConteudoMinistrado.Editar, ConteudoMinistrado.Excluir,
+                HabilidadesBncc.Visualizar];
 
         return [];
     }

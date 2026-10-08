@@ -47,7 +47,6 @@ export interface Chamada {
     disciplinaId: number | null;
     data: string;
     quantidadeAulas: number;
-    conteudo: string | null;
     registradoPor: string | null;
     registradoEm: string | null;
     atualizadoPor: string | null;
@@ -66,7 +65,6 @@ export interface ChamadaResumo {
     presentes: number;
     faltas: number;
     faltasJustificadas: number;
-    conteudo: string | null;
     registradoPor: string | null;
     registradoEm: string;
 }

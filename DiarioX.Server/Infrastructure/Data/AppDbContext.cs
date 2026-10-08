@@ -61,6 +61,10 @@ public class AppDbContext : DbContext
     public DbSet<AlunoTurma> AlunosTurmas => Set<AlunoTurma>();
     public DbSet<Chamada> Chamadas => Set<Chamada>();
     public DbSet<ChamadaAluno> ChamadasAlunos => Set<ChamadaAluno>();
+    public DbSet<HabilidadeBncc> HabilidadesBncc => Set<HabilidadeBncc>();
+    public DbSet<HabilidadeBnccEtapaEnsino> HabilidadesBnccEtapasEnsino => Set<HabilidadeBnccEtapaEnsino>();
+    public DbSet<ConteudoMinistrado> ConteudosMinistrados => Set<ConteudoMinistrado>();
+    public DbSet<ConteudoMinistradoHabilidade> ConteudosMinistradosHabilidades => Set<ConteudoMinistradoHabilidade>();
     public DbSet<Transferencia> Transferencias => Set<Transferencia>();
     public DbSet<PlanoAssinatura> PlanosAssinatura => Set<PlanoAssinatura>();
     public DbSet<Assinatura> Assinaturas => Set<Assinatura>();
@@ -96,6 +100,10 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AlunoTurmaConfiguration());
         modelBuilder.ApplyConfiguration(new ChamadaConfiguration());
         modelBuilder.ApplyConfiguration(new ChamadaAlunoConfiguration());
+        modelBuilder.ApplyConfiguration(new HabilidadeBnccConfiguration());
+        modelBuilder.ApplyConfiguration(new HabilidadeBnccEtapaEnsinoConfiguration());
+        modelBuilder.ApplyConfiguration(new ConteudoMinistradoConfiguration());
+        modelBuilder.ApplyConfiguration(new ConteudoMinistradoHabilidadeConfiguration());
         modelBuilder.ApplyConfiguration(new TransferenciaConfiguration());
         modelBuilder.ApplyConfiguration(new PlanoAssinaturaConfiguration());
         modelBuilder.ApplyConfiguration(new AssinaturaConfiguration());
@@ -172,6 +180,10 @@ public class AppDbContext : DbContext
             c => !EscopoPorEscola || EscolasPermitidas.Contains(c.Turma.EscolaId));
         modelBuilder.Entity<ChamadaAluno>().HasQueryFilter(FiltroEscola,
             r => !EscopoPorEscola || EscolasPermitidas.Contains(r.Chamada.Turma.EscolaId));
+        modelBuilder.Entity<ConteudoMinistrado>().HasQueryFilter(FiltroEscola,
+            c => !EscopoPorEscola || EscolasPermitidas.Contains(c.Turma.EscolaId));
+        modelBuilder.Entity<ConteudoMinistradoHabilidade>().HasQueryFilter(FiltroEscola,
+            h => !EscopoPorEscola || EscolasPermitidas.Contains(h.ConteudoMinistrado.Turma.EscolaId));
         modelBuilder.Entity<Transferencia>().HasQueryFilter(FiltroEscola,
             t => !EscopoPorEscola || EscolasPermitidas.Contains(t.EscolaOrigemId));
         // O calendário da rede (sem escola) vale para todas as escolas e aparece para todos.

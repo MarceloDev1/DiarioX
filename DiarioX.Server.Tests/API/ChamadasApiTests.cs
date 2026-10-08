@@ -52,7 +52,6 @@ public class ChamadasApiTests : IClassFixture<TenancyApiFactory>
             disciplinaId = _cenario.HistoriaId,
             data = data.ToString("yyyy-MM-dd"),
             quantidadeAulas = 2,
-            conteudo = "Frações",
             alunos = new object[]
             {
                 new { alunoId = _cenario.AnaId, situacao = "PRESENTE" },
@@ -74,7 +73,6 @@ public class ChamadasApiTests : IClassFixture<TenancyApiFactory>
         var alteracao = await client.PutAsJsonAsync($"/api/chamadas/{chamadaId}", new
         {
             quantidadeAulas = 2,
-            conteudo = "Frações equivalentes",
             alunos = new object[]
             {
                 new { alunoId = _cenario.AnaId, situacao = "PRESENTE" },

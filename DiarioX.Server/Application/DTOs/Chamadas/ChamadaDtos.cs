@@ -41,7 +41,6 @@ public record ChamadaResponse(
     int? DisciplinaId,
     DateOnly Data,
     int QuantidadeAulas,
-    string? Conteudo,
     string? RegistradoPor,
     DateTime? RegistradoEm,
     string? AtualizadoPor,
@@ -68,7 +67,6 @@ public class ChamadaRequest
     public int? DisciplinaId { get; set; }
     public DateOnly Data { get; set; }
     public int QuantidadeAulas { get; set; } = 1;
-    public string? Conteudo { get; set; }
     public List<ChamadaAlunoRequest> Alunos { get; set; } = new();
 }
 
@@ -81,7 +79,6 @@ public record ChamadaResumoResponse(
     int Presentes,
     int Faltas,
     int FaltasJustificadas,
-    string? Conteudo,
     string? RegistradoPor,
     DateTime RegistradoEm
 );

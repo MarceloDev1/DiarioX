@@ -18,7 +18,6 @@ public class ChamadaConfiguration : IEntityTypeConfiguration<Chamada>
         builder.Property(x => x.DisciplinaId).HasColumnName("disciplina_id");
         builder.Property(x => x.Data).HasColumnName("data").HasColumnType("date").IsRequired();
         builder.Property(x => x.QuantidadeAulas).HasColumnName("quantidade_aulas").HasDefaultValue(1).IsRequired();
-        builder.Property(x => x.Conteudo).HasColumnName("conteudo").HasMaxLength(2000);
         builder.Property(x => x.RegistradoPorUsuarioId).HasColumnName("registrado_por_usuario_id").IsRequired();
         builder.Property(x => x.AtualizadoPorUsuarioId).HasColumnName("atualizado_por_usuario_id");
         builder.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");

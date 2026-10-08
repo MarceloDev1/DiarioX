@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './Sidebar.css';
 import type { IconType } from 'react-icons';
-import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiUserMinus, FiLogOut, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare, FiDollarSign, FiCreditCard, FiBarChart2, FiCalendar } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiUserMinus, FiLogOut, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare, FiDollarSign, FiCreditCard, FiBarChart2, FiCalendar, FiEdit3, FiTarget } from 'react-icons/fi';
 import { MdSchool, MdPeople, MdManageAccounts } from 'react-icons/md';
 import { usePermissoes } from '../hooks/usePermissoes';
 import { permissaoDaPagina } from '../utils/permissoes';
@@ -48,6 +48,7 @@ const menuItems: MenuItem[] = [
         { id: 'calendario-letivo', label: 'Calendário Letivo', icon: FiCalendar },
         { id: 'disciplinas', label: 'Disciplinas', icon: FiBook },
         { id: 'turmas', label: 'Turmas', icon: FiUsers },
+        { id: 'habilidades-bncc', label: 'Habilidades BNCC', icon: FiTarget },
     ] },
     { id: 'professor', label: 'Professores', icon: FiUsers, submenu: [
         { id: 'professores', label: 'Cadastrar Professor', icon: FiUsers },
@@ -61,6 +62,7 @@ const menuItems: MenuItem[] = [
         { id: 'transferir-aluno', label: 'Transferência Externa', icon: FiLogOut },
     ] },
     { id: 'chamada', label: 'Chamada', icon: FiCheckSquare },
+    { id: 'conteudo-ministrado', label: 'Conteúdo Ministrado', icon: FiEdit3 },
     { id: 'relatorios', label: 'Relatórios', icon: FiBarChart2 },
     { id: 'configuracoes', label: 'Configurações', icon: FiSettings, submenu: [
         { id: 'usuarios', label: 'Usuários', icon: FiUser },

@@ -19,9 +19,6 @@ public class Chamada : ITenantEntity
     public DateOnly Data { get; set; }
     public int QuantidadeAulas { get; set; } = 1;
 
-    /// <summary>Conteúdo ministrado na aula, como no diário de classe.</summary>
-    public string? Conteudo { get; set; }
-
     // Sem navegação: o Administrador global (usuário sem instituição) também lança chamadas,
     // e o filtro de tenant de User o esconderia num Include.
     public int RegistradoPorUsuarioId { get; set; }
