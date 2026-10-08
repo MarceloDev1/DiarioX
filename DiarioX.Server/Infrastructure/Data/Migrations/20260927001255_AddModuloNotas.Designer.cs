@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DiarioX.Server.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261008014909_AddModuloNotas")]
+    [Migration("20260927001255_AddModuloNotas")]
     partial class AddModuloNotas
     {
         /// <inheritdoc />
@@ -201,16 +201,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("date")
                         .HasColumnName("data_inicio");
 
-                    b.Property<string>("MotivoDesenturmacao")
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("motivo_desenturmacao");
-
-                    b.Property<string>("ObservacaoDesenturmacao")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("observacao_desenturmacao");
-
                     b.Property<int>("TenantId")
                         .HasColumnType("integer")
                         .HasColumnName("tenant_id");
@@ -236,9 +226,7 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
 
                     b.ToTable("alunos_turmas", null, t =>
                         {
-                            t.HasCheckConstraint("CK_alunos_turmas_motivo_desenturmacao", "motivo_desenturmacao IS NULL OR motivo_desenturmacao IN ('REESTRUTURACAO_INTERNA', 'NAO_COMPARECEU', 'FALECIMENTO', 'ERRO_MATRICULA_ENTURMACAO', 'OUTROS', 'TRANSFERENCIA', 'REMANEJAMENTO')");
-
-                            t.HasCheckConstraint("CK_alunos_turmas_periodo", "data_fim IS NULL OR data_fim >= data_inicio - 1");
+                            t.HasCheckConstraint("CK_alunos_turmas_periodo", "data_fim IS NULL OR data_fim >= data_inicio");
                         });
                 });
 
@@ -505,66 +493,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.CalendarioLetivo", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AnoLetivoId")
-                        .HasColumnType("integer")
-                        .HasColumnName("ano_letivo_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<int?>("EscolaId")
-                        .HasColumnType("integer")
-                        .HasColumnName("escola_id");
-
-                    b.Property<DateTime?>("PublicadoEm")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("publicado_em");
-
-                    b.Property<int?>("PublicadoPorUsuarioId")
-                        .HasColumnType("integer")
-                        .HasColumnName("publicado_por_usuario_id");
-
-                    b.Property<int>("TenantId")
-                        .HasColumnType("integer")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AnoLetivoId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_calendarios_letivos_ano_rede")
-                        .HasFilter("escola_id IS NULL");
-
-                    b.HasIndex("EscolaId");
-
-                    b.HasIndex("PublicadoPorUsuarioId");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("AnoLetivoId", "EscolaId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_calendarios_letivos_ano_escola")
-                        .HasFilter("escola_id IS NOT NULL");
-
-                    b.ToTable("calendarios_letivos", (string)null);
-                });
-
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.Chamada", b =>
                 {
                     b.Property<int>("Id")
@@ -578,6 +506,11 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("atualizado_por_usuario_id");
 
+                    b.Property<string>("Conteudo")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("conteudo");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -588,7 +521,7 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("date")
                         .HasColumnName("data");
 
-                    b.Property<int?>("DisciplinaId")
+                    b.Property<int>("DisciplinaId")
                         .HasColumnType("integer")
                         .HasColumnName("disciplina_id");
 
@@ -623,11 +556,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.HasIndex("RegistradoPorUsuarioId");
 
                     b.HasIndex("TurmaId");
-
-                    b.HasIndex("TenantId", "TurmaId", "Data")
-                        .IsUnique()
-                        .HasDatabaseName("IX_chamadas_turma_data_diaria")
-                        .HasFilter("disciplina_id IS NULL");
 
                     b.HasIndex("TenantId", "TurmaId", "DisciplinaId", "Data")
                         .IsUnique()
@@ -686,107 +614,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_chamadas_alunos_situacao", "situacao IN ('PRESENTE', 'FALTA', 'FALTA_JUSTIFICADA')");
                         });
-                });
-
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.ConteudoMinistrado", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("AtualizadoPorUsuarioId")
-                        .HasColumnType("integer")
-                        .HasColumnName("atualizado_por_usuario_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<DateOnly>("Data")
-                        .HasColumnType("date")
-                        .HasColumnName("data");
-
-                    b.Property<string>("Descricao")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("descricao");
-
-                    b.Property<int>("DisciplinaId")
-                        .HasColumnType("integer")
-                        .HasColumnName("disciplina_id");
-
-                    b.Property<int>("RegistradoPorUsuarioId")
-                        .HasColumnType("integer")
-                        .HasColumnName("registrado_por_usuario_id");
-
-                    b.Property<int>("TenantId")
-                        .HasColumnType("integer")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<int>("TurmaId")
-                        .HasColumnType("integer")
-                        .HasColumnName("turma_id");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AtualizadoPorUsuarioId");
-
-                    b.HasIndex("DisciplinaId");
-
-                    b.HasIndex("RegistradoPorUsuarioId");
-
-                    b.HasIndex("TurmaId");
-
-                    b.HasIndex("TenantId", "TurmaId", "DisciplinaId", "Data")
-                        .IsUnique()
-                        .HasDatabaseName("IX_conteudos_ministrados_turma_disciplina_data");
-
-                    b.ToTable("conteudos_ministrados", (string)null);
-                });
-
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.ConteudoMinistradoHabilidade", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ConteudoMinistradoId")
-                        .HasColumnType("integer")
-                        .HasColumnName("conteudo_ministrado_id");
-
-                    b.Property<int>("HabilidadeBnccId")
-                        .HasColumnType("integer")
-                        .HasColumnName("habilidade_bncc_id");
-
-                    b.Property<int>("TenantId")
-                        .HasColumnType("integer")
-                        .HasColumnName("tenant_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("HabilidadeBnccId")
-                        .HasDatabaseName("IX_conteudos_ministrados_habilidades_habilidade");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("ConteudoMinistradoId", "HabilidadeBnccId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_conteudos_ministrados_habilidades_unicidade");
-
-                    b.ToTable("conteudos_ministrados_habilidades", (string)null);
                 });
 
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.Disciplina", b =>
@@ -1133,14 +960,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("tenant_id");
 
-                    b.Property<string>("TipoFrequencia")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasDefaultValue("POR_AULA")
-                        .HasColumnName("tipo_frequencia");
-
                     b.HasKey("Id");
 
                     b.HasIndex("RegraAvaliacaoId");
@@ -1157,61 +976,7 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_etapas_ensino_sigla");
 
-                    b.ToTable("etapas_ensino", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_etapas_ensino_tipo_frequencia", "tipo_frequencia IN ('POR_AULA', 'DIARIA')");
-                        });
-                });
-
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.EventoCalendario", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CalendarioLetivoId")
-                        .HasColumnType("integer")
-                        .HasColumnName("calendario_letivo_id");
-
-                    b.Property<bool>("ComAula")
-                        .HasColumnType("boolean")
-                        .HasColumnName("com_aula");
-
-                    b.Property<DateOnly>("Data")
-                        .HasColumnType("date")
-                        .HasColumnName("data");
-
-                    b.Property<string>("Descricao")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)")
-                        .HasColumnName("descricao");
-
-                    b.Property<int>("TenantId")
-                        .HasColumnType("integer")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Tipo")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("tipo");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("CalendarioLetivoId", "Data")
-                        .IsUnique()
-                        .HasDatabaseName("IX_eventos_calendario_calendario_data");
-
-                    b.ToTable("eventos_calendario", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_eventos_calendario_tipo", "tipo IN ('FERIADO', 'RECESSO', 'PONTO_FACULTATIVO', 'CONSELHO_CLASSE', 'PLANTAO_PEDAGOGICO', 'FORMACAO_CONTINUADA', 'SABADO_LETIVO')");
-                        });
+                    b.ToTable("etapas_ensino", (string)null);
                 });
 
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.FaturaAssinatura", b =>
@@ -1362,88 +1127,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_faturas_assinatura_situacao", "situacao IN ('PENDENTE', 'PAGA', 'VENCIDA', 'CANCELADA', 'ESTORNADA')");
                         });
-                });
-
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.HabilidadeBncc", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Ativa")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("ativa");
-
-                    b.Property<string>("Codigo")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("codigo");
-
-                    b.Property<string>("Descricao")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("descricao");
-
-                    b.Property<int>("DisciplinaId")
-                        .HasColumnType("integer")
-                        .HasColumnName("disciplina_id");
-
-                    b.Property<int>("TenantId")
-                        .HasColumnType("integer")
-                        .HasColumnName("tenant_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DisciplinaId")
-                        .HasDatabaseName("IX_habilidades_bncc_disciplina");
-
-                    b.HasIndex("TenantId", "Codigo")
-                        .IsUnique()
-                        .HasDatabaseName("IX_habilidades_bncc_codigo");
-
-                    b.ToTable("habilidades_bncc", (string)null);
-                });
-
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.HabilidadeBnccEtapaEnsino", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("EtapaEnsinoId")
-                        .HasColumnType("integer")
-                        .HasColumnName("etapa_ensino_id");
-
-                    b.Property<int>("HabilidadeBnccId")
-                        .HasColumnType("integer")
-                        .HasColumnName("habilidade_bncc_id");
-
-                    b.Property<int>("TenantId")
-                        .HasColumnType("integer")
-                        .HasColumnName("tenant_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EtapaEnsinoId")
-                        .HasDatabaseName("IX_habilidades_bncc_etapas_ensino_etapa");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("HabilidadeBnccId", "EtapaEnsinoId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_habilidades_bncc_etapas_ensino_unicidade");
-
-                    b.ToTable("habilidades_bncc_etapas_ensino", (string)null);
                 });
 
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.ModalidadeEnsino", b =>
@@ -1684,16 +1367,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.Property<DateOnly>("DataTermino")
                         .HasColumnType("date")
                         .HasColumnName("data_termino");
-
-                    b.Property<bool>("Encerrado")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("encerrado");
-
-                    b.Property<DateTime?>("EncerradoEm")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("encerrado_em");
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -2141,85 +1814,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.Transferencia", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AlunoId")
-                        .HasColumnType("integer")
-                        .HasColumnName("aluno_id");
-
-                    b.Property<int>("AnoLetivoId")
-                        .HasColumnType("integer")
-                        .HasColumnName("ano_letivo_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<DateOnly>("DataTransferencia")
-                        .HasColumnType("date")
-                        .HasColumnName("data_transferencia");
-
-                    b.Property<string>("EscolaDestino")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("escola_destino");
-
-                    b.Property<int>("EscolaOrigemId")
-                        .HasColumnType("integer")
-                        .HasColumnName("escola_origem_id");
-
-                    b.Property<string>("Motivo")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("motivo");
-
-                    b.Property<int>("RegistradoPorUsuarioId")
-                        .HasColumnType("integer")
-                        .HasColumnName("registrado_por_usuario_id");
-
-                    b.Property<int>("TenantId")
-                        .HasColumnType("integer")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Tipo")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("tipo");
-
-                    b.Property<int?>("TurmaId")
-                        .HasColumnType("integer")
-                        .HasColumnName("turma_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AnoLetivoId");
-
-                    b.HasIndex("EscolaOrigemId");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("TurmaId");
-
-                    b.HasIndex("AlunoId", "DataTransferencia")
-                        .HasDatabaseName("IX_transferencias_aluno_data");
-
-                    b.ToTable("transferencias", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_transferencias_tipo", "tipo IN ('OUTRA_REDE', 'ENTRE_ESCOLAS_DA_REDE', 'MUDANCA_MUNICIPIO_ESTADO')");
-                        });
-                });
-
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.Turma", b =>
                 {
                     b.Property<int>("Id")
@@ -2549,35 +2143,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.Navigation("Turma");
                 });
 
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.CalendarioLetivo", b =>
-                {
-                    b.HasOne("DiarioX.Server.Domain.Entities.AnoLetivo", "AnoLetivo")
-                        .WithMany()
-                        .HasForeignKey("AnoLetivoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Escola", "Escola")
-                        .WithMany()
-                        .HasForeignKey("EscolaId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("PublicadoPorUsuarioId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("AnoLetivo");
-
-                    b.Navigation("Escola");
-                });
-
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.Chamada", b =>
                 {
                     b.HasOne("DiarioX.Server.Domain.Entities.User", null)
@@ -2588,7 +2153,8 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.HasOne("DiarioX.Server.Domain.Entities.Disciplina", "Disciplina")
                         .WithMany()
                         .HasForeignKey("DisciplinaId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("DiarioX.Server.Domain.Entities.User", null)
                         .WithMany()
@@ -2636,67 +2202,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.Navigation("Aluno");
 
                     b.Navigation("Chamada");
-                });
-
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.ConteudoMinistrado", b =>
-                {
-                    b.HasOne("DiarioX.Server.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("AtualizadoPorUsuarioId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Disciplina", "Disciplina")
-                        .WithMany()
-                        .HasForeignKey("DisciplinaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("RegistradoPorUsuarioId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Turma", "Turma")
-                        .WithMany()
-                        .HasForeignKey("TurmaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Disciplina");
-
-                    b.Navigation("Turma");
-                });
-
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.ConteudoMinistradoHabilidade", b =>
-                {
-                    b.HasOne("DiarioX.Server.Domain.Entities.ConteudoMinistrado", "ConteudoMinistrado")
-                        .WithMany("Habilidades")
-                        .HasForeignKey("ConteudoMinistradoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.HabilidadeBncc", "HabilidadeBncc")
-                        .WithMany()
-                        .HasForeignKey("HabilidadeBnccId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ConteudoMinistrado");
-
-                    b.Navigation("HabilidadeBncc");
                 });
 
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.Disciplina", b =>
@@ -2783,23 +2288,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.Navigation("RegraAvaliacao");
                 });
 
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.EventoCalendario", b =>
-                {
-                    b.HasOne("DiarioX.Server.Domain.Entities.CalendarioLetivo", "CalendarioLetivo")
-                        .WithMany("Eventos")
-                        .HasForeignKey("CalendarioLetivoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CalendarioLetivo");
-                });
-
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.FaturaAssinatura", b =>
                 {
                     b.HasOne("DiarioX.Server.Domain.Entities.Assinatura", "Assinatura")
@@ -2815,48 +2303,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Assinatura");
-                });
-
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.HabilidadeBncc", b =>
-                {
-                    b.HasOne("DiarioX.Server.Domain.Entities.Disciplina", "Disciplina")
-                        .WithMany()
-                        .HasForeignKey("DisciplinaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Disciplina");
-                });
-
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.HabilidadeBnccEtapaEnsino", b =>
-                {
-                    b.HasOne("DiarioX.Server.Domain.Entities.EtapaEnsino", "EtapaEnsino")
-                        .WithMany()
-                        .HasForeignKey("EtapaEnsinoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.HabilidadeBncc", "HabilidadeBncc")
-                        .WithMany("EtapasEnsino")
-                        .HasForeignKey("HabilidadeBnccId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("EtapaEnsino");
-
-                    b.Navigation("HabilidadeBncc");
                 });
 
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.ModalidadeEnsino", b =>
@@ -3057,46 +2503,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.Transferencia", b =>
-                {
-                    b.HasOne("DiarioX.Server.Domain.Entities.Aluno", "Aluno")
-                        .WithMany()
-                        .HasForeignKey("AlunoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.AnoLetivo", "AnoLetivo")
-                        .WithMany()
-                        .HasForeignKey("AnoLetivoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Escola", "EscolaOrigem")
-                        .WithMany()
-                        .HasForeignKey("EscolaOrigemId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DiarioX.Server.Domain.Entities.Turma", "Turma")
-                        .WithMany()
-                        .HasForeignKey("TurmaId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Aluno");
-
-                    b.Navigation("AnoLetivo");
-
-                    b.Navigation("EscolaOrigem");
-
-                    b.Navigation("Turma");
-                });
-
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.Turma", b =>
                 {
                     b.HasOne("DiarioX.Server.Domain.Entities.AnoLetivo", "AnoLetivo")
@@ -3182,19 +2588,9 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.Navigation("Notas");
                 });
 
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.CalendarioLetivo", b =>
-                {
-                    b.Navigation("Eventos");
-                });
-
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.Chamada", b =>
                 {
                     b.Navigation("Registros");
-                });
-
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.ConteudoMinistrado", b =>
-                {
-                    b.Navigation("Habilidades");
                 });
 
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.Disciplina", b =>
@@ -3205,11 +2601,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.EmailTemplate", b =>
                 {
                     b.Navigation("EmailLogs");
-                });
-
-            modelBuilder.Entity("DiarioX.Server.Domain.Entities.HabilidadeBncc", b =>
-                {
-                    b.Navigation("EtapasEnsino");
                 });
 
             modelBuilder.Entity("DiarioX.Server.Domain.Entities.Professor", b =>

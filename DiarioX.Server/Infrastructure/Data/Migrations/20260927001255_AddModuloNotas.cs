@@ -227,7 +227,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.SetNull);
 
-
             // Instituições que já têm matriz de permissões recebem os módulos novos com o mesmo padrão
             // de Permissoes.PadraoDoPerfil. As que ainda não têm recebem a matriz completa no startup.
             migrationBuilder.Sql("""
