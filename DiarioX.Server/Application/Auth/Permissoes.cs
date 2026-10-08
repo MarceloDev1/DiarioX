@@ -37,6 +37,7 @@ public static class Permissoes
         // Editar inclui publicar o calendário.
         new("calendario-letivo", "Calendário Letivo", [Visualizar, Editar]),
         new("disciplinas", "Disciplinas", Crud),
+        new("regras-avaliacao", "Regras de Avaliação", Crud),
         new("turmas", "Turmas", Crud),
         new("professores", "Professores", Crud),
         new("alocacao-professor", "Alocação de Professor", [Visualizar, Criar, Excluir]),
@@ -46,6 +47,8 @@ public static class Permissoes
         new("conteudo-ministrado", "Conteúdo Ministrado", Crud),
         // Catálogo de habilidades da BNCC usado nas sugestões do conteúdo ministrado.
         new("habilidades-bncc", "Habilidades BNCC", Crud),
+        // Criar = cadastrar avaliações e lançar notas; Editar = alterar avaliações; Excluir = excluir avaliações.
+        new("notas", "Notas", Crud),
         // Cada relatório também exige ver o módulo dos dados que exibe (ex.: alunos.visualizar).
         new("relatorios", "Relatórios", [Visualizar]),
         new("usuarios", "Usuários", Crud),
@@ -98,6 +101,14 @@ public static class Permissoes
         public const string Criar = "disciplinas.criar";
         public const string Editar = "disciplinas.editar";
         public const string Excluir = "disciplinas.excluir";
+    }
+
+    public static class RegrasAvaliacao
+    {
+        public const string Visualizar = "regras-avaliacao.visualizar";
+        public const string Criar = "regras-avaliacao.criar";
+        public const string Editar = "regras-avaliacao.editar";
+        public const string Excluir = "regras-avaliacao.excluir";
     }
 
     public static class Turmas
@@ -155,6 +166,14 @@ public static class Permissoes
         public const string Excluir = "habilidades-bncc.excluir";
     }
 
+    public static class Notas
+    {
+        public const string Visualizar = "notas.visualizar";
+        public const string Criar = "notas.criar";
+        public const string Editar = "notas.editar";
+        public const string Excluir = "notas.excluir";
+    }
+
     public static class Relatorios
     {
         public const string Visualizar = "relatorios.visualizar";
@@ -197,6 +216,7 @@ public static class Permissoes
                     AlocacaoProfessor.Criar, AlocacaoProfessor.Excluir,
                     Chamada.Criar, Chamada.Editar,
                     ConteudoMinistrado.Criar, ConteudoMinistrado.Editar,
+                    Notas.Criar, Notas.Editar,
                 ])
                 .ToList();
         }
@@ -208,7 +228,8 @@ public static class Permissoes
             return ["turmas.visualizar", "disciplinas.visualizar", Alunos.Visualizar,
                 Chamada.Visualizar, Chamada.Criar, Chamada.Editar, CalendarioLetivo.Visualizar,
                 ConteudoMinistrado.Visualizar, ConteudoMinistrado.Criar, ConteudoMinistrado.Editar, ConteudoMinistrado.Excluir,
-                HabilidadesBncc.Visualizar];
+                HabilidadesBncc.Visualizar,
+                Notas.Visualizar, Notas.Criar, Notas.Editar, Notas.Excluir];
 
         return [];
     }

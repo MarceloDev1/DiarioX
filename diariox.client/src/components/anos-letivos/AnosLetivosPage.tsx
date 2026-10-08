@@ -15,6 +15,7 @@ interface PeriodoAvaliativo {
     dataInicio: string;
     dataTermino: string;
     encerrado: boolean;
+    prazoLancamentoNotas: string | null;
 }
 
 interface AnoLetivo {
@@ -33,6 +34,8 @@ interface PeriodoForm {
     dataTermino: string;
     /** RF017 EX02: período encerrado; as datas só mudam depois de reaberto. */
     encerrado: boolean;
+    /** Último dia para lançar avaliações e notas do período (vazio = sem prazo). */
+    prazoLancamentoNotas: string;
 }
 
 interface AnoLetivoForm {
@@ -59,6 +62,7 @@ function generatePeriodos(tipoPeriodo: string, existing?: PeriodoAvaliativo[]): 
         dataInicio: existing?.[i]?.dataInicio ?? '',
         dataTermino: existing?.[i]?.dataTermino ?? '',
         encerrado: existing?.[i]?.encerrado ?? false,
+        prazoLancamentoNotas: existing?.[i]?.prazoLancamentoNotas ?? '',
     }));
 }
 
@@ -153,7 +157,7 @@ function AnosLetivosPage() {
         setPeriodos(generatePeriodos(newTipo));
     };
 
-    const handlePeriodoChange = (index: number, field: 'dataInicio' | 'dataTermino', value: string) => {
+    const handlePeriodoChange = (index: number, field: 'dataInicio' | 'dataTermino' | 'prazoLancamentoNotas', value: string) => {
         setPeriodos(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p));
     };
 
@@ -198,6 +202,7 @@ function AnosLetivosPage() {
                 numero: p.numero,
                 dataInicio: p.dataInicio,
                 dataTermino: p.dataTermino,
+                prazoLancamentoNotas: p.prazoLancamentoNotas || null,
             })),
         };
 
@@ -416,6 +421,17 @@ function AnosLetivosPage() {
                                                         disabled={p.encerrado}
                                                         required
                                                     />
+                                                </div>
+                                                <div className="form-field">
+                                                    <label htmlFor={`p-prazo-${i}`}>Prazo para lançar notas</label>
+                                                    <input
+                                                        id={`p-prazo-${i}`}
+                                                        type="date"
+                                                        value={p.prazoLancamentoNotas}
+                                                        min={p.dataInicio || undefined}
+                                                        onChange={e => handlePeriodoChange(i, 'prazoLancamentoNotas', e.target.value)}
+                                                    />
+                                                    <span className="field-hint">Depois dessa data, avaliações e notas do período ficam bloqueadas. Vazio = sem prazo.</span>
                                                 </div>
                                             </div>
                                         </div>

@@ -67,13 +67,25 @@ public class AnoLetivoRepository : IAnoLetivoRepository
         existing.DataTermino = entity.DataTermino;
         existing.TipoPeriodo = entity.TipoPeriodo;
 
-        // Os períodos são recriados; o encerramento (RF017 EX02) acompanha o número do período.
-        var anteriores = existing.Periodos.ToDictionary(p => p.Numero);
-        _context.PeriodosAvaliativos.RemoveRange(existing.Periodos);
-
-        foreach (var periodo in entity.Periodos)
+        // Casa os períodos pelo número para preservar os Ids: as avaliações apontam para eles.
+        var novos = entity.Periodos.ToDictionary(p => p.Numero);
+        foreach (var periodo in existing.Periodos.ToList())
         {
-            anteriores.TryGetValue(periodo.Numero, out var anterior);
+            if (novos.Remove(periodo.Numero, out var novo))
+            {
+                periodo.Nome = novo.Nome;
+                periodo.DataInicio = novo.DataInicio;
+                periodo.DataTermino = novo.DataTermino;
+                periodo.PrazoLancamentoNotas = novo.PrazoLancamentoNotas;
+            }
+            else
+            {
+                _context.PeriodosAvaliativos.Remove(periodo);
+            }
+        }
+
+        foreach (var periodo in novos.Values)
+        {
             existing.Periodos.Add(new PeriodoAvaliativo
             {
                 AnoLetivoId = existing.Id,
@@ -81,8 +93,7 @@ public class AnoLetivoRepository : IAnoLetivoRepository
                 Numero = periodo.Numero,
                 DataInicio = periodo.DataInicio,
                 DataTermino = periodo.DataTermino,
-                Encerrado = anterior?.Encerrado ?? false,
-                EncerradoEm = anterior?.EncerradoEm,
+                PrazoLancamentoNotas = periodo.PrazoLancamentoNotas,
             });
         }
 
@@ -95,6 +106,18 @@ public class AnoLetivoRepository : IAnoLetivoRepository
         atual.Encerrado = encerrado;
         atual.EncerradoEm = encerrado ? DateTime.UtcNow : null;
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> PeriodosPossuemAvaliacoesAsync(IEnumerable<int> periodoIds)
+    {
+        var ids = periodoIds.ToList();
+        if (ids.Count == 0)
+            return false;
+
+        // O ano letivo é da rede toda: considera as avaliações de todas as escolas.
+        return await _context.Avaliacoes
+            .IgnoreQueryFilters([AppDbContext.FiltroEscola])
+            .AnyAsync(a => ids.Contains(a.PeriodoAvaliativoId));
     }
 
     public async Task DeleteAsync(AnoLetivo entity)

@@ -1,0 +1,215 @@
+/* Notas: lançamento por período, médias e regras de avaliação */
+
+.regra-resumo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    align-self: flex-end;
+    padding: 0.55rem 0.85rem;
+    border: 1px solid #e0e8f0;
+    border-radius: 8px;
+    background: #f9fbfd;
+    color: #44536b;
+    font-size: 0.85rem;
+}
+
+.regra-resumo-nome {
+    color: #0f3460;
+    font-weight: 700;
+}
+
+.avaliacao-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px dashed #c7d6ea;
+    border-radius: 10px;
+    background: #f7fafc;
+}
+
+.avaliacao-form-campos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: flex-end;
+}
+
+.avaliacao-form-nome {
+    flex: 1 1 240px;
+}
+
+.avaliacao-form-numero input {
+    width: 7rem;
+}
+
+.avaliacao-form .form-actions {
+    margin-top: 0;
+}
+
+.notas-table th,
+.notas-table td {
+    vertical-align: middle;
+}
+
+.nota-coluna {
+    min-width: 7.5rem;
+    text-align: center;
+}
+
+.nota-coluna-recuperacao {
+    background: #fffaf0;
+}
+
+.nota-coluna-nome {
+    display: block;
+    max-width: 10rem;
+    margin: 0 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nota-coluna-meta {
+    display: block;
+    color: #5b6475;
+    font-size: 0.75rem;
+    font-weight: 400;
+}
+
+.nota-coluna-acoes {
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 0.2rem;
+}
+
+.nota-coluna-resultado {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.notas-table td.nota-coluna-recuperacao,
+.notas-table td:has(> .nota-input) {
+    text-align: center;
+}
+
+.link-button {
+    padding: 0;
+    border: none;
+    background: none;
+    color: #1d5fa8;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.link-button:hover:not(:disabled) {
+    text-decoration: underline;
+}
+
+.link-button.danger {
+    color: #b4233a;
+}
+
+.link-button:disabled {
+    color: #9aa3b2;
+    cursor: not-allowed;
+}
+
+.nota-aluno-nome {
+    display: block;
+}
+
+.nota-aluno-meta {
+    display: block;
+    color: #5b6475;
+    font-size: 0.78rem;
+}
+
+.nota-input {
+    width: 4.5rem;
+    padding: 0.4rem 0.45rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.nota-input:focus {
+    outline: 2px solid #8a2be2;
+    outline-offset: 1px;
+    border-color: #8a2be2;
+}
+
+.nota-input:disabled {
+    background: #f4f6f9;
+    color: #44536b;
+}
+
+.nota-input-alterada {
+    border-color: #d97706;
+    background: #fffbeb;
+}
+
+.nota-input-invalida {
+    border-color: #b4233a;
+    background: #fff1f3;
+}
+
+.nota-pendentes {
+    display: block;
+    margin-top: 0.2rem;
+    color: #92580b;
+    font-size: 0.72rem;
+}
+
+.nota-pendente-marca {
+    margin-left: 0.15rem;
+    color: #92580b;
+    font-weight: 700;
+}
+
+.regra-padrao {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+    padding: 0.85rem 1.1rem;
+    border: 1px solid #c7d6ea;
+    border-radius: 10px;
+    background: #eef4fb;
+    color: #26405f;
+}
+
+.regra-etapa-aviso {
+    color: #92580b;
+}
+
+/* EX01: mensagem sob o campo de nota fora do intervalo */
+.nota-erro {
+    display: block;
+    margin-top: 0.2rem;
+    max-width: 14rem;
+    color: #b4233a;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: normal;
+}
+
+/* RN03: aluno que saiu da turma, notas somente leitura */
+.nota-linha-somente-leitura {
+    background: #f6f7f9;
+}
+
+.nota-linha-somente-leitura .nota-input {
+    background: #eceef2;
+    color: #5b6475;
+}
+
+.nota-status-saida {
+    margin-top: 0.25rem;
+    background: #eef0f4;
+    color: #44536b;
+    font-size: 0.72rem;
+}

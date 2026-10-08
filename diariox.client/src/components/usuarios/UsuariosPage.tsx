@@ -439,7 +439,7 @@ function UsuariosPage() {
                                 {filteredUsuarios.map((usuario) => (
                                     <tr key={usuario.id}>
                                         <td>{usuario.email}</td>
-                                        <td>{formatCpf(usuario.cpf)}</td>
+                                        <td className="nowrap-cell">{formatCpf(usuario.cpf)}</td>
                                         <td>
                                             {usuario.dataNascimento
                                                 ? new Date(usuario.dataNascimento).toLocaleDateString('pt-BR')

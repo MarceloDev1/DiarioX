@@ -14,4 +14,7 @@ public class PeriodoAvaliativo : ITenantEntity
     /// <summary>RF017 EX02: período consolidado e fechado pela coordenação; o diário não aceita mais alterações nele.</summary>
     public bool Encerrado { get; set; }
     public DateTime? EncerradoEm { get; set; }
+
+    /// <summary>Último dia para lançar avaliações e notas do período (definido pela gestão); nulo = sem prazo.</summary>
+    public DateOnly? PrazoLancamentoNotas { get; set; }
 }

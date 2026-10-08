@@ -11,4 +11,8 @@ public class Disciplina : ITenantEntity
     
     // Relacionamentos
     public ICollection<DisciplinaEtapaEnsino> EtapasEnsino { get; set; } = new List<DisciplinaEtapaEnsino>();
+
+    /// <summary>Disciplina sem etapas vinculadas vale para qualquer etapa (mesma regra da alocação de professor).</summary>
+    public bool FazParteDaGrade(Turma turma)
+        => EtapasEnsino.Count == 0 || EtapasEnsino.Any(e => e.EtapaEnsinoId == turma.EtapaEnsinoId);
 }

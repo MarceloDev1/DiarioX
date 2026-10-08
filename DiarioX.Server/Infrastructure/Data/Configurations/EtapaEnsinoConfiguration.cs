@@ -49,6 +49,10 @@ public class EtapaEnsinoConfiguration : IEntityTypeConfiguration<EtapaEnsino>
             .HasMaxLength(20)
             .HasDefaultValue(EtapaEnsino.FrequenciaPorAula)
             .IsRequired();
+        // Relacionamento configurado em RegraAvaliacaoConfiguration.
+        builder.Property(x => x.RegraAvaliacaoId)
+            .HasColumnName("regra_avaliacao_id")
+            .IsRequired(false);
 
         builder.HasIndex(x => new { x.TenantId, x.Sigla })
             .HasDatabaseName("IX_etapas_ensino_sigla")

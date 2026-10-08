@@ -52,6 +52,7 @@ public class AnoLetivoService : IAnoLetivoService
                 Numero = p.Numero,
                 DataInicio = p.DataInicio,
                 DataTermino = p.DataTermino,
+                PrazoLancamentoNotas = p.PrazoLancamentoNotas,
             }).ToList(),
         };
 
@@ -78,6 +79,16 @@ public class AnoLetivoService : IAnoLetivoService
                 return Invalid($"O período \"{encerrado.Nome}\" está encerrado e não pode ser alterado. Reabra o período antes de editar.");
         }
 
+        // Os períodos são casados pelo número; os que deixam de existir não podem ter avaliações.
+        var numeros = request.Periodos.Select(p => p.Numero).ToHashSet();
+        var removidos = existing.Periodos.Where(p => !numeros.Contains(p.Numero)).ToList();
+        if (await _repository.PeriodosPossuemAvaliacoesAsync(removidos.Select(p => p.Id)))
+        {
+            var nomes = string.Join(", ", removidos.OrderBy(p => p.Numero).Select(p => p.Nome));
+            return Invalid($"Não é possível remover o(s) período(s) {nomes}: já existem avaliações lançadas. " +
+                           "Exclua as avaliações ou mantenha o tipo de período.");
+        }
+
         var entity = new AnoLetivo
         {
             Id = id,
@@ -91,6 +102,7 @@ public class AnoLetivoService : IAnoLetivoService
                 Numero = p.Numero,
                 DataInicio = p.DataInicio,
                 DataTermino = p.DataTermino,
+                PrazoLancamentoNotas = p.PrazoLancamentoNotas,
             }).ToList(),
         };
 
@@ -150,6 +162,9 @@ public class AnoLetivoService : IAnoLetivoService
         if (request.Periodos.Count != qtdEsperada)
             return Invalid($"O tipo {request.TipoPeriodo} requer exatamente {qtdEsperada} período(s).");
 
+        if (!request.Periodos.Select(p => p.Numero).Order().SequenceEqual(Enumerable.Range(1, qtdEsperada)))
+            return Invalid($"Os períodos devem ser numerados de 1 a {qtdEsperada}.");
+
         for (var i = 0; i < request.Periodos.Count; i++)
         {
             var p = request.Periodos[i];
@@ -158,6 +173,9 @@ public class AnoLetivoService : IAnoLetivoService
 
             if (p.DataInicio >= p.DataTermino)
                 return Invalid($"No período {i + 1}, a data de início deve ser anterior à data de término.");
+
+            if (p.PrazoLancamentoNotas is DateOnly prazo && prazo < p.DataInicio)
+                return Invalid($"No período {i + 1}, o prazo de lançamento de notas não pode ser anterior ao início do período.");
 
             if (p.DataInicio < request.DataInicio || p.DataTermino > request.DataTermino)
                 return Invalid($"O período {i + 1} deve estar dentro do intervalo do ano letivo.");
@@ -181,7 +199,7 @@ public class AnoLetivoService : IAnoLetivoService
             a.DataTermino,
             a.TipoPeriodo,
             a.Periodos.OrderBy(p => p.Numero).Select(p =>
-                new PeriodoAvaliativoResponse(p.Id, p.AnoLetivoId, p.Nome, p.Numero, p.DataInicio, p.DataTermino, p.Encerrado, p.EncerradoEm)
+                new PeriodoAvaliativoResponse(p.Id, p.AnoLetivoId, p.Nome, p.Numero, p.DataInicio, p.DataTermino, p.Encerrado, p.EncerradoEm, p.PrazoLancamentoNotas)
             ).ToList()
         );
 }

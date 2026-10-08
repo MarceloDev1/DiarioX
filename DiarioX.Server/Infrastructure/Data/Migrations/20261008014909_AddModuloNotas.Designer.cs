@@ -3,6 +3,7 @@ using System;
 using DiarioX.Server.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DiarioX.Server.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261008014909_AddModuloNotas")]
+    partial class AddModuloNotas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1702,10 +1705,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("numero");
 
-                    b.Property<DateOnly?>("PrazoLancamentoNotas")
-                        .HasColumnType("date")
-                        .HasColumnName("prazo_lancamento_notas");
-
                     b.Property<int>("TenantId")
                         .HasColumnType("integer")
                         .HasColumnName("tenant_id");
@@ -2061,14 +2060,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("permite_recuperacao");
 
-                    b.Property<string>("SubstituicaoRecuperacao")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasDefaultValue("SUBSTITUI_MEDIA")
-                        .HasColumnName("substituicao_recuperacao");
-
                     b.Property<int>("TenantId")
                         .HasColumnType("integer")
                         .HasColumnName("tenant_id");
@@ -2090,8 +2081,6 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                             t.HasCheckConstraint("CK_regras_avaliacao_casas", "casas_decimais BETWEEN 0 AND 2");
 
                             t.HasCheckConstraint("CK_regras_avaliacao_media", "media_aprovacao > 0 AND media_aprovacao <= nota_maxima");
-
-                            t.HasCheckConstraint("CK_regras_avaliacao_substituicao", "substituicao_recuperacao IN ('SUBSTITUI_MEDIA', 'MEDIA_COM_RECUPERACAO', 'LIMITADA_A_MEDIA_APROVACAO')");
                         });
                 });
 

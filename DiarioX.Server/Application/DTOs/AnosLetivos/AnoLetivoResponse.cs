@@ -8,7 +8,8 @@ public record PeriodoAvaliativoResponse(
     DateOnly DataInicio,
     DateOnly DataTermino,
     bool Encerrado = false,
-    DateTime? EncerradoEm = null
+    DateTime? EncerradoEm = null,
+    DateOnly? PrazoLancamentoNotas = null
 );
 
 public record AnoLetivoResponse(
