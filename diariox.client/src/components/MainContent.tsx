@@ -21,6 +21,8 @@ import AlunosTransferidosPage from './alunos/AlunosTransferidosPage';
 import InstituicoesPage from './tenants/InstituicoesPage';
 import PermissoesPage from './configuracoes/PermissoesPage';
 import ChamadaPage from './chamada/ChamadaPage';
+import NotasPage from './notas/NotasPage';
+import RegrasAvaliacaoPage from './notas/RegrasAvaliacaoPage';
 import ConteudoMinistradoPage from './conteudo-ministrado/ConteudoMinistradoPage';
 import HabilidadesBnccPage from './habilidades-bncc/HabilidadesBnccPage';
 import AssinaturaPage from './configuracoes/AssinaturaPage';
@@ -99,6 +101,8 @@ function MainContent({ onNavigate }: MainContentProps) {
             <Route path="/transferir-aluno" element={<AlunosTransferidosRoute />} />
             <Route path="/transferir-aluno/novo" element={<TransferirAlunoRoute />} />
             <Route path="/chamada" element={<ChamadaPage />} />
+            <Route path="/notas" element={<NotasPage />} />
+            <Route path="/regras-avaliacao" element={<RegrasAvaliacaoPage />} />
             <Route path="/conteudo-ministrado" element={<ConteudoMinistradoPage />} />
             <Route path="/habilidades-bncc" element={<HabilidadesBnccPage />} />
             <Route path="/relatorios" element={<RelatoriosPage />} />

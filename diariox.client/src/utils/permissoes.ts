@@ -16,6 +16,8 @@ export const permissaoDaPagina: Record<string, string> = {
     'desenturmar-aluno': 'alunos.editar',
     'transferir-aluno': 'alunos.editar',
     'chamada': 'chamada.visualizar',
+    'notas': 'notas.visualizar',
+    'regras-avaliacao': 'regras-avaliacao.visualizar',
     'conteudo-ministrado': 'conteudo-ministrado.visualizar',
     'habilidades-bncc': 'habilidades-bncc.visualizar',
     'relatorios': 'relatorios.visualizar',

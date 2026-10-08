@@ -6,6 +6,7 @@ public class PeriodoAvaliativoRequest
     public int Numero { get; set; }
     public DateOnly DataInicio { get; set; }
     public DateOnly DataTermino { get; set; }
+    public DateOnly? PrazoLancamentoNotas { get; set; }
 }
 
 public class AnoLetivoRequest

@@ -66,6 +66,9 @@ public class AppDbContext : DbContext
     public DbSet<ConteudoMinistrado> ConteudosMinistrados => Set<ConteudoMinistrado>();
     public DbSet<ConteudoMinistradoHabilidade> ConteudosMinistradosHabilidades => Set<ConteudoMinistradoHabilidade>();
     public DbSet<Transferencia> Transferencias => Set<Transferencia>();
+    public DbSet<RegraAvaliacao> RegrasAvaliacao => Set<RegraAvaliacao>();
+    public DbSet<Avaliacao> Avaliacoes => Set<Avaliacao>();
+    public DbSet<NotaAvaliacao> NotasAvaliacoes => Set<NotaAvaliacao>();
     public DbSet<PlanoAssinatura> PlanosAssinatura => Set<PlanoAssinatura>();
     public DbSet<Assinatura> Assinaturas => Set<Assinatura>();
     public DbSet<FaturaAssinatura> FaturasAssinatura => Set<FaturaAssinatura>();
@@ -105,6 +108,9 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new ConteudoMinistradoConfiguration());
         modelBuilder.ApplyConfiguration(new ConteudoMinistradoHabilidadeConfiguration());
         modelBuilder.ApplyConfiguration(new TransferenciaConfiguration());
+        modelBuilder.ApplyConfiguration(new RegraAvaliacaoConfiguration());
+        modelBuilder.ApplyConfiguration(new AvaliacaoConfiguration());
+        modelBuilder.ApplyConfiguration(new NotaAvaliacaoConfiguration());
         modelBuilder.ApplyConfiguration(new PlanoAssinaturaConfiguration());
         modelBuilder.ApplyConfiguration(new AssinaturaConfiguration());
         modelBuilder.ApplyConfiguration(new FaturaAssinaturaConfiguration());
@@ -164,7 +170,7 @@ public class AppDbContext : DbContext
 
     /// <summary>
     /// Dados que pertencem a uma escola seguem o escopo do usuário. Cadastros da rede (modalidades,
-    /// etapas, anos letivos e disciplinas) continuam visíveis para todas as escolas.
+    /// etapas, anos letivos, disciplinas e regras de avaliação) continuam visíveis para todas as escolas.
     /// </summary>
     private void ConfigureEscolaFilters(ModelBuilder modelBuilder)
     {
@@ -191,6 +197,10 @@ public class AppDbContext : DbContext
             c => !EscopoPorEscola || c.EscolaId == null || EscolasPermitidas.Contains(c.EscolaId.Value));
         modelBuilder.Entity<EventoCalendario>().HasQueryFilter(FiltroEscola,
             e => !EscopoPorEscola || e.CalendarioLetivo.EscolaId == null || EscolasPermitidas.Contains(e.CalendarioLetivo.EscolaId.Value));
+        modelBuilder.Entity<Avaliacao>().HasQueryFilter(FiltroEscola,
+            a => !EscopoPorEscola || EscolasPermitidas.Contains(a.Turma.EscolaId));
+        modelBuilder.Entity<NotaAvaliacao>().HasQueryFilter(FiltroEscola,
+            n => !EscopoPorEscola || EscolasPermitidas.Contains(n.Avaliacao.Turma.EscolaId));
         modelBuilder.Entity<ProfessorAlocacao>().HasQueryFilter(FiltroEscola,
             pa => !EscopoPorEscola || EscolasPermitidas.Contains(pa.Turma.EscolaId));
         modelBuilder.Entity<ProfessorEscola>().HasQueryFilter(FiltroEscola,

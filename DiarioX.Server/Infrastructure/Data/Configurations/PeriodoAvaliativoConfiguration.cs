@@ -20,6 +20,7 @@ public class PeriodoAvaliativoConfiguration : IEntityTypeConfiguration<PeriodoAv
 
         builder.Property(x => x.Encerrado).HasColumnName("encerrado").HasDefaultValue(false).IsRequired();
         builder.Property(x => x.EncerradoEm).HasColumnName("encerrado_em");
+        builder.Property(x => x.PrazoLancamentoNotas).HasColumnName("prazo_lancamento_notas").HasColumnType("date");
 
         builder.HasOne(x => x.AnoLetivo)
             .WithMany(a => a.Periodos)

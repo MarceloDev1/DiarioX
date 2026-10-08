@@ -21,4 +21,7 @@ public class EtapaEnsino : ITenantEntity
 
     /// <summary>RF017 RN02: como a frequência das turmas da etapa é registrada.</summary>
     public string TipoFrequencia { get; set; } = FrequenciaPorAula;
+    /// <summary>Regra de avaliação das turmas da etapa; nula = regra padrão do sistema.</summary>
+    public int? RegraAvaliacaoId { get; set; }
+    public RegraAvaliacao? RegraAvaliacao { get; set; }
 }
