@@ -1212,3 +1212,46 @@ a.btn {
 .sortable-th[aria-sort='descending'] .sort-indicator {
     opacity: 1;
 }
+
+/* Conteúdo ministrado */
+.diario-linha-pendente {
+    background: #fffcf5;
+}
+
+.diario-pendencia {
+    background: #fff7e6;
+    color: #92580b;
+}
+
+.diario-conteudo + .diario-conteudo {
+    margin-top: 0.5rem;
+}
+
+.bncc-selecionada {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.bncc-remover {
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.bncc-sugestoes {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0.5rem 0.75rem;
+    max-height: 260px;
+    overflow-y: auto;
+    border: 1px solid #e0e8f0;
+    border-radius: 8px;
+    background: #f9fbfd;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}

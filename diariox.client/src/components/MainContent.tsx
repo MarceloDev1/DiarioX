@@ -21,6 +21,8 @@ import AlunosTransferidosPage from './alunos/AlunosTransferidosPage';
 import InstituicoesPage from './tenants/InstituicoesPage';
 import PermissoesPage from './configuracoes/PermissoesPage';
 import ChamadaPage from './chamada/ChamadaPage';
+import ConteudoMinistradoPage from './conteudo-ministrado/ConteudoMinistradoPage';
+import HabilidadesBnccPage from './habilidades-bncc/HabilidadesBnccPage';
 import AssinaturaPage from './configuracoes/AssinaturaPage';
 import FinanceiroPlataformaPage from './faturamento/FinanceiroPlataformaPage';
 import RelatoriosPage from './relatorios/RelatoriosPage';
@@ -97,6 +99,8 @@ function MainContent({ onNavigate }: MainContentProps) {
             <Route path="/transferir-aluno" element={<AlunosTransferidosRoute />} />
             <Route path="/transferir-aluno/novo" element={<TransferirAlunoRoute />} />
             <Route path="/chamada" element={<ChamadaPage />} />
+            <Route path="/conteudo-ministrado" element={<ConteudoMinistradoPage />} />
+            <Route path="/habilidades-bncc" element={<HabilidadesBnccPage />} />
             <Route path="/relatorios" element={<RelatoriosPage />} />
             <Route path="/relatorios/:relatorioId" element={
                 <Suspense fallback={<div className="loading">Carregando relatório...</div>}>

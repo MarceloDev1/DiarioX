@@ -12,7 +12,6 @@ public class ChamadaService : IChamadaService
     /// <summary>Frequência mínima exigida pela LDB (art. 24, VI).</summary>
     public const decimal FrequenciaMinima = 75m;
 
-    private const int MaxConteudo = 2000;
     private const int MaxJustificativa = 255;
 
     private readonly IChamadaRepository _chamadaRepository;
@@ -107,7 +106,6 @@ public class ChamadaService : IChamadaService
             c.Registros.Count(r => r.Situacao == ChamadaAluno.SituacaoPresente),
             c.Registros.Count(r => r.Situacao == ChamadaAluno.SituacaoFalta),
             c.Registros.Count(r => r.Situacao == ChamadaAluno.SituacaoFaltaJustificada),
-            c.Conteudo,
             emails.GetValueOrDefault(c.RegistradoPorUsuarioId),
             c.CreatedAt)).ToList());
     }
@@ -189,7 +187,6 @@ public class ChamadaService : IChamadaService
             DisciplinaId = disciplina,
             Data = request.Data,
             QuantidadeAulas = request.QuantidadeAulas,
-            Conteudo = NormalizarConteudo(request.Conteudo),
             RegistradoPorUsuarioId = usuario.UsuarioId,
             Registros = registros!,
         });
@@ -219,7 +216,6 @@ public class ChamadaService : IChamadaService
             return erroDados;
 
         chamada.QuantidadeAulas = request.QuantidadeAulas;
-        chamada.Conteudo = NormalizarConteudo(request.Conteudo);
         chamada.AtualizadoPorUsuarioId = usuario.UsuarioId;
         chamada.UpdatedAt = DateTime.UtcNow;
         await _chamadaRepository.UpdateAsync(chamada, registros!);
@@ -373,9 +369,6 @@ public class ChamadaService : IChamadaService
         if (request.QuantidadeAulas < 1 || request.QuantidadeAulas > Chamada.MaxQuantidadeAulas)
             return (null, Invalid($"A quantidade de aulas deve estar entre 1 e {Chamada.MaxQuantidadeAulas}."));
 
-        if ((request.Conteudo?.Trim().Length ?? 0) > MaxConteudo)
-            return (null, Invalid($"O conteúdo da aula deve ter no máximo {MaxConteudo} caracteres."));
-
         var lista = await GetListaDeAlunosAsync(turma.Id, request.Data, chamadaExistente);
         if (lista.Count == 0)
             return (null, Invalid("Não há alunos enturmados nesta turma na data da chamada."));
@@ -471,13 +464,13 @@ public class ChamadaService : IChamadaService
             .ToList();
 
         if (chamada is null)
-            return new ChamadaResponse(null, turma.Id, disciplinaId, data, 1, null, null, null, null, null, alunos, bloqueio, periodoEncerrado);
+            return new ChamadaResponse(null, turma.Id, disciplinaId, data, 1, null, null, null, null, alunos, bloqueio, periodoEncerrado);
 
         var emails = await _chamadaRepository.GetEmailsUsuariosAsync(
             new[] { chamada.RegistradoPorUsuarioId, chamada.AtualizadoPorUsuarioId ?? 0 }.Where(id => id > 0));
 
         return new ChamadaResponse(
-            chamada.Id, turma.Id, disciplinaId, data, chamada.QuantidadeAulas, chamada.Conteudo,
+            chamada.Id, turma.Id, disciplinaId, data, chamada.QuantidadeAulas,
             emails.GetValueOrDefault(chamada.RegistradoPorUsuarioId), chamada.CreatedAt,
             chamada.AtualizadoPorUsuarioId is int atualizadoPor ? emails.GetValueOrDefault(atualizadoPor) : null,
             chamada.UpdatedAt,

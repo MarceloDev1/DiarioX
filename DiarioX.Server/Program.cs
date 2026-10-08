@@ -74,6 +74,8 @@ builder.Services.AddScoped<IAlunoTurmaRepository, AlunoTurmaRepository>();
 builder.Services.AddScoped<ITransferenciaRepository, TransferenciaRepository>();
 builder.Services.AddScoped<IPerfilPermissaoRepository, PerfilPermissaoRepository>();
 builder.Services.AddScoped<IChamadaRepository, ChamadaRepository>();
+builder.Services.AddScoped<IHabilidadeBnccRepository, HabilidadeBnccRepository>();
+builder.Services.AddScoped<IConteudoMinistradoRepository, ConteudoMinistradoRepository>();
 builder.Services.AddScoped<IFaturamentoRepository, FaturamentoRepository>();
 
 // Dependency Injection - Services
@@ -97,6 +99,8 @@ builder.Services.AddScoped<ITransferenciaAlunoService, TransferenciaAlunoService
 builder.Services.AddSingleton<IDeclaracaoTransferenciaPdf, DeclaracaoTransferenciaPdf>();
 builder.Services.AddScoped<IPermissaoService, PermissaoService>();
 builder.Services.AddScoped<IChamadaService, ChamadaService>();
+builder.Services.AddScoped<IHabilidadeBnccService, HabilidadeBnccService>();
+builder.Services.AddScoped<IConteudoMinistradoService, ConteudoMinistradoService>();
 
 // Relatórios: cada IRelatorio registrado aparece no catálogo; exportação em Excel (ClosedXML) e PDF (QuestPDF).
 // QuestPDF: licença Community, gratuita para empresas com receita bruta anual abaixo de US$ 1 milhão.

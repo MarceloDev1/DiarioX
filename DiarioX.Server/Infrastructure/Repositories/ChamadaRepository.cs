@@ -70,7 +70,6 @@ public class ChamadaRepository : IChamadaRepository
             .FirstAsync(c => c.Id == chamada.Id);
 
         atual.QuantidadeAulas = chamada.QuantidadeAulas;
-        atual.Conteudo = chamada.Conteudo;
         atual.AtualizadoPorUsuarioId = chamada.AtualizadoPorUsuarioId;
         atual.UpdatedAt = chamada.UpdatedAt;
 

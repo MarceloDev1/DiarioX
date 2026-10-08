@@ -55,7 +55,6 @@ function HistoricoChamadas({ turmaId, disciplinaId, onAbrir }: HistoricoChamadas
                             <th>Presentes</th>
                             <th>Faltas</th>
                             <th>Justificadas</th>
-                            <th>Conteúdo</th>
                             <th>Registrada por</th>
                             <th>Ações</th>
                         </tr>
@@ -68,7 +67,6 @@ function HistoricoChamadas({ turmaId, disciplinaId, onAbrir }: HistoricoChamadas
                                 <td>{c.presentes}</td>
                                 <td>{c.faltas}</td>
                                 <td>{c.faltasJustificadas}</td>
-                                <td className="chamada-conteudo-cell" title={c.conteudo ?? undefined}>{c.conteudo ?? '—'}</td>
                                 <td>
                                     <small>{c.registradoPor ?? '—'}<br />{formatarDataHora(c.registradoEm)}</small>
                                 </td>

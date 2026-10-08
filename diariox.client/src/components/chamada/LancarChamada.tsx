@@ -19,7 +19,6 @@ interface LancarChamadaProps {
 
 interface Rascunho {
     quantidadeAulas: number;
-    conteudo: string;
     registros: Record<number, { situacao: Situacao; justificativa: string }>;
 }
 
@@ -30,7 +29,6 @@ const plural = (quantidade: number, singular: string, pluralTexto: string) =>
 function rascunhoDe(chamada: Chamada): Rascunho {
     return {
         quantidadeAulas: chamada.quantidadeAulas,
-        conteudo: chamada.conteudo ?? '',
         registros: Object.fromEntries(chamada.alunos.map(a => [
             a.alunoId,
             { situacao: a.situacao ?? 'PRESENTE', justificativa: a.justificativa ?? '' },
@@ -144,7 +142,6 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
                 disciplinaId,
                 data,
                 quantidadeAulas: rascunho.quantidadeAulas,
-                conteudo: rascunho.conteudo.trim() || null,
                 alunos: chamada.alunos.map(a => {
                     const registro = rascunho.registros[a.alunoId];
                     return {
@@ -289,18 +286,6 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
                         {!podeSalvar && <> · Seu perfil pode apenas consultar {isNova ? 'o lançamento' : 'esta chamada'}.</>}
                     </p>
 
-                    <div className="form-group">
-                        <label htmlFor="chamada-conteudo">Conteúdo da aula</label>
-                        <textarea
-                            id="chamada-conteudo"
-                            rows={3}
-                            maxLength={2000}
-                            placeholder="Conteúdo ministrado (ex.: Frações equivalentes — exercícios da página 42)"
-                            value={rascunho.conteudo}
-                            onChange={e => setRascunho(atual => atual && { ...atual, conteudo: e.target.value })}
-                            disabled={somenteLeitura}
-                        />
-                    </div>
 
                     {chamada.alunos.length === 0 ? (
                         <EmptyState
