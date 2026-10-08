@@ -8,7 +8,8 @@ public class EtapaEnsinoConfiguration : IEntityTypeConfiguration<EtapaEnsino>
 {
     public void Configure(EntityTypeBuilder<EtapaEnsino> builder)
     {
-        builder.ToTable("etapas_ensino");
+        builder.ToTable("etapas_ensino", table =>
+            table.HasCheckConstraint("CK_etapas_ensino_tipo_frequencia", "tipo_frequencia IN ('POR_AULA', 'DIARIA')"));
 
         builder.HasKey(x => x.Id);
 
@@ -42,6 +43,12 @@ public class EtapaEnsinoConfiguration : IEntityTypeConfiguration<EtapaEnsino>
         builder.Property(x => x.IdadeRecomendada)
             .HasColumnName("idade_recomendada")
             .IsRequired(false);
+
+        builder.Property(x => x.TipoFrequencia)
+            .HasColumnName("tipo_frequencia")
+            .HasMaxLength(20)
+            .HasDefaultValue(EtapaEnsino.FrequenciaPorAula)
+            .IsRequired();
 
         builder.HasIndex(x => new { x.TenantId, x.Sigla })
             .HasDatabaseName("IX_etapas_ensino_sigla")

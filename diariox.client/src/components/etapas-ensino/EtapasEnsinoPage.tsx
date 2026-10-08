@@ -21,6 +21,7 @@ interface EtapaEnsinoFormState {
     sigla: string;
     ordemCronologica: string;
     idadeRecomendada: string;
+    tipoFrequencia: string;
 }
 
 interface EtapaEnsino {
@@ -31,6 +32,7 @@ interface EtapaEnsino {
     sigla: string;
     ordemCronologica: number;
     idadeRecomendada: number | null;
+    tipoFrequencia: string;
 }
 
 const emptyForm: EtapaEnsinoFormState = {
@@ -39,6 +41,7 @@ const emptyForm: EtapaEnsinoFormState = {
     sigla: '',
     ordemCronologica: '',
     idadeRecomendada: '',
+    tipoFrequencia: 'POR_AULA',
 };
 
 function EtapasEnsinoPage() {
@@ -102,6 +105,7 @@ function EtapasEnsinoPage() {
             sigla: etapa.sigla,
             ordemCronologica: String(etapa.ordemCronologica),
             idadeRecomendada: etapa.idadeRecomendada != null ? String(etapa.idadeRecomendada) : '',
+            tipoFrequencia: etapa.tipoFrequencia,
         });
         setSuccessMessage(null);
         setView('form');
@@ -115,6 +119,7 @@ function EtapasEnsinoPage() {
             sigla: (form.sigla as string).trim(),
             ordemCronologica: parseInt(form.ordemCronologica as string),
             idadeRecomendada: idadeStr ? parseInt(idadeStr) : null,
+            tipoFrequencia: form.tipoFrequencia as string,
         };
     };
 
@@ -253,6 +258,19 @@ function EtapasEnsinoPage() {
                                     placeholder="Ex: 8"
                                 />
                             </div>
+                            <div className="form-field">
+                                <label htmlFor="etapa-frequencia">Registro de Frequência</label>
+                                <select
+                                    id="etapa-frequencia"
+                                    name="tipoFrequencia"
+                                    value={form.tipoFrequencia as string}
+                                    onChange={handleFieldChange}
+                                >
+                                    <option value="POR_AULA">Por aula, por disciplina (Anos Finais)</option>
+                                    <option value="DIARIA">Diária, uma por turma (Anos Iniciais)</option>
+                                </select>
+                                <span className="field-hint">Define como a chamada das turmas desta etapa é registrada.</span>
+                            </div>
                         </div>
                         <div className="form-actions">
                             <button type="submit" disabled={isSaving}>
@@ -339,6 +357,7 @@ function EtapasEnsinoPage() {
                                     <th>Sigla</th>
                                     <th>Ordem</th>
                                     <th>Idade</th>
+                                    <th>Frequência</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
@@ -350,6 +369,7 @@ function EtapasEnsinoPage() {
                                         <td>{e.sigla}</td>
                                         <td>{e.ordemCronologica}</td>
                                         <td>{e.idadeRecomendada != null ? `${e.idadeRecomendada} anos` : '—'}</td>
+                                        <td>{e.tipoFrequencia === 'DIARIA' ? 'Diária' : 'Por aula'}</td>
                                         <td>
                                             <div className="action-group">
                                                 {can('etapas-ensino.editar') && <button type="button" className="table-action-button" onClick={() => handleEdit(e)}>Editar</button>}

@@ -14,6 +14,7 @@ interface PeriodoAvaliativo {
     numero: number;
     dataInicio: string;
     dataTermino: string;
+    encerrado: boolean;
 }
 
 interface AnoLetivo {
@@ -30,6 +31,8 @@ interface PeriodoForm {
     numero: number;
     dataInicio: string;
     dataTermino: string;
+    /** RF017 EX02: período encerrado; as datas só mudam depois de reaberto. */
+    encerrado: boolean;
 }
 
 interface AnoLetivoForm {
@@ -55,6 +58,7 @@ function generatePeriodos(tipoPeriodo: string, existing?: PeriodoAvaliativo[]): 
         numero: i + 1,
         dataInicio: existing?.[i]?.dataInicio ?? '',
         dataTermino: existing?.[i]?.dataTermino ?? '',
+        encerrado: existing?.[i]?.encerrado ?? false,
     }));
 }
 
@@ -81,6 +85,8 @@ function AnosLetivosPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [periodoEmAcaoId, setPeriodoEmAcaoId] = useState<number | null>(null);
 
     const [view, setView] = useState<View>('list');
     const [form, setForm] = useState<AnoLetivoForm>(emptyForm);
@@ -249,6 +255,40 @@ function AnosLetivosPage() {
         }
     };
 
+    // RF017 EX02: a coordenação encerra o período avaliativo (o diário não aceita mais alterações nele) ou o reabre.
+    const handleTogglePeriodo = async (ano: AnoLetivo, periodo: PeriodoAvaliativo) => {
+        const encerrar = !periodo.encerrado;
+        const confirmed = await confirm({
+            title: encerrar ? 'Encerrar período' : 'Reabrir período',
+            variant: encerrar ? 'warning' : 'default',
+            confirmLabel: encerrar ? 'Encerrar' : 'Reabrir',
+            message: encerrar ? (
+                <>
+                    <p>Encerrar o <strong>{periodo.nome}</strong> de <strong>{ano.anoReferencia}</strong>?</p>
+                    <p>Professores e secretaria não poderão mais registrar, alterar ou excluir frequência nesse período. A coordenação pode reabri-lo depois.</p>
+                </>
+            ) : (
+                <p>Reabrir o <strong>{periodo.nome}</strong> de <strong>{ano.anoReferencia}</strong>? A frequência voltará a aceitar alterações.</p>
+            ),
+        });
+        if (!confirmed) return;
+
+        setError(null);
+        setSuccessMessage(null);
+        setPeriodoEmAcaoId(periodo.id);
+        try {
+            const res = await apiFetch(`/api/anosletivos/${ano.id}/periodos/${periodo.id}/${encerrar ? 'encerrar' : 'reabrir'}`, { method: 'POST' });
+            if (!res.ok) throw new Error(await readApiError(res));
+            const atualizado = (await res.json()) as AnoLetivo;
+            setAnos(prev => prev.map(a => (a.id === atualizado.id ? atualizado : a)));
+            setSuccessMessage(encerrar ? `${periodo.nome} encerrado com sucesso.` : `${periodo.nome} reaberto com sucesso.`);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Falha ao atualizar o período.');
+        } finally {
+            setPeriodoEmAcaoId(null);
+        }
+    };
+
     const formatDate = (d: string) => {
         if (!d) return '—';
         const [y, m, day] = d.split('-');
@@ -346,7 +386,14 @@ function AnosLetivosPage() {
                                 <div className="periodos-grid">
                                     {periodos.map((p, i) => (
                                         <div key={p.numero} className="periodo-block">
-                                            <div className="periodo-block-header">{p.nome}</div>
+                                            <div className="periodo-block-header">
+                                                {p.nome}
+                                                {p.encerrado && (
+                                                    <span className="status-pill status-inactive" style={{ marginLeft: '0.5rem' }} title="Reabra o período para alterar as datas.">
+                                                        Encerrado
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="form-grid">
                                                 <div className="form-field">
                                                     <label htmlFor={`p-inicio-${i}`}>Data de Início</label>
@@ -355,6 +402,7 @@ function AnosLetivosPage() {
                                                         type="date"
                                                         value={p.dataInicio}
                                                         onChange={e => handlePeriodoChange(i, 'dataInicio', e.target.value)}
+                                                        disabled={p.encerrado}
                                                         required
                                                     />
                                                 </div>
@@ -365,6 +413,7 @@ function AnosLetivosPage() {
                                                         type="date"
                                                         value={p.dataTermino}
                                                         onChange={e => handlePeriodoChange(i, 'dataTermino', e.target.value)}
+                                                        disabled={p.encerrado}
                                                         required
                                                     />
                                                 </div>
@@ -421,6 +470,7 @@ function AnosLetivosPage() {
                 </form>
 
                 <FeedbackMessage message={error} />
+                <FeedbackMessage message={successMessage} type="success" />
 
                 {isLoading || filteredAnos.length === 0 ? (
                     <EmptyState
@@ -454,6 +504,20 @@ function AnosLetivosPage() {
                                                 {a.periodos.map(p => (
                                                     <span key={p.id} className="periodo-tag">
                                                         {p.nome}: {formatDate(p.dataInicio)} – {formatDate(p.dataTermino)}
+                                                        {p.encerrado && (
+                                                            <span className="status-pill status-inactive" style={{ marginLeft: '0.5rem' }}>Encerrado</span>
+                                                        )}
+                                                        {can('anos-letivos.editar') && (
+                                                            <button
+                                                                type="button"
+                                                                className="table-action-button"
+                                                                style={{ marginLeft: '0.5rem', padding: '0.2rem 0.6rem' }}
+                                                                disabled={periodoEmAcaoId === p.id}
+                                                                onClick={() => void handleTogglePeriodo(a, p)}
+                                                            >
+                                                                {p.encerrado ? 'Reabrir' : 'Encerrar'}
+                                                            </button>
+                                                        )}
                                                     </span>
                                                 ))}
                                             </div>

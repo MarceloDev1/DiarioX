@@ -9,4 +9,7 @@ public interface IAnoLetivoService
     Task<AnoLetivoCommandResult> CreateAsync(AnoLetivoRequest request);
     Task<AnoLetivoCommandResult> UpdateAsync(int id, AnoLetivoRequest request);
     Task<AnoLetivoCommandResult> DeleteAsync(int id);
+
+    /// <summary>RF017 EX02: encerra (ou reabre) o período avaliativo; encerrado, o diário não aceita mais alterações nele.</summary>
+    Task<AnoLetivoCommandResult> DefinirPeriodoEncerradoAsync(int anoLetivoId, int periodoId, bool encerrado);
 }

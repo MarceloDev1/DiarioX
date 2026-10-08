@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { apiFetch, readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
-import { formatarData, formatarDataHora, type ChamadaResumo } from './tipos';
+import { formatarData, formatarDataHora, paramsDaChamada, type ChamadaResumo } from './tipos';
 
 interface HistoricoChamadasProps {
     turmaId: number;
-    disciplinaId: number;
+    disciplinaId: number | null;
     onAbrir: (data: string) => void;
 }
 
@@ -19,7 +19,7 @@ function HistoricoChamadas({ turmaId, disciplinaId, onAbrir }: HistoricoChamadas
 
         async function load() {
             try {
-                const params = new URLSearchParams({ turmaId: String(turmaId), disciplinaId: String(disciplinaId) });
+                const params = paramsDaChamada(turmaId, disciplinaId);
                 const response = await apiFetch(`/api/chamadas?${params}`);
                 if (!response.ok) throw new Error(await readApiError(response));
                 const data = (await response.json()) as ChamadaResumo[];

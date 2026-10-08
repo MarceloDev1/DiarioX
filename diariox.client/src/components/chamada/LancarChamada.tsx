@@ -6,13 +6,13 @@ import { apiFetch, readApiError } from '../../utils/api';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import {
-    MAX_QUANTIDADE_AULAS, formatarData, formatarDataHora, hojeIso, situacoes,
+    MAX_QUANTIDADE_AULAS, MENSAGEM_PERIODO_ENCERRADO, formatarData, formatarDataHora, hojeIso, paramsDaChamada, situacoes,
     type Chamada, type ChamadaTurma, type Situacao,
 } from './tipos';
 
 interface LancarChamadaProps {
     turma: ChamadaTurma;
-    disciplinaId: number;
+    disciplinaId: number | null;
     data: string;
     onDataChange: (data: string) => void;
 }
@@ -56,7 +56,7 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
 
         async function load() {
             try {
-                const params = new URLSearchParams({ turmaId: String(turma.turmaId), disciplinaId: String(disciplinaId), data });
+                const params = paramsDaChamada(turma.turmaId, disciplinaId, { data });
                 const response = await apiFetch(`/api/chamadas/aula?${params}`);
                 if (!response.ok) throw new Error(await readApiError(response));
                 const chamada = (await response.json()) as Chamada;
@@ -80,7 +80,11 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
     const isLoading = !chamada && erroCarga?.data !== data;
     const isNova = chamada?.chamadaId === null;
     const podeSalvar = chamada ? (isNova ? can('chamada.criar') : can('chamada.editar')) : false;
-    const somenteLeitura = !podeSalvar || isSaving || !!chamada?.bloqueio;
+    // RF017 EX02: período encerrado pela coordenação; a chamada só pode ser consultada.
+    const periodoEncerrado = !!chamada?.periodoEncerrado;
+    // RF017 RN02: na frequência diária a chamada vale o dia todo, sem quantidade de aulas.
+    const diaria = turma.tipoFrequencia === 'DIARIA';
+    const somenteLeitura = !podeSalvar || isSaving || !!chamada?.bloqueio || periodoEncerrado;
     const isDirty = !!chamada && !!rascunho && JSON.stringify(rascunho) !== JSON.stringify(rascunhoDe(chamada));
 
     const hoje = hojeIso();
@@ -215,6 +219,7 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
                         disabled={isSaving}
                     />
                 </div>
+                {!diaria && (
                 <div className="form-group">
                     <label htmlFor="chamada-aulas">Quantidade de aulas</label>
                     <input
@@ -231,11 +236,19 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
                     />
                     <span className="field-hint">Aulas seguidas da disciplina no dia (aula dupla = 2).</span>
                 </div>
+                )}
             </div>
 
             <FeedbackMessage message={erroCarga?.data === data ? erroCarga.message : null} type="error" />
             <FeedbackMessage message={error} type="error" />
             <FeedbackMessage message={successMessage} type="success" />
+
+            {periodoEncerrado && !chamada?.bloqueio && (
+                // RF017 EX02
+                <div className="aviso-financeiro aviso-bloqueio" role="alert">
+                    <span><FiLock aria-hidden="true" /> {MENSAGEM_PERIODO_ENCERRADO}</span>
+                </div>
+            )}
 
             {isLoading ? (
                 <div className="loading">Carregando chamada...</div>
@@ -251,7 +264,7 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
                             {can('chamada.excluir') ? ', mas pode ser excluída.' : '.'}
                         </p>
                     )}
-                    {!isNova && can('chamada.excluir') && (
+                    {!isNova && !periodoEncerrado && can('chamada.excluir') && (
                         <div className="form-actions">
                             <button type="button" className="btn btn-danger" onClick={handleExcluir} disabled={isSaving}>
                                 Excluir chamada
@@ -376,7 +389,7 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
                         </>
                     )}
 
-                    {(podeSalvar || (!isNova && can('chamada.excluir'))) && (
+                    {!periodoEncerrado && (podeSalvar || (!isNova && can('chamada.excluir'))) && (
                         <div className="form-actions">
                             {podeSalvar && chamada.alunos.length > 0 && (
                                 <button
@@ -388,7 +401,7 @@ function LancarChamada({ turma, disciplinaId, data, onDataChange }: LancarChamad
                                     {isSaving ? 'Salvando...' : isNova ? 'Registrar chamada' : 'Salvar alterações'}
                                 </button>
                             )}
-                            {!isNova && can('chamada.excluir') && (
+                            {!isNova && !periodoEncerrado && can('chamada.excluir') && (
                                 <button type="button" className="btn btn-danger" onClick={handleExcluir} disabled={isSaving}>
                                     Excluir chamada
                                 </button>

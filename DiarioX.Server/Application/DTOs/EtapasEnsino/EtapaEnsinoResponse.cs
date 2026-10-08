@@ -7,5 +7,6 @@ public record EtapaEnsinoResponse(
     string Nome,
     string Sigla,
     int OrdemCronologica,
-    int? IdadeRecomendada
+    int? IdadeRecomendada,
+    string TipoFrequencia
 );

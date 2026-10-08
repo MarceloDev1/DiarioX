@@ -15,7 +15,7 @@ public class ChamadaConfiguration : IEntityTypeConfiguration<Chamada>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasColumnName("id").UseIdentityByDefaultColumn();
         builder.Property(x => x.TurmaId).HasColumnName("turma_id").IsRequired();
-        builder.Property(x => x.DisciplinaId).HasColumnName("disciplina_id").IsRequired();
+        builder.Property(x => x.DisciplinaId).HasColumnName("disciplina_id");
         builder.Property(x => x.Data).HasColumnName("data").HasColumnType("date").IsRequired();
         builder.Property(x => x.QuantidadeAulas).HasColumnName("quantidade_aulas").HasDefaultValue(1).IsRequired();
         builder.Property(x => x.Conteudo).HasColumnName("conteudo").HasMaxLength(2000);
@@ -47,6 +47,12 @@ public class ChamadaConfiguration : IEntityTypeConfiguration<Chamada>
         // Uma chamada por turma, disciplina e dia (aulas seguidas entram em QuantidadeAulas).
         builder.HasIndex(x => new { x.TenantId, x.TurmaId, x.DisciplinaId, x.Data })
             .HasDatabaseName("IX_chamadas_turma_disciplina_data")
+            .IsUnique();
+
+        // Frequência diária (sem disciplina): o índice acima não vale, pois NULL nunca repete para ele.
+        builder.HasIndex(x => new { x.TenantId, x.TurmaId, x.Data })
+            .HasDatabaseName("IX_chamadas_turma_data_diaria")
+            .HasFilter("disciplina_id IS NULL")
             .IsUnique();
     }
 }

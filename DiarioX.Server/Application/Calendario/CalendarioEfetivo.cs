@@ -38,14 +38,7 @@ public static class CalendarioEfetivo
     /// </summary>
     public static string? MotivoBloqueio(DateOnly data, IReadOnlyCollection<CalendarioLetivo> publicados)
     {
-        if (publicados.Count == 0)
-            return null;
-
-        var evento = Mesclar(
-            publicados.FirstOrDefault(c => c.EscolaId is null),
-            publicados.FirstOrDefault(c => c.EscolaId is not null)).GetValueOrDefault(data);
-
-        if (DiaLetivo(data, evento))
+        if (!Bloqueado(data, publicados, out var evento))
             return null;
 
         if (evento is not null)
@@ -54,8 +47,34 @@ public static class CalendarioEfetivo
                    $"{evento.Descricao} - Dia Sem Aula.";
         }
 
-        var dia = data.DayOfWeek == DayOfWeek.Saturday ? "sábado" : "domingo";
-        return $"Não é possível realizar lançamentos nesta data: {dia} sem Dia Letivo Especial (Sábado Letivo) " +
+        return $"Não é possível realizar lançamentos nesta data: {NomeDoDia(data)} sem Dia Letivo Especial (Sábado Letivo) " +
                "cadastrado no Calendário Escolar.";
     }
+
+    /// <summary>RF017 EX01: o mesmo bloqueio, com o texto da tela de frequência.</summary>
+    public static string? MotivoBloqueioFrequencia(DateOnly data, IReadOnlyCollection<CalendarioLetivo> publicados)
+    {
+        if (!Bloqueado(data, publicados, out var evento))
+            return null;
+
+        var descricao = evento is not null
+            ? evento.Descricao
+            : $"{NomeDoDia(data)} sem Dia Letivo Especial (Sábado Letivo)";
+        return $"Não é possível registrar frequência. Data configurada como {descricao} no Calendário Escolar.";
+    }
+
+    private static bool Bloqueado(DateOnly data, IReadOnlyCollection<CalendarioLetivo> publicados, out EventoCalendario? evento)
+    {
+        evento = null;
+        if (publicados.Count == 0)
+            return false;
+
+        evento = Mesclar(
+            publicados.FirstOrDefault(c => c.EscolaId is null),
+            publicados.FirstOrDefault(c => c.EscolaId is not null)).GetValueOrDefault(data);
+
+        return !DiaLetivo(data, evento);
+    }
+
+    private static string NomeDoDia(DateOnly data) => data.DayOfWeek == DayOfWeek.Saturday ? "sábado" : "domingo";
 }

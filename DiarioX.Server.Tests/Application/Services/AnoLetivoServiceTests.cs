@@ -388,6 +388,94 @@ public class AnoLetivoServiceTests
         repo.Verify(r => r.DeleteAsync(It.Is<AnoLetivo>(a => a.Id == 5)), Times.Once);
     }
 
+    // ── RF017 EX02 – encerrar/reabrir período ────────────────────────────────
+
+    [Fact]
+    public async Task DefinirPeriodoEncerradoAsync_Encerrar_MarcaOPeriodo()
+    {
+        var (service, repo) = BuildService();
+        repo.Setup(r => r.GetByIdAsync(7)).ReturnsAsync(BuildEntity(7));
+
+        var result = await service.DefinirPeriodoEncerradoAsync(7, 2, encerrado: true);
+
+        Assert.True(result.Success, result.Message);
+        Assert.Equal("2º Bimestre encerrado com sucesso.", result.Message);
+        repo.Verify(r => r.DefinirPeriodoEncerradoAsync(It.Is<PeriodoAvaliativo>(p => p.Id == 2), true), Times.Once);
+    }
+
+    [Fact]
+    public async Task DefinirPeriodoEncerradoAsync_Reabrir_DesmarcaOPeriodo()
+    {
+        var (service, repo) = BuildService();
+        var ano = BuildEntity(7);
+        ano.Periodos.First(p => p.Id == 2).Encerrado = true;
+        repo.Setup(r => r.GetByIdAsync(7)).ReturnsAsync(ano);
+
+        var result = await service.DefinirPeriodoEncerradoAsync(7, 2, encerrado: false);
+
+        Assert.True(result.Success, result.Message);
+        Assert.Equal("2º Bimestre reaberto com sucesso.", result.Message);
+        repo.Verify(r => r.DefinirPeriodoEncerradoAsync(It.Is<PeriodoAvaliativo>(p => p.Id == 2), false), Times.Once);
+    }
+
+    [Fact]
+    public async Task DefinirPeriodoEncerradoAsync_JaNoEstadoPedido_RetornaConflito()
+    {
+        var (service, repo) = BuildService();
+        repo.Setup(r => r.GetByIdAsync(7)).ReturnsAsync(BuildEntity(7));
+
+        var result = await service.DefinirPeriodoEncerradoAsync(7, 2, encerrado: false);
+
+        Assert.Equal(AnoLetivoResultError.Conflict, result.Error);
+        repo.Verify(r => r.DefinirPeriodoEncerradoAsync(It.IsAny<PeriodoAvaliativo>(), It.IsAny<bool>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task DefinirPeriodoEncerradoAsync_PeriodoOuAnoInexistente_RetornaNotFound()
+    {
+        var (service, repo) = BuildService();
+        repo.Setup(r => r.GetByIdAsync(7)).ReturnsAsync(BuildEntity(7));
+        repo.Setup(r => r.GetByIdAsync(8)).ReturnsAsync((AnoLetivo?)null);
+
+        Assert.Equal(AnoLetivoResultError.NotFound, (await service.DefinirPeriodoEncerradoAsync(7, 99, true)).Error);
+        Assert.Equal(AnoLetivoResultError.NotFound, (await service.DefinirPeriodoEncerradoAsync(8, 1, true)).Error);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_AlterandoDatasDePeriodoEncerrado_RetornaErro()
+    {
+        var (service, repo) = BuildService();
+        var ano = BuildEntity(7);
+        ano.Periodos.First(p => p.Numero == 1).Encerrado = true;
+        repo.Setup(r => r.GetByIdAsync(7)).ReturnsAsync(ano);
+        SetupNoConflicts(repo, excludeId: 7);
+
+        var request = BuildValidRequest();
+        request.Periodos[0].DataTermino = request.Periodos[0].DataTermino.AddDays(-1);
+
+        var result = await service.UpdateAsync(7, request);
+
+        Assert.Equal(AnoLetivoResultError.Validation, result.Error);
+        Assert.Contains("1º Bimestre", result.Message);
+        Assert.Contains("encerrado", result.Message);
+        repo.Verify(r => r.UpdateAsync(It.IsAny<AnoLetivo>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SemMexerNoPeriodoEncerrado_Atualiza()
+    {
+        var (service, repo) = BuildService();
+        var ano = BuildEntity(7);
+        ano.Periodos.First(p => p.Numero == 1).Encerrado = true;
+        repo.Setup(r => r.GetByIdAsync(7)).ReturnsAsync(ano);
+        SetupNoConflicts(repo, excludeId: 7);
+
+        var result = await service.UpdateAsync(7, BuildValidRequest());
+
+        Assert.True(result.Success, result.Message);
+        repo.Verify(r => r.UpdateAsync(It.IsAny<AnoLetivo>()), Times.Once);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static (AnoLetivoService Service, Mock<IAnoLetivoRepository> Repo) BuildService()

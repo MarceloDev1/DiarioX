@@ -51,29 +51,35 @@ public class ChamadaService : IChamadaService
         return turmas
             .Select(turma =>
             {
-                var permitidas = disciplinas
-                    .Where(d => escopo is null ? FazParteDaGrade(d, turma) : escopo.Contains((turma.Id, d.Id)))
-                    .OrderBy(d => d.Nome)
-                    .Select(d => new ChamadaDisciplinaResponse(d.Id, d.Nome))
-                    .ToList();
+                // RF017 RN02: na frequência diária não há disciplina; basta o usuário estar alocado na turma.
+                var diaria = Diaria(turma);
+                var permitidas = diaria
+                    ? []
+                    : disciplinas
+                        .Where(d => escopo is null ? FazParteDaGrade(d, turma) : escopo.Contains((turma.Id, d.Id)))
+                        .OrderBy(d => d.Nome)
+                        .Select(d => new ChamadaDisciplinaResponse(d.Id, d.Nome))
+                        .ToList();
 
                 var periodos = anos.TryGetValue(turma.AnoLetivoId, out var ano)
                     ? ano.Periodos.OrderBy(p => p.Numero)
-                        .Select(p => new ChamadaPeriodoResponse(p.Id, p.Nome, p.DataInicio, p.DataTermino)).ToList()
+                        .Select(p => new ChamadaPeriodoResponse(p.Id, p.Nome, p.DataInicio, p.DataTermino, p.Encerrado)).ToList()
                     : [];
 
-                return new ChamadaTurmaResponse(
+                var acessivel = diaria ? escopo is null || escopo.Any(e => e.TurmaId == turma.Id) : permitidas.Count > 0;
+                return (Acessivel: acessivel, Resposta: new ChamadaTurmaResponse(
                     turma.Id, turma.NomeCompleto, turma.Escola.Nome, turma.AnoLetivo.AnoReferencia, turma.Turno,
-                    turma.AnoLetivo.DataInicio, turma.AnoLetivo.DataTermino, permitidas, periodos);
+                    turma.AnoLetivo.DataInicio, turma.AnoLetivo.DataTermino, permitidas, periodos, turma.EtapaEnsino.TipoFrequencia));
             })
-            .Where(t => t.Disciplinas.Count > 0)
+            .Where(t => t.Acessivel)
+            .Select(t => t.Resposta)
             .OrderByDescending(t => t.AnoReferencia)
             .ThenBy(t => t.TurmaNome);
     }
 
-    public async Task<ChamadaQueryResult<ChamadaResponse>> GetAsync(UsuarioAtual usuario, int turmaId, int disciplinaId, DateOnly data)
+    public async Task<ChamadaQueryResult<ChamadaResponse>> GetAsync(UsuarioAtual usuario, int turmaId, int? disciplinaId, DateOnly data)
     {
-        var (turma, erro) = await ValidarAcessoAsync(usuario, turmaId, disciplinaId);
+        var (turma, disciplina, erro) = await ValidarAcessoAsync(usuario, turmaId, disciplinaId);
         if (erro is not null)
             return new(default, erro.Message, erro.Error);
 
@@ -81,17 +87,17 @@ public class ChamadaService : IChamadaService
         if (erroData is not null)
             return new(default, erroData, ChamadaResultError.Validation);
 
-        var chamada = await _chamadaRepository.GetAsync(turmaId, disciplinaId, data);
-        return new(await MontarRespostaAsync(turma!, disciplinaId, data, chamada));
+        var chamada = await _chamadaRepository.GetAsync(turmaId, disciplina, data);
+        return new(await MontarRespostaAsync(turma!, disciplina, data, chamada));
     }
 
-    public async Task<ChamadaQueryResult<IEnumerable<ChamadaResumoResponse>>> ListAsync(UsuarioAtual usuario, int turmaId, int disciplinaId)
+    public async Task<ChamadaQueryResult<IEnumerable<ChamadaResumoResponse>>> ListAsync(UsuarioAtual usuario, int turmaId, int? disciplinaId)
     {
-        var (_, erro) = await ValidarAcessoAsync(usuario, turmaId, disciplinaId);
+        var (_, disciplina, erro) = await ValidarAcessoAsync(usuario, turmaId, disciplinaId);
         if (erro is not null)
             return new(default, erro.Message, erro.Error);
 
-        var chamadas = await _chamadaRepository.ListAsync(turmaId, disciplinaId);
+        var chamadas = await _chamadaRepository.ListAsync(turmaId, disciplina);
         var emails = await _chamadaRepository.GetEmailsUsuariosAsync(chamadas.Select(c => c.RegistradoPorUsuarioId));
 
         return new(chamadas.Select(c => new ChamadaResumoResponse(
@@ -106,9 +112,9 @@ public class ChamadaService : IChamadaService
             c.CreatedAt)).ToList());
     }
 
-    public async Task<ChamadaQueryResult<FrequenciaResponse>> GetFrequenciaAsync(UsuarioAtual usuario, int turmaId, int disciplinaId, int? periodoId)
+    public async Task<ChamadaQueryResult<FrequenciaResponse>> GetFrequenciaAsync(UsuarioAtual usuario, int turmaId, int? disciplinaId, int? periodoId)
     {
-        var (turma, erro) = await ValidarAcessoAsync(usuario, turmaId, disciplinaId);
+        var (turma, disciplina, erro) = await ValidarAcessoAsync(usuario, turmaId, disciplinaId);
         if (erro is not null)
             return new(default, erro.Message, erro.Error);
 
@@ -124,7 +130,7 @@ public class ChamadaService : IChamadaService
             (de, ate) = (periodo.DataInicio, periodo.DataTermino);
         }
 
-        var chamadas = await _chamadaRepository.ListAsync(turmaId, disciplinaId, de, ate);
+        var chamadas = await _chamadaRepository.ListAsync(turmaId, disciplina, de, ate);
         var enturmacoes = await _chamadaRepository.GetEnturmacoesAsync(turmaId, de, ate);
 
         // Alunos que passaram pela turma no período ou que têm registro nas chamadas dele.
@@ -157,17 +163,19 @@ public class ChamadaService : IChamadaService
 
     public async Task<ChamadaCommandResult> CreateAsync(UsuarioAtual usuario, ChamadaRequest request)
     {
-        var (turma, erro) = await ValidarAcessoAsync(usuario, request.TurmaId, request.DisciplinaId);
+        var (turma, disciplina, erro) = await ValidarAcessoAsync(usuario, request.TurmaId, request.DisciplinaId);
         if (erro is not null)
             return erro;
 
         if (turma!.Status != Turma.StatusAtivo)
             return Invalid("Não é possível lançar chamada em uma turma inativa.");
 
-        if (await _chamadaRepository.GetAsync(request.TurmaId, request.DisciplinaId, request.Data) is not null)
+        request.DisciplinaId = disciplina;
+        if (await _chamadaRepository.GetAsync(request.TurmaId, disciplina, request.Data) is not null)
         {
-            return new(false,
-                "Já existe uma chamada registrada para esta turma, disciplina e data. Abra a chamada existente para alterá-la.",
+            return new(false, Diaria(turma)
+                ? "Já existe uma chamada registrada para esta turma e data. Abra a chamada existente para alterá-la."
+                : "Já existe uma chamada registrada para esta turma, disciplina e data. Abra a chamada existente para alterá-la.",
                 Error: ChamadaResultError.Conflict);
         }
 
@@ -178,7 +186,7 @@ public class ChamadaService : IChamadaService
         await _chamadaRepository.AddAsync(new Chamada
         {
             TurmaId = request.TurmaId,
-            DisciplinaId = request.DisciplinaId,
+            DisciplinaId = disciplina,
             Data = request.Data,
             QuantidadeAulas = request.QuantidadeAulas,
             Conteudo = NormalizarConteudo(request.Conteudo),
@@ -186,9 +194,9 @@ public class ChamadaService : IChamadaService
             Registros = registros!,
         });
 
-        var salva = await _chamadaRepository.GetAsync(request.TurmaId, request.DisciplinaId, request.Data);
+        var salva = await _chamadaRepository.GetAsync(request.TurmaId, disciplina, request.Data);
         return new(true, "Chamada registrada com sucesso!",
-            await MontarRespostaAsync(turma, request.DisciplinaId, request.Data, salva));
+            await MontarRespostaAsync(turma, disciplina, request.Data, salva));
     }
 
     public async Task<ChamadaCommandResult> UpdateAsync(UsuarioAtual usuario, int id, ChamadaRequest request)
@@ -198,7 +206,7 @@ public class ChamadaService : IChamadaService
             return NotFound();
 
         // Turma, disciplina e data identificam a chamada e não mudam na edição.
-        var (turma, erro) = await ValidarAcessoAsync(usuario, chamada.TurmaId, chamada.DisciplinaId);
+        var (turma, _, erro) = await ValidarAcessoAsync(usuario, chamada.TurmaId, chamada.DisciplinaId);
         if (erro is not null)
             return erro;
 
@@ -227,9 +235,13 @@ public class ChamadaService : IChamadaService
         if (chamada is null)
             return NotFound();
 
-        var (_, erro) = await ValidarAcessoAsync(usuario, chamada.TurmaId, chamada.DisciplinaId);
+        var (turma, _, erro) = await ValidarAcessoAsync(usuario, chamada.TurmaId, chamada.DisciplinaId);
         if (erro is not null)
             return erro;
+
+        var periodoEncerrado = await GetPeriodoEncerradoAsync(turma!, chamada.Data);
+        if (periodoEncerrado is not null)
+            return Invalid(periodoEncerrado);
 
         await _chamadaRepository.DeleteAsync(chamada);
         return new(true, "Chamada excluída com sucesso!");
@@ -254,28 +266,52 @@ public class ChamadaService : IChamadaService
         return alocacoes.Select(a => (a.TurmaId, a.DisciplinaId)).ToHashSet();
     }
 
-    private async Task<(Turma? Turma, ChamadaCommandResult? Erro)> ValidarAcessoAsync(UsuarioAtual usuario, int turmaId, int disciplinaId)
+    /// <summary>RF017 RN02: etapas dos Anos Iniciais (polivalente) registram uma frequência por dia, sem disciplina.</summary>
+    private static bool Diaria(Turma turma) => turma.EtapaEnsino.TipoFrequencia == EtapaEnsino.FrequenciaDiaria;
+
+    /// <summary>
+    /// Valida o acesso à turma (e à disciplina, nas etapas de frequência por aula). Devolve a disciplina que
+    /// vale para a chamada: a informada, ou nula na frequência diária (onde a informada é ignorada).
+    /// </summary>
+    private async Task<(Turma? Turma, int? DisciplinaId, ChamadaCommandResult? Erro)> ValidarAcessoAsync(
+        UsuarioAtual usuario, int turmaId, int? disciplinaId)
     {
         var turma = await _turmaRepository.GetByIdAsync(turmaId);
         if (turma is null)
-            return (null, new(false, "Turma não encontrada.", Error: ChamadaResultError.NotFound));
-
-        var disciplina = await _disciplinaRepository.GetByIdAsync(disciplinaId);
-        if (disciplina is null)
-            return (null, new(false, "Disciplina não encontrada.", Error: ChamadaResultError.NotFound));
+            return (null, null, new(false, "Turma não encontrada.", Error: ChamadaResultError.NotFound));
 
         var escopo = await GetEscopoAsync(usuario);
-        if (escopo is not null && !escopo.Contains((turmaId, disciplinaId)))
+
+        if (Diaria(turma))
         {
-            return (null, new(false,
+            if (escopo is not null && !escopo.Any(e => e.TurmaId == turmaId))
+            {
+                return (null, null, new(false,
+                    "Você só pode acessar a chamada das turmas em que está alocado.",
+                    Error: ChamadaResultError.Forbidden));
+            }
+
+            return (turma, null, null);
+        }
+
+        if (disciplinaId is null)
+            return (null, null, Invalid("Selecione a disciplina da chamada."));
+
+        var disciplina = await _disciplinaRepository.GetByIdAsync(disciplinaId.Value);
+        if (disciplina is null)
+            return (null, null, new(false, "Disciplina não encontrada.", Error: ChamadaResultError.NotFound));
+
+        if (escopo is not null && !escopo.Contains((turmaId, disciplinaId.Value)))
+        {
+            return (null, null, new(false,
                 "Você só pode acessar a chamada das turmas e disciplinas em que está alocado.",
                 Error: ChamadaResultError.Forbidden));
         }
 
         if (escopo is null && !FazParteDaGrade(disciplina, turma))
-            return (null, Invalid("A disciplina não faz parte da grade desta turma."));
+            return (null, null, Invalid("A disciplina não faz parte da grade desta turma."));
 
-        return (turma, null);
+        return (turma, disciplinaId, null);
     }
 
     // Mesma regra da alocação de professor: disciplina sem etapas vinculadas vale para qualquer etapa.
@@ -300,8 +336,19 @@ public class ChamadaService : IChamadaService
         return null;
     }
 
+    /// <summary>RF017 RN01/EX01: motivo do bloqueio da data pelo Calendário Letivo, ou nulo se pode registrar.</summary>
     private async Task<string?> GetBloqueioAsync(Turma turma, DateOnly data)
-        => CalendarioEfetivo.MotivoBloqueio(data, await _calendarioRepository.GetPublicadosAsync(turma.AnoLetivoId, turma.EscolaId));
+        => CalendarioEfetivo.MotivoBloqueioFrequencia(data, await _calendarioRepository.GetPublicadosAsync(turma.AnoLetivoId, turma.EscolaId));
+
+    /// <summary>RF017 EX02: mensagem de bloqueio se o período avaliativo da data foi encerrado pela coordenação.</summary>
+    private async Task<string?> GetPeriodoEncerradoAsync(Turma turma, DateOnly data)
+    {
+        var ano = await _anoLetivoRepository.GetByIdAsync(turma.AnoLetivoId);
+        var encerrado = ano?.Periodos.Any(p => p.Encerrado && data >= p.DataInicio && data <= p.DataTermino) ?? false;
+        return encerrado
+            ? "Este período letivo está encerrado para alterações. Contate a coordenação pedagógica."
+            : null;
+    }
 
     private async Task<(List<ChamadaAluno>? Registros, ChamadaCommandResult? Erro)> ValidarDadosAsync(
         Turma turma, ChamadaRequest request, Chamada? chamadaExistente)
@@ -310,10 +357,18 @@ public class ChamadaService : IChamadaService
         if (erroData is not null)
             return (null, Invalid(erroData));
 
+        var periodoEncerrado = await GetPeriodoEncerradoAsync(turma, request.Data);
+        if (periodoEncerrado is not null)
+            return (null, Invalid(periodoEncerrado));
+
         // RF005A RN01: dia sem aula no calendário publicado bloqueia a frequência e o conteúdo ministrado.
         var bloqueio = await GetBloqueioAsync(turma, request.Data);
         if (bloqueio is not null)
             return (null, Invalid(bloqueio));
+
+        // RF017 RN02: na frequência diária a chamada vale o dia inteiro, uma única vez.
+        if (Diaria(turma))
+            request.QuantidadeAulas = 1;
 
         if (request.QuantidadeAulas < 1 || request.QuantidadeAulas > Chamada.MaxQuantidadeAulas)
             return (null, Invalid($"A quantidade de aulas deve estar entre 1 e {Chamada.MaxQuantidadeAulas}."));
@@ -394,10 +449,16 @@ public class ChamadaService : IChamadaService
             .ToDictionary(g => g.Key, g => g.First());
     }
 
-    private async Task<ChamadaResponse> MontarRespostaAsync(Turma turma, int disciplinaId, DateOnly data, Chamada? chamada)
+    private async Task<ChamadaResponse> MontarRespostaAsync(Turma turma, int? disciplinaId, DateOnly data, Chamada? chamada)
     {
-        var lista = await GetListaDeAlunosAsync(turma.Id, data, chamada);
+        var bloqueio = await GetBloqueioAsync(turma, data);
+
+        // RF017 EX01: data sem aula e sem chamada registrada: a lista não é aberta.
+        var lista = bloqueio is not null && chamada is null
+            ? new Dictionary<int, Aluno>()
+            : await GetListaDeAlunosAsync(turma.Id, data, chamada);
         var registros = chamada?.Registros.ToDictionary(r => r.AlunoId) ?? new Dictionary<int, ChamadaAluno>();
+        var periodoEncerrado = await GetPeriodoEncerradoAsync(turma, data) is not null;
 
         var alunos = lista.Values
             .OrderBy(a => a.Nome, StringComparer.CurrentCultureIgnoreCase)
@@ -409,9 +470,8 @@ public class ChamadaService : IChamadaService
             })
             .ToList();
 
-        var bloqueio = await GetBloqueioAsync(turma, data);
         if (chamada is null)
-            return new ChamadaResponse(null, turma.Id, disciplinaId, data, 1, null, null, null, null, null, alunos, bloqueio);
+            return new ChamadaResponse(null, turma.Id, disciplinaId, data, 1, null, null, null, null, null, alunos, bloqueio, periodoEncerrado);
 
         var emails = await _chamadaRepository.GetEmailsUsuariosAsync(
             new[] { chamada.RegistradoPorUsuarioId, chamada.AtualizadoPorUsuarioId ?? 0 }.Where(id => id > 0));
@@ -422,7 +482,8 @@ public class ChamadaService : IChamadaService
             chamada.AtualizadoPorUsuarioId is int atualizadoPor ? emails.GetValueOrDefault(atualizadoPor) : null,
             chamada.UpdatedAt,
             alunos,
-            bloqueio);
+            bloqueio,
+            periodoEncerrado);
     }
 
     private static string? NormalizarConteudo(string? conteudo)

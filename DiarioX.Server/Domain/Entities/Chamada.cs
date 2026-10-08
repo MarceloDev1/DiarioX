@@ -3,6 +3,8 @@ namespace DiarioX.Server.Domain.Entities;
 /// <summary>
 /// Chamada de uma aula: turma + disciplina + data. Uma aula dupla é registrada uma única vez com
 /// QuantidadeAulas = 2, e a situação de cada aluno vale para todas as aulas do registro.
+/// Nas etapas de frequência diária (Anos Iniciais, RF017 RN02) não há disciplina: a chamada é uma só por
+/// turma e dia, com DisciplinaId nulo.
 /// </summary>
 public class Chamada : ITenantEntity
 {
@@ -12,8 +14,8 @@ public class Chamada : ITenantEntity
     public int TenantId { get; set; }
     public int TurmaId { get; set; }
     public Turma Turma { get; set; } = null!;
-    public int DisciplinaId { get; set; }
-    public Disciplina Disciplina { get; set; } = null!;
+    public int? DisciplinaId { get; set; }
+    public Disciplina? Disciplina { get; set; }
     public DateOnly Data { get; set; }
     public int QuantidadeAulas { get; set; } = 1;
 

@@ -3,17 +3,21 @@ using DiarioX.Server.Application.DTOs.Chamadas;
 
 namespace DiarioX.Server.Application.Interfaces;
 
+/// <remarks>
+/// Nas turmas de frequência diária (Anos Iniciais, RF017 RN02) não há disciplina: a chamada é uma por turma e
+/// dia, e o <c>disciplinaId</c> informado é ignorado.
+/// </remarks>
 public interface IChamadaService
 {
     /// <summary>Turmas e disciplinas em que o usuário pode lançar chamada (o professor vê só as suas alocações).</summary>
     Task<IEnumerable<ChamadaTurmaResponse>> GetTurmasAsync(UsuarioAtual usuario);
 
     /// <summary>Chamada da data: a já registrada ou a lista de alunos enturmados para lançar.</summary>
-    Task<ChamadaQueryResult<ChamadaResponse>> GetAsync(UsuarioAtual usuario, int turmaId, int disciplinaId, DateOnly data);
+    Task<ChamadaQueryResult<ChamadaResponse>> GetAsync(UsuarioAtual usuario, int turmaId, int? disciplinaId, DateOnly data);
 
-    Task<ChamadaQueryResult<IEnumerable<ChamadaResumoResponse>>> ListAsync(UsuarioAtual usuario, int turmaId, int disciplinaId);
+    Task<ChamadaQueryResult<IEnumerable<ChamadaResumoResponse>>> ListAsync(UsuarioAtual usuario, int turmaId, int? disciplinaId);
 
-    Task<ChamadaQueryResult<FrequenciaResponse>> GetFrequenciaAsync(UsuarioAtual usuario, int turmaId, int disciplinaId, int? periodoId);
+    Task<ChamadaQueryResult<FrequenciaResponse>> GetFrequenciaAsync(UsuarioAtual usuario, int turmaId, int? disciplinaId, int? periodoId);
 
     Task<ChamadaCommandResult> CreateAsync(UsuarioAtual usuario, ChamadaRequest request);
     Task<ChamadaCommandResult> UpdateAsync(UsuarioAtual usuario, int id, ChamadaRequest request);

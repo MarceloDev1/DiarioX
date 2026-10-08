@@ -54,6 +54,11 @@ function ChamadaPage() {
 
     const turma = turmas.find(t => t.turmaId === turmaId) ?? null;
     const disciplina = turma?.disciplinas.find(d => d.id === disciplinaId) ?? null;
+    // RF017 RN02: nos Anos Iniciais a frequência é diária, uma por turma e dia, sem disciplina.
+    const diaria = turma?.tipoFrequencia === 'DIARIA';
+    const pronta = !!turma && (diaria || !!disciplina);
+    const disciplinaDaChamada = diaria ? null : disciplina?.id ?? null;
+    const chaveDaChamada = `${turma?.turmaId}-${disciplinaDaChamada ?? 'diaria'}`;
 
     const handleTurmaChange = (value: string) => {
         const proxima = turmas.find(t => t.turmaId === Number(value)) ?? null;
@@ -96,22 +101,29 @@ function ChamadaPage() {
                                 ))}
                             </select>
                         </div>
-                        <div className="form-group">
-                            <label htmlFor="chamada-disciplina">Disciplina</label>
-                            <select
-                                id="chamada-disciplina"
-                                value={disciplinaId ?? ''}
-                                onChange={e => setDisciplinaId(e.target.value ? Number(e.target.value) : null)}
-                                disabled={!turma}
-                            >
-                                <option value="">Selecione...</option>
-                                {turma?.disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
-                            </select>
-                        </div>
+                        {diaria ? (
+                            <div className="form-group">
+                                <label>Frequência</label>
+                                <span className="field-hint">Diária: uma chamada por dia para toda a turma, sem disciplina.</span>
+                            </div>
+                        ) : (
+                            <div className="form-group">
+                                <label htmlFor="chamada-disciplina">Disciplina</label>
+                                <select
+                                    id="chamada-disciplina"
+                                    value={disciplinaId ?? ''}
+                                    onChange={e => setDisciplinaId(e.target.value ? Number(e.target.value) : null)}
+                                    disabled={!turma}
+                                >
+                                    <option value="">Selecione...</option>
+                                    {turma?.disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+                                </select>
+                            </div>
+                        )}
                     </div>
 
-                    {!turma || !disciplina ? (
-                        <EmptyState emptyMessage="Selecione a turma e a disciplina para lançar ou consultar a chamada." />
+                    {!turma || !pronta ? (
+                        <EmptyState emptyMessage={diaria ? "Selecione a turma para lançar ou consultar a chamada." : "Selecione a turma e a disciplina para lançar ou consultar a chamada."} />
                     ) : (
                         <div className="form-grid">
                             <div className="form-tabs" role="tablist" aria-label="Chamada">
@@ -132,23 +144,23 @@ function ChamadaPage() {
                             <div className="chamada-painel" role="tabpanel">
                                 {aba === 'lancar' && (
                                     <LancarChamada
-                                        key={`${turma.turmaId}-${disciplina.id}`}
+                                        key={chaveDaChamada}
                                         turma={turma}
-                                        disciplinaId={disciplina.id}
+                                        disciplinaId={disciplinaDaChamada}
                                         data={data}
                                         onDataChange={setData}
                                     />
                                 )}
                                 {aba === 'historico' && (
                                     <HistoricoChamadas
-                                        key={`${turma.turmaId}-${disciplina.id}`}
+                                        key={chaveDaChamada}
                                         turmaId={turma.turmaId}
-                                        disciplinaId={disciplina.id}
+                                        disciplinaId={disciplinaDaChamada}
                                         onAbrir={handleAbrirChamada}
                                     />
                                 )}
                                 {aba === 'frequencia' && (
-                                    <FrequenciaChamada key={`${turma.turmaId}-${disciplina.id}`} turma={turma} disciplinaId={disciplina.id} />
+                                    <FrequenciaChamada key={chaveDaChamada} turma={turma} disciplinaId={disciplinaDaChamada} />
                                 )}
                             </div>
                         </div>

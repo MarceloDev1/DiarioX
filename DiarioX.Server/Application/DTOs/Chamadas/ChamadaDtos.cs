@@ -1,10 +1,12 @@
+using DiarioX.Server.Domain.Entities;
+
 namespace DiarioX.Server.Application.DTOs.Chamadas;
 
 // ---------- Seleção de turma/disciplina ----------
 
 public record ChamadaDisciplinaResponse(int Id, string Nome);
 
-public record ChamadaPeriodoResponse(int Id, string Nome, DateOnly DataInicio, DateOnly DataTermino);
+public record ChamadaPeriodoResponse(int Id, string Nome, DateOnly DataInicio, DateOnly DataTermino, bool Encerrado = false);
 
 public record ChamadaTurmaResponse(
     int TurmaId,
@@ -15,7 +17,9 @@ public record ChamadaTurmaResponse(
     DateOnly AnoLetivoInicio,
     DateOnly AnoLetivoTermino,
     IReadOnlyList<ChamadaDisciplinaResponse> Disciplinas,
-    IReadOnlyList<ChamadaPeriodoResponse> Periodos
+    IReadOnlyList<ChamadaPeriodoResponse> Periodos,
+    // RF017 RN02: POR_AULA (por disciplina) ou DIARIA (uma por dia, sem disciplina; Disciplinas vem vazia).
+    string TipoFrequencia = EtapaEnsino.FrequenciaPorAula
 );
 
 // ---------- Lançamento ----------
@@ -34,7 +38,7 @@ public record ChamadaAlunoResponse(
 public record ChamadaResponse(
     int? ChamadaId,
     int TurmaId,
-    int DisciplinaId,
+    int? DisciplinaId,
     DateOnly Data,
     int QuantidadeAulas,
     string? Conteudo,
@@ -43,8 +47,11 @@ public record ChamadaResponse(
     string? AtualizadoPor,
     DateTime? AtualizadoEm,
     IReadOnlyList<ChamadaAlunoResponse> Alunos,
-    // RF005A EX01: motivo do bloqueio da data pelo Calendário Letivo; nulo = lançamentos permitidos.
-    string? Bloqueio = null
+    // RF017 EX01: motivo do bloqueio da data pelo Calendário Letivo; nulo = lançamentos permitidos.
+    // Com a data bloqueada e sem chamada registrada, a lista de alunos não é aberta (vem vazia).
+    string? Bloqueio = null,
+    // RF017 EX02: o período avaliativo da data está encerrado; a chamada só pode ser consultada.
+    bool PeriodoEncerrado = false
 );
 
 public class ChamadaAlunoRequest
@@ -57,7 +64,8 @@ public class ChamadaAlunoRequest
 public class ChamadaRequest
 {
     public int TurmaId { get; set; }
-    public int DisciplinaId { get; set; }
+    /// <summary>Obrigatório nas turmas de frequência por aula; ignorado nas de frequência diária.</summary>
+    public int? DisciplinaId { get; set; }
     public DateOnly Data { get; set; }
     public int QuantidadeAulas { get; set; } = 1;
     public string? Conteudo { get; set; }

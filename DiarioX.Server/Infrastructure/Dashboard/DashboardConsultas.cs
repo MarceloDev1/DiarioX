@@ -85,7 +85,7 @@ public class DashboardConsultas : IDashboardConsultas
         var chamadas = _context.Chamadas.AsNoTracking().AsQueryable();
         if (professorId is not null)
             chamadas = chamadas.Where(c => _context.ProfessorAlocacoes.Any(pa =>
-                pa.ProfessorId == professorId && pa.Ativa && pa.TurmaId == c.TurmaId && pa.DisciplinaId == c.DisciplinaId));
+                pa.ProfessorId == professorId && pa.Ativa && pa.TurmaId == c.TurmaId && (c.DisciplinaId == null || pa.DisciplinaId == c.DisciplinaId)));
 
         var linhas = await chamadas
             .OrderByDescending(c => c.Data).ThenByDescending(c => c.CreatedAt)
@@ -94,7 +94,7 @@ public class DashboardConsultas : IDashboardConsultas
             {
                 c.Id,
                 Turma = c.Turma.NomeCompleto,
-                Disciplina = c.Disciplina.Nome,
+                Disciplina = c.Disciplina == null ? "Frequência diária" : c.Disciplina.Nome,
                 c.RegistradoPorUsuarioId,
                 Professor = _context.Professores
                     .Where(x => x.UsuarioId == c.RegistradoPorUsuarioId)
@@ -163,7 +163,7 @@ public class DashboardConsultas : IDashboardConsultas
 
         return alocacoes
             .Where(pa => !_context.Chamadas.Any(c =>
-                c.TurmaId == pa.TurmaId && c.DisciplinaId == pa.DisciplinaId && c.Data >= semChamadaDesde));
+                c.TurmaId == pa.TurmaId && (c.DisciplinaId == null || c.DisciplinaId == pa.DisciplinaId) && c.Data >= semChamadaDesde));
     }
 
     /// <summary>Registros de presença de chamadas no intervalo (do professor, quando informado).</summary>
@@ -174,7 +174,7 @@ public class DashboardConsultas : IDashboardConsultas
         if (professorId is not null)
             registros = registros.Where(r => _context.ProfessorAlocacoes.Any(pa =>
                 pa.ProfessorId == professorId && pa.Ativa &&
-                pa.TurmaId == r.Chamada.TurmaId && pa.DisciplinaId == r.Chamada.DisciplinaId));
+                pa.TurmaId == r.Chamada.TurmaId && (r.Chamada.DisciplinaId == null || pa.DisciplinaId == r.Chamada.DisciplinaId)));
         return registros;
     }
 
