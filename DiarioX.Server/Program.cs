@@ -75,6 +75,7 @@ builder.Services.AddScoped<ITransferenciaRepository, TransferenciaRepository>();
 builder.Services.AddScoped<IPerfilPermissaoRepository, PerfilPermissaoRepository>();
 builder.Services.AddScoped<IChamadaRepository, ChamadaRepository>();
 builder.Services.AddScoped<IHabilidadeBnccRepository, HabilidadeBnccRepository>();
+builder.Services.AddScoped<IHorarioAulaRepository, HorarioAulaRepository>();
 builder.Services.AddScoped<IConteudoMinistradoRepository, ConteudoMinistradoRepository>();
 builder.Services.AddScoped<IFaturamentoRepository, FaturamentoRepository>();
 builder.Services.AddScoped<IRegraAvaliacaoRepository, RegraAvaliacaoRepository>();
@@ -102,6 +103,7 @@ builder.Services.AddSingleton<IDeclaracaoTransferenciaPdf, DeclaracaoTransferenc
 builder.Services.AddScoped<IPermissaoService, PermissaoService>();
 builder.Services.AddScoped<IChamadaService, ChamadaService>();
 builder.Services.AddScoped<IHabilidadeBnccService, HabilidadeBnccService>();
+builder.Services.AddScoped<IHorarioAulaService, HorarioAulaService>();
 builder.Services.AddScoped<IConteudoMinistradoService, ConteudoMinistradoService>();
 builder.Services.AddScoped<IRegraAvaliacaoService, RegraAvaliacaoService>();
 builder.Services.AddScoped<INotaService, NotaService>();
@@ -121,6 +123,8 @@ builder.Services.AddScoped<IRelatorioService, RelatorioService>();
 // Painel da página inicial
 builder.Services.AddScoped<IDashboardConsultas, DashboardConsultas>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IPainelProfessorConsultas, PainelProfessorConsultas>();
+builder.Services.AddScoped<IPainelProfessorService, PainelProfessorService>();
 
 // Faturamento da plataforma (Asaas): a chave de API e o token do webhook ficam em user-secrets/variáveis de ambiente.
 builder.Services.Configure<AsaasOptions>(builder.Configuration.GetSection(AsaasOptions.Secao));

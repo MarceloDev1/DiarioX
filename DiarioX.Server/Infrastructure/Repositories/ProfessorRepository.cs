@@ -28,8 +28,7 @@ public class ProfessorRepository : BaseRepository<Professor>, IProfessorReposito
 
     public async Task<Professor?> GetByUsuarioIdAsync(int usuarioId)
     {
-        return await DaInstituicao
-            .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId);
+        return await _context.ProfessoresDoUsuario(usuarioId).AsNoTracking().FirstOrDefaultAsync();
     }
 
     public async Task<Professor?> GetByCpfAsync(string cpf)

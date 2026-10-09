@@ -1,0 +1,60 @@
+.horarios-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.horarios-aviso {
+    margin: 0 0 1rem;
+}
+
+.horarios-grade th[scope='row'] {
+    width: 4.5rem;
+    white-space: nowrap;
+}
+
+.horarios-grade td {
+    min-width: 7.5rem;
+}
+
+.horarios-grade select {
+    width: 100%;
+}
+
+.horarios-celula-ocupada {
+    border-color: #b9a3ef;
+    background: #f6f3fd;
+    font-weight: 600;
+}
+
+.horarios-linhas {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.75rem 0 1.25rem;
+}
+
+.horarios-resumo h2 {
+    margin: 0 0 0.6rem;
+    font-size: 1rem;
+}
+
+.horarios-resumo ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.5rem 1.5rem;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+}
+
+.horarios-resumo li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.4rem;
+    align-items: baseline;
+}
+
+.horarios-resumo li .field-hint {
+    flex-basis: 100%;
+}

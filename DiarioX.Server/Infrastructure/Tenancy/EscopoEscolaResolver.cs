@@ -37,12 +37,26 @@ public class EscopoEscolaResolver
         if (!somenteProfessor)
             return null;
 
-        return await _context.ProfessorEscolas
+        var professorId = await _context.ProfessoresDoUsuario(usuarioId).Select(p => (int?)p.Id).FirstOrDefaultAsync();
+        if (professorId is null)
+            return [];
+
+        // Escolas de atuação do cadastro e as das turmas em que está alocado (a alocação pode ter sido feita
+        // sem a escola marcada no cadastro).
+        var escolas = await _context.ProfessorEscolas
             .IgnoreQueryFilters([AppDbContext.FiltroEscola])
             .AsNoTracking()
-            .Where(pe => pe.Professor.UsuarioId == usuarioId)
+            .Where(pe => pe.ProfessorId == professorId)
             .Select(pe => pe.EscolaId)
-            .Distinct()
             .ToListAsync();
+
+        var dasAlocacoes = await _context.ProfessorAlocacoes
+            .IgnoreQueryFilters([AppDbContext.FiltroEscola])
+            .AsNoTracking()
+            .Where(pa => pa.ProfessorId == professorId && pa.Ativa)
+            .Select(pa => pa.Turma.EscolaId)
+            .ToListAsync();
+
+        return escolas.Concat(dasAlocacoes).Distinct().ToList();
     }
 }

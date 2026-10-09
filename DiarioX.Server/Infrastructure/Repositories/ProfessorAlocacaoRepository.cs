@@ -20,6 +20,9 @@ public class ProfessorAlocacaoRepository : BaseRepository<ProfessorAlocacao>, IP
     public async Task<IEnumerable<ProfessorAlocacao>> GetAtivasAsync()
         => await Query().Where(x => x.Ativa).ToListAsync();
 
+    public async Task<IEnumerable<ProfessorAlocacao>> GetAtivasDaTurmaAsync(int turmaId)
+        => await Query().Where(x => x.Ativa && x.TurmaId == turmaId).ToListAsync();
+
     public async Task<IEnumerable<ProfessorAlocacao>> GetAtivasDetalhadasAsync()
         => await Query()
             .Where(x => x.Ativa)

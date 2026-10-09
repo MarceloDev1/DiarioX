@@ -39,6 +39,8 @@ public static class Permissoes
         new("disciplinas", "Disciplinas", Crud),
         new("regras-avaliacao", "Regras de Avaliação", Crud),
         new("turmas", "Turmas", Crud),
+        // Grade semanal de tempos de aula de cada turma (aulas previstas no painel do professor).
+        new("horarios", "Horário das Turmas", [Visualizar, Editar]),
         new("professores", "Professores", Crud),
         new("alocacao-professor", "Alocação de Professor", [Visualizar, Criar, Excluir]),
         // Enturmar e remanejar alteram a situação do aluno: exigem "alunos.editar".
@@ -117,6 +119,12 @@ public static class Permissoes
         public const string Criar = "turmas.criar";
         public const string Editar = "turmas.editar";
         public const string Excluir = "turmas.excluir";
+    }
+
+    public static class Horarios
+    {
+        public const string Visualizar = "horarios.visualizar";
+        public const string Editar = "horarios.editar";
     }
 
     public static class Professores
@@ -211,7 +219,7 @@ public static class Permissoes
                 .Select(m => Codigo(m.Id, Visualizar))
                 .Concat([
                     Alunos.Criar, Alunos.Editar,
-                    Turmas.Criar, Turmas.Editar,
+                    Turmas.Criar, Turmas.Editar, Horarios.Editar,
                     Professores.Criar, Professores.Editar,
                     AlocacaoProfessor.Criar, AlocacaoProfessor.Excluir,
                     Chamada.Criar, Chamada.Editar,
@@ -225,7 +233,7 @@ public static class Permissoes
             return [Alunos.Visualizar];
 
         if (Is(perfilNome, Perfil.Professor))
-            return ["turmas.visualizar", "disciplinas.visualizar", Alunos.Visualizar,
+            return ["turmas.visualizar", Horarios.Visualizar, "disciplinas.visualizar", Alunos.Visualizar,
                 Chamada.Visualizar, Chamada.Criar, Chamada.Editar, CalendarioLetivo.Visualizar,
                 ConteudoMinistrado.Visualizar, ConteudoMinistrado.Criar, ConteudoMinistrado.Editar, ConteudoMinistrado.Excluir,
                 HabilidadesBncc.Visualizar,

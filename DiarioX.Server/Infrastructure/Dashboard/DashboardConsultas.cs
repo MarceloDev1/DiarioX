@@ -19,8 +19,7 @@ public class DashboardConsultas : IDashboardConsultas
     }
 
     public Task<int?> ObterProfessorIdDoUsuarioAsync(int usuarioId)
-        => _context.Professores.AsNoTracking()
-            .Where(p => p.UsuarioId == usuarioId)
+        => _context.ProfessoresDoUsuario(usuarioId)
             .Select(p => (int?)p.Id)
             .FirstOrDefaultAsync();
 
