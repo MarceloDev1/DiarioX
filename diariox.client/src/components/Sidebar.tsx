@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './Sidebar.css';
 import type { IconType } from 'react-icons';
-import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiUserMinus, FiLogOut, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare, FiDollarSign, FiCreditCard, FiBarChart2, FiCalendar, FiEdit3, FiTarget, FiSliders, FiClipboard } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiUserMinus, FiLogOut, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare, FiDollarSign, FiCreditCard, FiBarChart2, FiCalendar, FiEdit3, FiTarget, FiSliders, FiClipboard, FiClock } from 'react-icons/fi';
 import { MdSchool, MdPeople, MdManageAccounts } from 'react-icons/md';
 import { usePermissoes } from '../hooks/usePermissoes';
 import { permissaoDaPagina } from '../utils/permissoes';
@@ -49,6 +49,7 @@ const menuItems: MenuItem[] = [
         { id: 'disciplinas', label: 'Disciplinas', icon: FiBook },
         { id: 'regras-avaliacao', label: 'Regras de Avaliação', icon: FiSliders },
         { id: 'turmas', label: 'Turmas', icon: FiUsers },
+        { id: 'horarios', label: 'Grade de Horários', icon: FiClock },
         { id: 'habilidades-bncc', label: 'Habilidades BNCC', icon: FiTarget },
     ] },
     { id: 'professor', label: 'Professores', icon: FiUsers, submenu: [

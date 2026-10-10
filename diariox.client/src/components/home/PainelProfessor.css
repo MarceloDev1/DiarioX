@@ -1,0 +1,437 @@
+/* Home do professor. Reaproveita os cartões e selos de Home.css. */
+
+.painel-professor {
+    --painel-vermelho: #dc2626;
+    --painel-vermelho-fundo: #fde8ec;
+    --painel-verde-fundo: #e9f9ef;
+}
+
+.painel-professor-atualizando {
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+}
+
+.painel-professor-topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.painel-professor-escola {
+    width: min(100%, 420px);
+    margin: 0;
+}
+
+.painel-professor-ano {
+    color: var(--home-texto);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+@media (prefers-color-scheme: dark) {
+    .painel-professor-ano {
+        color: var(--text-h);
+    }
+}
+
+.painel-professor-linha {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.4fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.painel-professor-graficos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.painel-cartao-aulas .home-cartao-cabecalho h2,
+.painel-cartao-pendencias .home-cartao-cabecalho h2,
+.painel-cartao-diarios .home-cartao-cabecalho h2 {
+    padding-left: 0.7rem;
+    border-left: 4px solid;
+    border-radius: 2px;
+}
+
+.painel-cartao-aulas .home-cartao-cabecalho h2 { border-left-color: #8a2be2; }
+.painel-cartao-pendencias .home-cartao-cabecalho h2 { border-left-color: var(--painel-vermelho); }
+.painel-cartao-diarios .home-cartao-cabecalho h2 { border-left-color: #2563eb; }
+
+.painel-data {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: -0.4rem 0 0.9rem;
+    color: var(--home-texto);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+/* ---------- Listas ---------- */
+
+.painel-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.painel-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--home-borda);
+    border-radius: 10px;
+}
+
+.painel-lista-compacta .painel-item {
+    padding: 0.55rem 0.75rem;
+}
+
+.painel-item-texto {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.painel-item-texto strong {
+    color: var(--home-titulo);
+    font-size: 0.92rem;
+}
+
+.painel-item-texto > span {
+    color: var(--home-texto);
+    font-size: 0.8rem;
+}
+
+.painel-item-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.2rem;
+}
+
+.painel-item-status .home-selo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.painel-item-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.painel-botao {
+    padding: 0.3rem 0.7rem;
+    border: 1px solid #d4c2f5;
+    border-radius: 8px;
+    background: #f6f3fd;
+    color: var(--home-roxo);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.painel-botao:hover {
+    background: #ece4fb;
+}
+
+.painel-botao:focus-visible {
+    outline: 2px solid var(--home-roxo);
+    outline-offset: 2px;
+}
+
+.painel-botao-alerta {
+    border-color: #fbcfd6;
+    background: #fff1f3;
+    color: #b4233a;
+}
+
+.painel-botao-alerta:hover {
+    background: var(--painel-vermelho-fundo);
+}
+
+/* ---------- Calendário de pendências ---------- */
+
+.painel-calendario-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+}
+
+.painel-calendario-nav strong {
+    color: var(--home-titulo);
+    font-size: 0.92rem;
+}
+
+.painel-calendario-nav button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--home-borda);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--home-titulo);
+    cursor: pointer;
+}
+
+.painel-calendario-nav button:disabled {
+    cursor: default;
+    opacity: 0.35;
+}
+
+.painel-calendario-grade {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.25rem;
+    text-align: center;
+}
+
+.painel-calendario-carregando {
+    opacity: 0.5;
+}
+
+.painel-calendario-semana {
+    color: var(--home-texto);
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.painel-dia {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: none;
+    color: var(--home-titulo);
+    font: inherit;
+    font-size: 0.82rem;
+}
+
+.painel-dia-fora-do-ano { color: #c4cad6; }
+.painel-dia-nao-letivo { background: #f1f4f9; color: #9aa3b2; }
+.painel-dia-sem-aula { color: var(--home-texto); }
+.painel-dia-em-dia { background: var(--painel-verde-fundo); color: #15803d; font-weight: 700; }
+.painel-dia-futuro { color: var(--home-texto); }
+.painel-dia-hoje { border-color: var(--home-roxo); color: var(--home-roxo); font-weight: 700; }
+
+.painel-dia-pendente {
+    background: var(--painel-vermelho);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.painel-dia-pendente:hover {
+    filter: brightness(0.92);
+}
+
+.painel-dia-pendente:focus-visible,
+.painel-dia-selecionado {
+    outline: 2px solid var(--home-titulo);
+    outline-offset: 1px;
+}
+
+.painel-calendario-resumo {
+    margin: 0.75rem 0 0.6rem;
+    color: var(--home-texto);
+    font-size: 0.8rem;
+}
+
+/* ---------- Diários ---------- */
+
+.painel-diarios {
+    max-height: 26rem;
+    overflow-y: auto;
+}
+
+.painel-diario {
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--home-borda);
+    border-radius: 10px;
+}
+
+.painel-diario-cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.6rem;
+    margin-bottom: 0.4rem;
+}
+
+.painel-diario-cabecalho strong {
+    color: var(--home-titulo);
+    font-size: 0.95rem;
+}
+
+.painel-diario-cabecalho > span:not(.home-selo) {
+    color: var(--home-texto);
+    font-size: 0.78rem;
+}
+
+.painel-diario-cabecalho .home-selo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.painel-diario-linha {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    padding: 0.45rem 0;
+    border-top: 1px solid #f1f3f8;
+    color: var(--home-titulo);
+    font-size: 0.86rem;
+}
+
+.painel-diario-linha small {
+    color: var(--home-texto);
+}
+
+/* ---------- Gráficos ---------- */
+
+.painel-grafico {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.painel-grafico-rosca {
+    width: 160px;
+    height: 160px;
+    flex-shrink: 0;
+}
+
+.painel-grafico-valor {
+    fill: var(--home-titulo);
+    font-size: 6px;
+    font-weight: 700;
+}
+
+.painel-grafico-legenda {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 180px;
+}
+
+.painel-grafico-legenda ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--home-texto);
+    font-size: 0.88rem;
+}
+
+.painel-grafico-legenda li {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.painel-grafico-legenda strong {
+    color: var(--home-titulo);
+}
+
+.painel-grafico-legenda small {
+    color: var(--home-texto);
+    font-size: 0.75rem;
+}
+
+.painel-grafico-cor {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 3px;
+}
+
+/* ---------- Notas por período ---------- */
+
+.painel-periodos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.painel-periodo {
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--home-borda);
+    border-radius: 10px;
+}
+
+.painel-periodo-pendente {
+    border-color: #fbcfd6;
+}
+
+.painel-periodo header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+    margin-bottom: 0.7rem;
+}
+
+.painel-periodo header strong {
+    color: var(--home-titulo);
+}
+
+.painel-periodo-datas {
+    flex-basis: 100%;
+    color: var(--home-texto);
+    font-size: 0.76rem;
+}
+
+.painel-periodo .home-vazio {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    color: #15803d;
+}
+
+/* ---------- Responsivo ---------- */
+
+@media (max-width: 1200px) {
+    .painel-professor-linha {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .painel-cartao-diarios {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 760px) {
+    .painel-professor-linha,
+    .painel-professor-graficos {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

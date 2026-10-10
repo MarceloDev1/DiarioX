@@ -8,6 +8,7 @@ import UsuariosPage from './usuarios/UsuariosPage';
 import AnosLetivosPage from './anos-letivos/AnosLetivosPage';
 import CalendarioLetivoPage from './calendario-letivo/CalendarioLetivoPage';
 import TurmasPage from './turmas/TurmasPage';
+import HorariosPage from './horarios/HorariosPage';
 import DisciplinasPage from './disciplinas/DisciplinasPage';
 import ProfessoresPage from './professores/ProfessoresPage';
 import AlunosPage from './alunos/AlunosPage';
@@ -91,6 +92,7 @@ function MainContent({ onNavigate }: MainContentProps) {
             <Route path="/calendario-letivo" element={<CalendarioLetivoPage />} />
             <Route path="/disciplinas" element={<DisciplinasPage />} />
             <Route path="/turmas" element={<TurmasPage />} />
+            <Route path="/horarios" element={<HorariosPage />} />
             <Route path="/professores" element={<ProfessoresPage />} />
             <Route path="/alocacao-professor" element={<ProfessorAlocacoesPage />} />
             <Route path="/alunos" element={<AlunosPage onEnturmar={alunoId => onNavigate('enturmar-aluno/novo', alunoId)} />} />

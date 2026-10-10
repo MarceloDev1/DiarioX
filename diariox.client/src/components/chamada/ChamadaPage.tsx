@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { apiFetch, readApiError } from '../../utils/api';
+import { lerSelecaoDiario, turmaPedida } from '../../utils/selecaoDiario';
 import FeedbackMessage from '../ui/FeedbackMessage';
 import EmptyState from '../ui/EmptyState';
 import LancarChamada from './LancarChamada';
@@ -16,6 +18,9 @@ const abas: { id: Aba; label: string }[] = [
 ];
 
 function ChamadaPage() {
+    const [searchParams] = useSearchParams();
+    // Atalho da home do professor: turma, disciplina e data já escolhidas.
+    const [pedido] = useState(() => lerSelecaoDiario(searchParams));
     const [turmas, setTurmas] = useState<ChamadaTurma[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -23,7 +28,7 @@ function ChamadaPage() {
     const [disciplinaId, setDisciplinaId] = useState<number | null>(null);
     const [aba, setAba] = useState<Aba>('lancar');
     // Data da chamada aberta na aba "Lançar"; o histórico também abre chamadas antigas por aqui.
-    const [data, setData] = useState(hojeIso);
+    const [data, setData] = useState(() => pedido.data ?? hojeIso());
 
     useEffect(() => {
         let cancelled = false;
@@ -36,8 +41,12 @@ function ChamadaPage() {
                 if (cancelled) return;
 
                 setTurmas(carregadas);
-                // Professor com uma única turma/disciplina já cai direto nela.
-                if (carregadas.length === 1) {
+                const pedida = turmaPedida(carregadas, pedido);
+                if (pedida) {
+                    setTurmaId(pedida.turma.turmaId);
+                    setDisciplinaId(pedida.disciplinaId);
+                } else if (carregadas.length === 1) {
+                    // Professor com uma única turma/disciplina já cai direto nela.
                     setTurmaId(carregadas[0].turmaId);
                     if (carregadas[0].disciplinas.length === 1) setDisciplinaId(carregadas[0].disciplinas[0].id);
                 }
@@ -50,7 +59,7 @@ function ChamadaPage() {
 
         void load();
         return () => { cancelled = true; };
-    }, []);
+    }, [pedido]);
 
     const turma = turmas.find(t => t.turmaId === turmaId) ?? null;
     const disciplina = turma?.disciplinas.find(d => d.id === disciplinaId) ?? null;

@@ -61,6 +61,7 @@ public class AppDbContext : DbContext
     public DbSet<AlunoTurma> AlunosTurmas => Set<AlunoTurma>();
     public DbSet<Chamada> Chamadas => Set<Chamada>();
     public DbSet<ChamadaAluno> ChamadasAlunos => Set<ChamadaAluno>();
+    public DbSet<HorarioAula> HorariosAula => Set<HorarioAula>();
     public DbSet<HabilidadeBncc> HabilidadesBncc => Set<HabilidadeBncc>();
     public DbSet<HabilidadeBnccEtapaEnsino> HabilidadesBnccEtapasEnsino => Set<HabilidadeBnccEtapaEnsino>();
     public DbSet<ConteudoMinistrado> ConteudosMinistrados => Set<ConteudoMinistrado>();
@@ -103,6 +104,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AlunoTurmaConfiguration());
         modelBuilder.ApplyConfiguration(new ChamadaConfiguration());
         modelBuilder.ApplyConfiguration(new ChamadaAlunoConfiguration());
+        modelBuilder.ApplyConfiguration(new HorarioAulaConfiguration());
         modelBuilder.ApplyConfiguration(new HabilidadeBnccConfiguration());
         modelBuilder.ApplyConfiguration(new HabilidadeBnccEtapaEnsinoConfiguration());
         modelBuilder.ApplyConfiguration(new ConteudoMinistradoConfiguration());
@@ -197,6 +199,8 @@ public class AppDbContext : DbContext
             c => !EscopoPorEscola || c.EscolaId == null || EscolasPermitidas.Contains(c.EscolaId.Value));
         modelBuilder.Entity<EventoCalendario>().HasQueryFilter(FiltroEscola,
             e => !EscopoPorEscola || e.CalendarioLetivo.EscolaId == null || EscolasPermitidas.Contains(e.CalendarioLetivo.EscolaId.Value));
+        modelBuilder.Entity<HorarioAula>().HasQueryFilter(FiltroEscola,
+            h => !EscopoPorEscola || EscolasPermitidas.Contains(h.Turma.EscolaId));
         modelBuilder.Entity<Avaliacao>().HasQueryFilter(FiltroEscola,
             a => !EscopoPorEscola || EscolasPermitidas.Contains(a.Turma.EscolaId));
         modelBuilder.Entity<NotaAvaliacao>().HasQueryFilter(FiltroEscola,
