@@ -177,4 +177,88 @@ public class DashboardConsultas : IDashboardConsultas
         return registros;
     }
 
+    public async Task<IReadOnlyList<EscolaOpcaoLinha>> ListarEscolasAsync()
+    {
+        return await _context.Escolas.AsNoTracking()
+            .Where(e => e.Status == Escola.StatusAtivo)
+            .OrderBy(e => e.Nome)
+            .Select(e => new EscolaOpcaoLinha(e.Id, e.Nome))
+            .ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<AlunoEmRiscoLinha>> ListarAlunosEmRiscoAsync(
+        DateOnly de, DateOnly ate, decimal limiteFrequencia)
+    {
+        var agregados = await _context.ChamadasAlunos.AsNoTracking()
+            .Where(r => r.Chamada.Data >= de && r.Chamada.Data <= ate &&
+                        r.Aluno.Status != Aluno.StatusInativo &&
+                        r.Aluno.Status != Aluno.StatusInativoObito &&
+                        r.Aluno.Status != Aluno.StatusNaoCompareceu &&
+                        r.Aluno.Status != Aluno.StatusTransferido)
+            .GroupBy(r => r.AlunoId)
+            .Select(g => new
+            {
+                AlunoId = g.Key,
+                Aulas = g.Sum(r => r.Chamada.QuantidadeAulas),
+                Presencas = g.Sum(r => r.Situacao == ChamadaAluno.SituacaoPresente ? r.Chamada.QuantidadeAulas : 0),
+            })
+            .Where(x => x.Aulas > 0 && x.Presencas * 100m < limiteFrequencia * x.Aulas)
+            .OrderBy(x => x.Presencas * 100m / x.Aulas)
+            .Take(50)
+            .ToListAsync();
+
+        if (agregados.Count == 0)
+            return [];
+
+        var ids = agregados.Select(a => a.AlunoId).ToList();
+
+        var detalhes = await _context.AlunosTurmas.AsNoTracking()
+            .Where(at => ids.Contains(at.AlunoId) && at.DataFim == null)
+            .Select(at => new { at.AlunoId, at.Aluno.Nome, Turma = at.Turma.NomeCompleto, Escola = at.Turma.Escola.Nome })
+            .ToListAsync();
+        var porAluno = detalhes.GroupBy(d => d.AlunoId).ToDictionary(g => g.Key, g => g.First());
+
+        return agregados.Select(x =>
+        {
+            var percentual = Math.Round(x.Presencas * 100m / x.Aulas, 1);
+            porAluno.TryGetValue(x.AlunoId, out var d);
+            return new AlunoEmRiscoLinha(x.AlunoId, d?.Nome ?? "", d?.Turma ?? "", d?.Escola ?? "",
+                percentual, x.Aulas - x.Presencas, x.Aulas, null);
+        }).ToList();
+    }
+
+    public async Task<IReadOnlyList<FrequenciaDiaLinha>> ObterFrequenciaDiariaAsync(DateOnly de, DateOnly ate)
+    {
+        var linhas = await _context.ChamadasAlunos.AsNoTracking()
+            .Where(r => r.Chamada.Data >= de && r.Chamada.Data <= ate)
+            .GroupBy(r => r.Chamada.Data)
+            .Select(g => new
+            {
+                Data = g.Key,
+                Aulas = g.Sum(r => r.Chamada.QuantidadeAulas),
+                Presencas = g.Sum(r => r.Situacao == ChamadaAluno.SituacaoPresente ? r.Chamada.QuantidadeAulas : 0),
+            })
+            .OrderBy(f => f.Data)
+            .ToListAsync();
+
+        return linhas.Select(l => new FrequenciaDiaLinha(l.Data, l.Aulas, l.Presencas)).ToList();
+    }
+
+    public async Task<ConsolidadoDiariosLinha> ObterConsolidadoDiariosAsync(DateOnly de, DateOnly ate)
+    {
+        var chamadas = _context.Chamadas.AsNoTracking()
+            .Where(c => c.Data >= de && c.Data <= ate);
+
+        var comConteudo = chamadas.Where(c =>
+            _context.ConteudosMinistrados.Any(cm =>
+                cm.TurmaId == c.TurmaId &&
+                (c.DisciplinaId == null || cm.DisciplinaId == c.DisciplinaId) &&
+                cm.Data == c.Data));
+
+        var total = await chamadas.CountAsync();
+        var com = await comConteudo.CountAsync();
+
+        return new ConsolidadoDiariosLinha(com, total - com, total);
+    }
+
 }

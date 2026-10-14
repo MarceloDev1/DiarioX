@@ -10,6 +10,41 @@ export interface Dashboard {
     alertas: { tipo: TipoAlerta; mensagem: string; pagina: string | null }[];
     ultimasChamadas: ChamadaRecente[] | null;
     agenda: EventoAgenda[];
+    escolas: EscolaOpcao[] | null;
+    escolaIdSelecionada: number | null;
+    alunosEmRisco: AlunoEmRisco[] | null;
+    graficoFrequencia: FrequenciaDia[] | null;
+    graficoDiarios: DashboardDiarios | null;
+}
+
+export interface EscolaOpcao {
+    id: number;
+    nome: string;
+}
+
+export interface AlunoEmRisco {
+    alunoId: number;
+    nome: string;
+    turma: string;
+    escola: string | null;
+    frequenciaPercentual: number;
+    totalFaltas: number;
+    totalAulas: number;
+    periodoAvaliativo: string | null;
+}
+
+export interface FrequenciaDia {
+    data: string;
+    percentual: number;
+    aulas: number;
+    presencas: number;
+}
+
+export interface DashboardDiarios {
+    chamadasComConteudo: number;
+    chamadasSemConteudo: number;
+    totalChamadas: number;
+    percentual: number;
 }
 
 export interface ChamadaRecente {

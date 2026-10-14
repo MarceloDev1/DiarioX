@@ -11,7 +11,12 @@ public record DashboardResponse(
     DashboardProfessores? Professores,
     IReadOnlyList<DashboardAlerta> Alertas,
     IReadOnlyList<DashboardChamadaRecente>? UltimasChamadas,
-    IReadOnlyList<DashboardEvento> Agenda
+    IReadOnlyList<DashboardEvento> Agenda,
+    IReadOnlyList<EscolaOpcao>? Escolas,
+    int? EscolaIdSelecionada,
+    IReadOnlyList<AlunoEmRisco>? AlunosEmRisco,
+    IReadOnlyList<FrequenciaDia>? GraficoFrequencia,
+    DashboardDiarios? GraficoDiarios
 );
 
 /// <summary>Alunos (não inativos) enturmados hoje e a variação em relação a 30 dias atrás.</summary>
@@ -54,3 +59,24 @@ public static class TipoEvento
 
 /// <summary>Marco do calendário letivo (início/fim de ano letivo e de período avaliativo).</summary>
 public record DashboardEvento(DateOnly Data, string Tipo, string Titulo, string Descricao);
+
+/// <summary>RN01: escola disponível para filtro no dashboard da gestão.</summary>
+public record EscolaOpcao(int Id, string Nome);
+
+/// <summary>RN02: aluno com frequência abaixo de 80% no período avaliativo corrente.</summary>
+public record AlunoEmRisco(
+    int AlunoId,
+    string Nome,
+    string Turma,
+    string? Escola,
+    decimal FrequenciaPercentual,
+    int TotalFaltas,
+    int TotalAulas,
+    string? PeriodoAvaliativo
+);
+
+/// <summary>RN03: ponto de frequência diária para o gráfico de evolução.</summary>
+public record FrequenciaDia(string Data, decimal Percentual, int Aulas, int Presencas);
+
+/// <summary>RN03: consolidado de lançamentos de diários (conteúdo ministrado × chamadas).</summary>
+public record DashboardDiarios(int ChamadasComConteudo, int ChamadasSemConteudo, int TotalChamadas, decimal Percentual);

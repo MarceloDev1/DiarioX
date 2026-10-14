@@ -14,6 +14,7 @@ public class DashboardServiceTests
 
     private readonly Mock<IDashboardConsultas> _consultas = new();
     private readonly Mock<IPermissaoService> _permissoes = new();
+    private readonly Mock<ITenantContext> _tenantContext = new();
     private readonly DashboardService _service;
 
     public DashboardServiceTests()
@@ -23,7 +24,15 @@ public class DashboardServiceTests
             .ReturnsAsync([]);
         _consultas.Setup(c => c.ListarUltimasChamadasAsync(It.IsAny<int>(), It.IsAny<int?>()))
             .ReturnsAsync([]);
-        _service = new DashboardService(_consultas.Object, _permissoes.Object);
+        _consultas.Setup(c => c.ListarEscolasAsync())
+            .ReturnsAsync([]);
+        _consultas.Setup(c => c.ObterFrequenciaDiariaAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>()))
+            .ReturnsAsync([]);
+        _consultas.Setup(c => c.ObterConsolidadoDiariosAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>()))
+            .ReturnsAsync(new ConsolidadoDiariosLinha(0, 0, 0));
+        _consultas.Setup(c => c.ListarAlunosEmRiscoAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), It.IsAny<decimal>()))
+            .ReturnsAsync([]);
+        _service = new DashboardService(_consultas.Object, _permissoes.Object, _tenantContext.Object);
     }
 
     [Fact]

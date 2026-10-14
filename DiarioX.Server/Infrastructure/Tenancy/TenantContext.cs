@@ -23,4 +23,11 @@ public class TenantContext : ITenantContext
     {
         EscolaIds = escolaIds;
     }
+
+    public void RestringirEscolas(IReadOnlyList<int> escolaIds)
+    {
+        EscolaIds = EscolaIds is null
+            ? escolaIds
+            : EscolaIds.Intersect(escolaIds).ToList();
+    }
 }

@@ -114,6 +114,12 @@
     .home-titulo-secao {
         color: var(--text-h);
     }
+
+    .home-filtro-escola select {
+        background: var(--bg-card, #1e293b);
+        color: var(--text-h, #e2e8f0);
+        border-color: var(--border, #334155);
+    }
 }
 
 /* ---------- Acesso rápido ---------- */
@@ -356,6 +362,127 @@ a.home-alerta:hover {
     background: #f6f3fd;
 }
 
+/* ---------- Filtro de escola (RN01) ---------- */
+
+.home-filtro-escola {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.home-filtro-escola label {
+    color: var(--home-texto);
+    font-size: 0.88rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.home-filtro-escola select {
+    flex: 1;
+    max-width: 360px;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--home-borda);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--home-titulo);
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.home-filtro-escola select:focus {
+    outline: 2px solid var(--home-roxo);
+    outline-offset: 1px;
+}
+
+/* ---------- Gráficos (RN03) ---------- */
+
+.home-graficos {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(240px, 2fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.home-cartao-grafico .home-cartao-cabecalho h2 {
+    padding-left: 0.7rem;
+    border-left: 4px solid #2a78d6;
+    border-radius: 2px;
+}
+
+.home-grafico-subtitulo {
+    margin: -0.5rem 0 0.75rem;
+    color: var(--home-texto);
+    font-size: 0.8rem;
+}
+
+.home-svg-grafico {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.home-svg-donut {
+    display: block;
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+}
+
+.home-diarios-grafico {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.home-diarios-legenda {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--home-texto);
+}
+
+.home-diarios-legenda span {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.home-legenda-cor {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.home-diarios-total {
+    margin-top: 0.25rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--home-borda);
+    font-weight: 700;
+    color: var(--home-titulo);
+}
+
+/* ---------- Alunos em risco (RN02) ---------- */
+
+.home-cartao-risco .home-cartao-cabecalho h2 {
+    padding-left: 0.7rem;
+    border-left: 4px solid #dc2626;
+    border-radius: 2px;
+}
+
+.home-risco-descricao {
+    margin: -0.5rem 0 0.75rem;
+    color: var(--home-texto);
+    font-size: 0.82rem;
+}
+
+.home-selo-aviso {
+    background: #fef3c7;
+    color: #d97706;
+}
+
 /* ---------- Responsivo ---------- */
 
 @media (max-width: 1200px) {
@@ -363,7 +490,8 @@ a.home-alerta:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .home-grade {
+    .home-grade,
+    .home-graficos {
         grid-template-columns: minmax(0, 1fr);
     }
 }
@@ -372,5 +500,14 @@ a.home-alerta:hover {
     .home-kpis,
     .home-atalhos {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .home-filtro-escola select {
+        max-width: none;
+    }
+
+    .home-diarios-grafico {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }

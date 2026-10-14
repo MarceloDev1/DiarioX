@@ -18,6 +18,18 @@ public interface IDashboardConsultas
 
     /// <summary>Períodos avaliativos e anos letivos que começam ou terminam no intervalo.</summary>
     Task<IReadOnlyList<MarcoCalendarioLinha>> ListarMarcosDoCalendarioAsync(DateOnly de, DateOnly ate);
+
+    /// <summary>Escolas ativas acessíveis pelo usuário da requisição (respeita FiltroInstituicao e FiltroEscola).</summary>
+    Task<IReadOnlyList<EscolaOpcaoLinha>> ListarEscolasAsync();
+
+    /// <summary>Alunos com frequência abaixo do limite no período indicado.</summary>
+    Task<IReadOnlyList<AlunoEmRiscoLinha>> ListarAlunosEmRiscoAsync(DateOnly de, DateOnly ate, decimal limiteFrequencia);
+
+    /// <summary>Frequência agregada por dia no intervalo (RN03: consolidado até ontem).</summary>
+    Task<IReadOnlyList<FrequenciaDiaLinha>> ObterFrequenciaDiariaAsync(DateOnly de, DateOnly ate);
+
+    /// <summary>Contagem de chamadas com e sem conteúdo ministrado no período.</summary>
+    Task<ConsolidadoDiariosLinha> ObterConsolidadoDiariosAsync(DateOnly de, DateOnly ate);
 }
 
 /// <param name="Hoje">Data de referência dos alunos ativos e das turmas vigentes.</param>
@@ -64,3 +76,20 @@ public record ChamadaRecenteLinha(
 
 /// <summary>Período avaliativo (PeriodoNome preenchido) ou ano letivo, com suas datas.</summary>
 public record MarcoCalendarioLinha(int AnoReferencia, string? PeriodoNome, DateOnly Inicio, DateOnly Termino);
+
+public record EscolaOpcaoLinha(int Id, string Nome);
+
+public record AlunoEmRiscoLinha(
+    int AlunoId,
+    string Nome,
+    string Turma,
+    string? Escola,
+    decimal FrequenciaPercentual,
+    int TotalFaltas,
+    int TotalAulas,
+    string? PeriodoNome
+);
+
+public record FrequenciaDiaLinha(DateOnly Data, int Aulas, int Presencas);
+
+public record ConsolidadoDiariosLinha(int ChamadasComConteudo, int ChamadasSemConteudo, int TotalChamadas);

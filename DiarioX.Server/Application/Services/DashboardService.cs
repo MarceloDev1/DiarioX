@@ -27,27 +27,45 @@ public class DashboardService : IDashboardService
     public const int MaximoEventosAgenda = 4;
     public const int QuantidadeUltimasChamadas = 5;
 
+    /// <summary>RN02: frequência mínima para o alerta de infrequência do dashboard de gestão (80%).</summary>
+    public const decimal LimiteInfrequenciaGestao = 80m;
+
     private static readonly CultureInfo PtBr = new("pt-BR");
 
     private readonly IDashboardConsultas _consultas;
     private readonly IPermissaoService _permissaoService;
+    private readonly ITenantContext _tenantContext;
 
-    public DashboardService(IDashboardConsultas consultas, IPermissaoService permissaoService)
+    public DashboardService(IDashboardConsultas consultas, IPermissaoService permissaoService, ITenantContext tenantContext)
     {
         _consultas = consultas;
         _permissaoService = permissaoService;
+        _tenantContext = tenantContext;
     }
 
-    public async Task<DashboardResponse> ObterAsync(UsuarioAtual usuario, DateOnly hoje)
+    public async Task<DashboardResponse> ObterAsync(UsuarioAtual usuario, DateOnly hoje, int? escolaId = null)
     {
+        // RN01: listar escolas antes de restringir o escopo.
+        var escolasDisponiveis = await _consultas.ListarEscolasAsync();
+        var escolasOpcoes = escolasDisponiveis.Count > 1
+            ? escolasDisponiveis.Select(e => new EscolaOpcao(e.Id, e.Nome)).ToList()
+            : null;
+
+        int? escolaSelecionada = null;
+        if (escolaId is not null && escolasDisponiveis.Any(e => e.Id == escolaId))
+        {
+            escolaSelecionada = escolaId;
+            _tenantContext.RestringirEscolas([escolaId.Value]);
+        }
+
         var permissoes = await _permissaoService.GetPermissoesDoUsuarioAsync(usuario.UsuarioId, usuario.IsGlobalAdmin);
         var verAlunos = permissoes.Contains(Permissoes.Alunos.Visualizar);
         var verTurmas = permissoes.Contains(Permissoes.Turmas.Visualizar);
         var verChamada = permissoes.Contains(Permissoes.Chamada.Visualizar);
         var verProfessores = permissoes.Contains(Permissoes.Professores.Visualizar) ||
                              permissoes.Contains(Permissoes.AlocacaoProfessor.Visualizar);
+        var verConteudo = permissoes.Contains(Permissoes.ConteudoMinistrado.Visualizar);
 
-        // Mesma regra da chamada: o usuário vinculado a um professor só vê as próprias turmas/disciplinas.
         var professorId = verChamada && !usuario.IsGlobalAdmin
             ? await _consultas.ObterProfessorIdDoUsuarioAsync(usuario.UsuarioId)
             : null;
@@ -55,7 +73,6 @@ public class DashboardService : IDashboardService
         var alertas = new List<DashboardAlerta>();
         var frequenciaDe = hoje.AddDays(-(DiasFrequencia - 1));
 
-        // Os contadores saem juntos numa única consulta; os blocos sem permissão são descartados abaixo.
         var indicadores = await _consultas.ObterIndicadoresAsync(new ParametrosIndicadores(
             hoje,
             hoje.AddDays(-DiasVariacaoAlunos),
@@ -82,6 +99,7 @@ public class DashboardService : IDashboardService
 
         DashboardFrequencia? frequencia = null;
         IReadOnlyList<DashboardChamadaRecente>? ultimasChamadas = null;
+        IReadOnlyList<FrequenciaDia>? graficoFrequencia = null;
         if (verChamada)
         {
             var aulas = indicadores.AulasRegistradas;
@@ -107,6 +125,51 @@ public class DashboardService : IDashboardService
             ultimasChamadas = (await _consultas.ListarUltimasChamadasAsync(QuantidadeUltimasChamadas, professorId))
                 .Select(c => new DashboardChamadaRecente(c.Id, c.Turma, c.Disciplina, c.RegistradoPor, c.Data, c.Presentes, c.Alunos))
                 .ToList();
+
+            // RN03: gráfico de frequência diária (consolidado até ontem).
+            var ontem = hoje.AddDays(-1);
+            var graficoDe = ontem.AddDays(-(DiasFrequencia - 1));
+            var pontos = await _consultas.ObterFrequenciaDiariaAsync(graficoDe, ontem);
+            graficoFrequencia = pontos
+                .Select(p => new FrequenciaDia(
+                    p.Data.ToString("dd/MM"),
+                    p.Aulas == 0 ? 0 : Math.Round(p.Presencas * 100m / p.Aulas, 1),
+                    p.Aulas,
+                    p.Presencas))
+                .ToList();
+        }
+
+        // RN02: alunos em risco de infrequência (>20% de faltas = frequência < 80%).
+        IReadOnlyList<AlunoEmRisco>? alunosEmRisco = null;
+        if (verChamada && verAlunos)
+        {
+            var periodoAtual = (await _consultas.ListarMarcosDoCalendarioAsync(hoje.AddDays(-365), hoje.AddDays(365)))
+                .Where(m => m.PeriodoNome is not null && m.Inicio <= hoje && m.Termino >= hoje)
+                .OrderByDescending(m => m.Inicio)
+                .FirstOrDefault();
+
+            if (periodoAtual is not null)
+            {
+                var riscos = await _consultas.ListarAlunosEmRiscoAsync(
+                    periodoAtual.Inicio, hoje, LimiteInfrequenciaGestao);
+                alunosEmRisco = riscos
+                    .Select(r => new AlunoEmRisco(r.AlunoId, r.Nome, r.Turma, r.Escola,
+                        r.FrequenciaPercentual, r.TotalFaltas, r.TotalAulas, periodoAtual.PeriodoNome))
+                    .ToList();
+            }
+        }
+
+        // RN03: gráfico de diários (conteúdo ministrado × chamadas).
+        DashboardDiarios? graficoDiarios = null;
+        if (verChamada && verConteudo)
+        {
+            var ontem = hoje.AddDays(-1);
+            var consolidado = await _consultas.ObterConsolidadoDiariosAsync(frequenciaDe, ontem);
+            var pct = consolidado.TotalChamadas == 0
+                ? 0m
+                : Math.Round(consolidado.ChamadasComConteudo * 100m / consolidado.TotalChamadas, 1);
+            graficoDiarios = new DashboardDiarios(
+                consolidado.ChamadasComConteudo, consolidado.ChamadasSemConteudo, consolidado.TotalChamadas, pct);
         }
 
         if (verAlunos && indicadores.AlunosAguardandoEnturmacao > 0)
@@ -131,7 +194,8 @@ public class DashboardService : IDashboardService
 
         return new DashboardResponse(
             alunos, turmas, frequencia, professores, alertas, ultimasChamadas,
-            MontarAgenda(marcos, hoje));
+            MontarAgenda(marcos, hoje),
+            escolasOpcoes, escolaSelecionada, alunosEmRisco, graficoFrequencia, graficoDiarios);
     }
 
     private static IReadOnlyList<DashboardEvento> MontarAgenda(IEnumerable<MarcoCalendarioLinha> marcos, DateOnly hoje)

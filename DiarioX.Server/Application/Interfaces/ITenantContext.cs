@@ -16,4 +16,10 @@ public interface ITenantContext
     /// que é o caso do Administrador global, da gerência da rede e dos processos internos.
     /// </summary>
     IReadOnlyList<int>? EscolaIds => null;
+
+    /// <summary>
+    /// Restringe o escopo de escolas dentro da requisição. O novo escopo é a interseção do escopo atual com
+    /// as escolas informadas, nunca ampliando o acesso original do usuário.
+    /// </summary>
+    void RestringirEscolas(IReadOnlyList<int> escolaIds) { }
 }

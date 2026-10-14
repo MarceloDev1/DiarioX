@@ -22,12 +22,12 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Obter()
+    public async Task<IActionResult> Obter([FromQuery] int? escolaId)
     {
         if (!User.TryGetUsuarioAtual(out var usuario))
             return Unauthorized();
 
-        return Ok(await _dashboardService.ObterAsync(usuario, DateOnly.FromDateTime(DateTime.Today)));
+        return Ok(await _dashboardService.ObterAsync(usuario, DateOnly.FromDateTime(DateTime.Today), escolaId));
     }
 
     /// <summary>Home do professor. 204 quando o usuário não é professor (a home usa o painel geral).</summary>
