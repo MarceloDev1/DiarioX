@@ -1,4 +1,5 @@
 using System.Text;
+using DiarioX.Server.Application.Alunos;
 using DiarioX.Server.Application.Auth;
 using DiarioX.Server.Application.Dashboard;
 using DiarioX.Server.Application.Faturamento;
@@ -9,6 +10,7 @@ using DiarioX.Server.Application.Transferencias;
 using DiarioX.Server.Application.Services;
 using DiarioX.Server.Domain.Entities;
 using DiarioX.Server.Domain.Interfaces;
+using DiarioX.Server.Infrastructure.Alunos;
 using DiarioX.Server.Infrastructure.Authorization;
 using DiarioX.Server.Infrastructure.Dashboard;
 using DiarioX.Server.Infrastructure.Documentos;
@@ -99,6 +101,8 @@ builder.Services.AddScoped<IProfessorAlocacaoService, ProfessorAlocacaoService>(
 builder.Services.AddScoped<IAlunoService, AlunoService>();
 builder.Services.AddScoped<IRemanejamentoAlunoService, RemanejamentoAlunoService>();
 builder.Services.AddScoped<ITransferenciaAlunoService, TransferenciaAlunoService>();
+builder.Services.AddScoped<IHistoricoAlunoConsultas, HistoricoAlunoConsultas>();
+builder.Services.AddScoped<IHistoricoAlunoService, HistoricoAlunoService>();
 builder.Services.AddSingleton<IDeclaracaoTransferenciaPdf, DeclaracaoTransferenciaPdf>();
 builder.Services.AddScoped<IPermissaoService, PermissaoService>();
 builder.Services.AddScoped<IChamadaService, ChamadaService>();

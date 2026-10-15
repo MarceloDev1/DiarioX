@@ -22,5 +22,9 @@ public record AlunoResponse(
     string EscolaNome,
     string Status,
     DateTime CreatedAt,
-    DateTime? UpdatedAt
+    DateTime? UpdatedAt,
+    // Na lista de uma escola, o aluno que saiu dela por transferência para outra escola da rede: a linha
+    // traz a escola consultada com status TRANSFERIDO, e aqui a escola em que ele está hoje.
+    bool TransferidoDaEscola = false,
+    string? EscolaAtualNome = null
 );

@@ -17,11 +17,22 @@ public class AlunosControllerTests
 
         var controller = BuildController(service.Object);
 
-        var result = await controller.GetAll();
+        var result = await controller.GetAll(null);
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var payload = Assert.IsAssignableFrom<IEnumerable<AlunoResponse>>(ok.Value);
         Assert.Equal(2, payload.Count());
+    }
+
+    [Fact]
+    public async Task GetAll_ComEscolaForaDoEscopo_ReturnsNotFound()
+    {
+        var service = new Mock<IAlunoService>();
+        service.Setup(s => s.GetByEscolaAsync(5)).ReturnsAsync((IReadOnlyList<AlunoResponse>?)null);
+
+        var result = await BuildController(service.Object).GetAll(5);
+
+        Assert.IsType<NotFoundObjectResult>(result);
     }
 
     [Fact]
@@ -210,7 +221,7 @@ public class AlunosControllerTests
     };
 
     private static AlunosController BuildController(IAlunoService alunoService)
-        => new(alunoService, Mock.Of<IRemanejamentoAlunoService>());
+        => new(alunoService, Mock.Of<IRemanejamentoAlunoService>(), Mock.Of<IHistoricoAlunoService>());
 
     private static AlunoResponse BuildResponse(int id) => new(
         id,

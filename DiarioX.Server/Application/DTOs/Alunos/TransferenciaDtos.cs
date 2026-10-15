@@ -8,9 +8,16 @@ public sealed class TransferenciaRequest
     /// <summary>OUTRA_REDE, ENTRE_ESCOLAS_DA_REDE ou MUDANCA_MUNICIPIO_ESTADO.</summary>
     public string? Tipo { get; set; }
 
+    /// <summary>Nome da escola de destino, para transferências para fora da rede.</summary>
     public string? EscolaDestino { get; set; }
+
+    /// <summary>Escola de destino na transferência entre escolas da rede.</summary>
+    public int? EscolaDestinoId { get; set; }
+
     public string? Motivo { get; set; }
 }
+
+public sealed record EscolaDestinoResponse(int Id, string Nome);
 
 public sealed record TransferenciaResponse(
     int Id,
@@ -27,7 +34,8 @@ public sealed record TransferenciaResponse(
     string TipoDescricao,
     string EscolaDestino,
     string? Motivo,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    int? EscolaDestinoId = null);
 
 /// <summary>
 /// Linha da lista de alunos transferidos. Modalidade, etapa, turma e turno são nulos quando o aluno

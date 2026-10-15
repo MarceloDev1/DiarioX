@@ -243,21 +243,84 @@ public class TransferenciaAlunoServiceTests
         Assert.Null(semTurma.Turno);
     }
 
+    [Fact]
+    public async Task TransferirAsync_EntreEscolasDaRede_GravaEscolaDestinoPeloIdENomeDaEscola()
+    {
+        var f = new Fixture();
+        Transferencia? gravada = null;
+        f.Transferencias.Setup(r => r.TransferirAsync(It.IsAny<Transferencia>(), Fixture.VinculoId))
+            .Callback<Transferencia, int?>((t, _) => gravada = t)
+            .ReturnsAsync((Transferencia t, int? _) => t);
+
+        var result = await f.Service.TransferirAsync(Secretaria, Fixture.AlunoId,
+            Request(tipo: Transferencia.TipoEntreEscolasDaRede, escolaDestino: "texto ignorado", escolaDestinoId: Fixture.EscolaDaRedeId));
+
+        Assert.True(result.Success, result.Message);
+        Assert.Equal("Transferência realizada com sucesso! O aluno agora aguarda enturmação na escola EM Cecília Meireles.", result.Message);
+        Assert.Equal(Fixture.EscolaDaRedeId, gravada!.EscolaDestinoId);
+        Assert.Equal("EM Cecília Meireles", gravada.EscolaDestino);
+        Assert.Equal(Fixture.EscolaDaTurmaId, gravada.EscolaOrigemId);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(999)]
+    public async Task TransferirAsync_EntreEscolasDaRedeSemEscolaValida_ReturnsValidation(int? escolaDestinoId)
+    {
+        var f = new Fixture();
+
+        var result = await f.Service.TransferirAsync(Secretaria, Fixture.AlunoId,
+            Request(tipo: Transferencia.TipoEntreEscolasDaRede, escolaDestinoId: escolaDestinoId));
+
+        Assert.Equal("Selecione a escola da rede que vai receber o aluno.", result.Message);
+        f.VerifyNadaGravado();
+    }
+
+    [Fact]
+    public async Task TransferirAsync_EntreEscolasDaRedeParaAPropriaEscola_ReturnsValidation()
+    {
+        var f = new Fixture();
+
+        var result = await f.Service.TransferirAsync(Secretaria, Fixture.AlunoId,
+            Request(tipo: Transferencia.TipoEntreEscolasDaRede, escolaDestinoId: Fixture.EscolaDaTurmaId));
+
+        Assert.Equal("A escola de destino deve ser diferente da escola atual do aluno.", result.Message);
+        f.VerifyNadaGravado();
+    }
+
+    [Fact]
+    public async Task TransferirAsync_ParaOutraRede_IgnoraEscolaDestinoId()
+    {
+        var f = new Fixture();
+        Transferencia? gravada = null;
+        f.Transferencias.Setup(r => r.TransferirAsync(It.IsAny<Transferencia>(), Fixture.VinculoId))
+            .Callback<Transferencia, int?>((t, _) => gravada = t)
+            .ReturnsAsync((Transferencia t, int? _) => t);
+
+        var result = await f.Service.TransferirAsync(Secretaria, Fixture.AlunoId, Request(escolaDestinoId: Fixture.EscolaDaRedeId));
+
+        Assert.True(result.Success, result.Message);
+        Assert.Null(gravada!.EscolaDestinoId);
+        Assert.Equal("Escola Estadual X", gravada.EscolaDestino);
+    }
+
     private static TransferenciaRequest Request(
         DateOnly? data = null,
         string tipo = Transferencia.TipoOutraRede,
         string escolaDestino = "Escola Estadual X",
-        string? motivo = null) => new()
+        string? motivo = null,
+        int? escolaDestinoId = null) => new()
     {
         DataTransferencia = data ?? Hoje,
         Tipo = tipo,
         EscolaDestino = escolaDestino,
+        EscolaDestinoId = escolaDestinoId,
         Motivo = motivo,
     };
 
     private sealed class Fixture
     {
-        public const int AlunoId = 1, TurmaId = 10, VinculoId = 77, EscolaDaTurmaId = 6, EscolaDoCadastroId = 6;
+        public const int AlunoId = 1, TurmaId = 10, VinculoId = 77, EscolaDaTurmaId = 6, EscolaDoCadastroId = 6, EscolaDaRedeId = 7;
 
         public Mock<ITransferenciaRepository> Transferencias { get; } = new();
         public Mock<IDeclaracaoTransferenciaPdf> Pdf { get; } = new();
@@ -297,9 +360,17 @@ public class TransferenciaAlunoServiceTests
             Pdf.Setup(p => p.Gerar(It.IsAny<DeclaracaoTransferenciaDados>())).Returns([0x25, 0x50, 0x44, 0x46]);
             Transferencias.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((Transferencia?)null);
 
+            Escolas.Setup(r => r.GetAtivasDaInstituicaoAsync()).ReturnsAsync(
+            [
+                new Escola { Id = EscolaDaTurmaId, Nome = "EM Monteiro Lobato" },
+                new Escola { Id = EscolaDaRedeId, Nome = "EM Cecília Meireles" },
+            ]);
+
             Service = new TransferenciaAlunoService(alunos.Object, alunoTurmas.Object, anos.Object, Transferencias.Object,
-                tenants.Object, tenantContext.Object, Pdf.Object);
+                tenants.Object, tenantContext.Object, Pdf.Object, Escolas.Object);
         }
+
+        public Mock<IEscolaRepository> Escolas { get; } = new();
 
         public void VerifyNadaGravado()
             => Transferencias.Verify(r => r.TransferirAsync(It.IsAny<Transferencia>(), It.IsAny<int?>()), Times.Never);

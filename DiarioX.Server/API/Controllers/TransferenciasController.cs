@@ -31,6 +31,15 @@ public class TransferenciasController : ControllerBase
         return Ok(await _service.ListAsync());
     }
 
+    /// <summary>Escolas da rede que podem receber o aluno numa transferência entre escolas da rede.</summary>
+    [Permissao(Permissoes.Alunos.Editar)]
+    [HttpGet("transferencias/escolas-destino")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarEscolasDestino()
+    {
+        return Ok(await _service.ListarEscolasDestinoAsync());
+    }
+
     /// <summary>Transferências do aluno, da mais recente para a mais antiga.</summary>
     [Permissao(Permissoes.Alunos.Visualizar)]
     [HttpGet("alunos/{alunoId:int}/transferencias")]
@@ -41,8 +50,9 @@ public class TransferenciasController : ControllerBase
     }
 
     /// <summary>
-    /// Registra a saída definitiva do aluno: status TRANSFERIDO, enturmação encerrada na data do
-    /// desligamento e vaga liberada. A resposta traz a transferência, para emitir a declaração.
+    /// Registra a saída do aluno: enturmação encerrada na data do desligamento e vaga liberada. Para fora
+    /// da rede o aluno fica TRANSFERIDO; entre escolas da rede passa à escola de destino aguardando
+    /// enturmação. A resposta traz a transferência, para emitir a declaração.
     /// </summary>
     [Permissao(Permissoes.Alunos.Editar)]
     [HttpPost("alunos/{alunoId:int}/transferencias")]

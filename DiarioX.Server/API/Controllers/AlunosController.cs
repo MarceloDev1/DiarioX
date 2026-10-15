@@ -20,23 +20,42 @@ public class AlunosController : ControllerBase
 {
     private readonly IAlunoService _alunoService;
     private readonly IRemanejamentoAlunoService _remanejamentoAlunoService;
+    private readonly IHistoricoAlunoService _historicoAlunoService;
 
-    public AlunosController(IAlunoService alunoService, IRemanejamentoAlunoService remanejamentoAlunoService)
+    public AlunosController(IAlunoService alunoService, IRemanejamentoAlunoService remanejamentoAlunoService,
+        IHistoricoAlunoService historicoAlunoService)
     {
         _alunoService = alunoService;
         _remanejamentoAlunoService = remanejamentoAlunoService;
+        _historicoAlunoService = historicoAlunoService;
     }
 
     /// <summary>
-    /// Lista todos os alunos cadastrados.
+    /// Lista os alunos cadastrados. Com escolaId, lista os alunos da escola, incluindo os que saíram dela
+    /// transferidos para outra escola da rede (com status TRANSFERIDO).
     /// </summary>
     [Permissao(Permissoes.Alunos.Visualizar)]
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll()
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAll([FromQuery] int? escolaId)
     {
-        var alunos = await _alunoService.GetAllAsync();
-        return Ok(alunos);
+        if (escolaId is null)
+            return Ok(await _alunoService.GetAllAsync());
+
+        var alunos = await _alunoService.GetByEscolaAsync(escolaId.Value);
+        return alunos is null ? NotFound(new { message = "Escola não encontrada." }) : Ok(alunos);
+    }
+
+    /// <summary>Histórico de movimentação do aluno: enturmações, remanejamentos, desenturmações e transferências.</summary>
+    [Permissao(Permissoes.Alunos.Visualizar)]
+    [HttpGet("{id:int}/historico")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetHistorico([FromRoute] int id)
+    {
+        var historico = await _historicoAlunoService.ObterAsync(id);
+        return historico is null ? NotFound(new { message = "Aluno não encontrado." }) : Ok(historico);
     }
 
     /// <summary>

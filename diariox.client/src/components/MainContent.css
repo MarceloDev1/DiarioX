@@ -819,8 +819,13 @@
     grid-column: 1 / -1;
 }
 
-.form-section[hidden] {
+.form-section[hidden],
+.form-actions[hidden] {
     display: none;
+}
+
+.form-tab-panel {
+    grid-column: 1 / -1;
 }
 
 .form-tab-hint {
@@ -828,6 +833,38 @@
     margin: 0;
     color: #5b6475;
     font-size: 0.85rem;
+}
+
+/* Alunos > Histórico de movimentação */
+.historico-aluno {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-top: 1.25rem;
+}
+
+.historico-titulo {
+    margin: 0 0 0.75rem;
+    color: #0f3460;
+    font-size: 1rem;
+}
+
+.historico-selo {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: #e3edff;
+    color: #1d4ed8;
+    font-size: 0.72rem;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+.aluno-escola-atual {
+    display: block;
+    color: #5b6475;
+    font-size: 0.78rem;
 }
 
 /* Configurações > Permissões */

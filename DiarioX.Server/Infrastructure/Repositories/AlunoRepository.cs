@@ -36,6 +36,27 @@ public class AlunoRepository : BaseRepository<Aluno>, IAlunoRepository
             .ToListAsync();
     }
 
+    public async Task<IReadOnlyList<Aluno>> GetByEscolaAsync(int escolaId)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .Include(a => a.Escola)
+            .Where(a => a.EscolaId == escolaId)
+            .OrderBy(a => a.Nome)
+            .ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<Aluno>> GetTransferidosDaEscolaAsync(int escolaId)
+    {
+        var transferencias = _context.Transferencias.IgnoreQueryFilters([AppDbContext.FiltroEscola]);
+        return await DaInstituicao
+            .Include(a => a.Escola)
+            .Where(a => a.EscolaId != escolaId &&
+                        transferencias.Any(t => t.AlunoId == a.Id && t.EscolaOrigemId == escolaId))
+            .OrderBy(a => a.Nome)
+            .ToListAsync();
+    }
+
     // Unicidade e matrícula valem para a instituição inteira, não só para as escolas do usuário.
     private IQueryable<Aluno> DaInstituicao => _dbSet.IgnoreQueryFilters([AppDbContext.FiltroEscola]).AsNoTracking();
 

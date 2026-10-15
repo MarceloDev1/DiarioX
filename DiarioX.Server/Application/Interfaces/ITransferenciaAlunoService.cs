@@ -10,6 +10,9 @@ public interface ITransferenciaAlunoService
     Task<IReadOnlyList<TransferenciaResponse>> GetByAlunoIdAsync(int alunoId);
     Task<TransferenciaResult> TransferirAsync(UsuarioAtual usuario, int alunoId, TransferenciaRequest request);
 
+    /// <summary>Escolas ativas da rede que podem receber um aluno transferido entre escolas.</summary>
+    Task<IReadOnlyList<EscolaDestinoResponse>> ListarEscolasDestinoAsync();
+
     /// <summary>PDF da Declaração de Transferência; nulo se a transferência não existir.</summary>
     Task<DeclaracaoTransferenciaArquivo?> GerarDeclaracaoAsync(int transferenciaId);
 }

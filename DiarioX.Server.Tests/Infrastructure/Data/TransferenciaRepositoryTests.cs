@@ -1,5 +1,6 @@
 using DiarioX.Server.Application.Interfaces;
 using DiarioX.Server.Domain.Entities;
+using DiarioX.Server.Infrastructure.Alunos;
 using DiarioX.Server.Infrastructure.Data;
 using DiarioX.Server.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -74,13 +75,90 @@ public class TransferenciaRepositoryTests
         Assert.Equal(Aluno.StatusAtivo, verificacao.Alunos.Single().Status);
     }
 
+    [Fact]
+    public async Task TransferirAsync_EntreEscolasDaRede_LevaOAlunoParaADestinoAguardandoEnturmacao()
+    {
+        var database = Guid.NewGuid().ToString();
+        var (alunoId, turmaId, vinculoId) = Seed(database, enturmado: true);
+        var (origemId, destinoId) = ComEscolaDestino(database);
+
+        var transferencia = NovaTransferencia(database, alunoId, turmaId);
+        transferencia.Tipo = Transferencia.TipoEntreEscolasDaRede;
+        transferencia.EscolaDestinoId = destinoId;
+        transferencia.EscolaDestino = "Escola B";
+        await using (var context = CreateContext(database))
+            await new TransferenciaRepository(context).TransferirAsync(transferencia, vinculoId);
+
+        await using var verificacao = CreateContext(database);
+        var aluno = verificacao.Alunos.Single();
+        Assert.Equal(destinoId, aluno.EscolaId);
+        Assert.Equal(Aluno.StatusAtivoAguardandoEnturmacao, aluno.Status);
+        Assert.Equal(AlunoTurma.MotivoTransferencia, verificacao.AlunosTurmas.Single().MotivoDesenturmacao);
+
+        // A escola de origem, mesmo com escopo só dela, enxerga o aluno que saiu.
+        await using var origem = CreateContext(database, escolaIds: [origemId]);
+        var alunos = new AlunoRepository(origem);
+        Assert.Empty(await alunos.GetByEscolaAsync(origemId));
+        var transferido = Assert.Single(await alunos.GetTransferidosDaEscolaAsync(origemId));
+        Assert.Equal("Escola B", transferido.Escola.Nome);
+        Assert.Empty(await alunos.GetTransferidosDaEscolaAsync(destinoId));
+        Assert.Single(await new AlunoRepository(verificacao).GetByEscolaAsync(destinoId));
+    }
+
+    [Fact]
+    public async Task HistoricoAlunoConsultas_LiberaQuemPassouPeloEscopoENegaOsDemais()
+    {
+        var database = Guid.NewGuid().ToString();
+        var (alunoId, turmaId, vinculoId) = Seed(database, enturmado: true);
+        var (origemId, destinoId) = ComEscolaDestino(database);
+        int outraEscolaId;
+        await using (var context = CreateContext(database))
+        {
+            var outra = new Escola { Nome = "Escola C", Cnpj = "3", Status = Escola.StatusAtivo };
+            context.Add(outra);
+            context.SaveChanges();
+            outraEscolaId = outra.Id;
+        }
+
+        var transferencia = NovaTransferencia(database, alunoId, turmaId);
+        transferencia.Tipo = Transferencia.TipoEntreEscolasDaRede;
+        transferencia.EscolaDestinoId = destinoId;
+        transferencia.EscolaDestino = "Escola B";
+        await using (var context = CreateContext(database))
+            await new TransferenciaRepository(context).TransferirAsync(transferencia, vinculoId);
+
+        await using (var origem = CreateContext(database, escolaIds: [origemId]))
+        {
+            var dados = await new HistoricoAlunoConsultas(origem).ObterAsync(alunoId);
+            Assert.NotNull(dados);
+            Assert.Equal("Escola B", dados!.EscolaNome);
+            Assert.Equal("6º Ano A", Assert.Single(dados.Vinculos).Turma);
+            Assert.Equal(destinoId, Assert.Single(dados.Transferencias).EscolaDestinoId);
+        }
+
+        await using (var destino = CreateContext(database, escolaIds: [destinoId]))
+            Assert.NotNull(await new HistoricoAlunoConsultas(destino).ObterAsync(alunoId));
+
+        await using var outraEscola = CreateContext(database, escolaIds: [outraEscolaId]);
+        Assert.Null(await new HistoricoAlunoConsultas(outraEscola).ObterAsync(alunoId));
+    }
+
+    private static (int OrigemId, int DestinoId) ComEscolaDestino(string database)
+    {
+        using var context = CreateContext(database);
+        var destino = new Escola { Nome = "Escola B", Cnpj = "2", Status = Escola.StatusAtivo };
+        context.Add(destino);
+        context.SaveChanges();
+        return (context.Escolas.Single(e => e.Nome == "Escola A").Id, destino.Id);
+    }
+
     private static Transferencia NovaTransferencia(string database, int alunoId, int? turmaId)
     {
         using var context = CreateContext(database);
         return new Transferencia
         {
             AlunoId = alunoId,
-            EscolaOrigemId = context.Escolas.Single().Id,
+            EscolaOrigemId = context.Escolas.Single(e => e.Nome == "Escola A").Id,
             TurmaId = turmaId,
             AnoLetivoId = context.AnosLetivos.Single().Id,
             DataTransferencia = DataTransferencia,
@@ -115,7 +193,7 @@ public class TransferenciaRepositoryTests
         return (aluno.Id, turma.Id, vinculo?.Id);
     }
 
-    private static AppDbContext CreateContext(string database)
+    private static AppDbContext CreateContext(string database, IReadOnlyList<int>? escolaIds = null)
     {
         // O banco em memória não tem transações nem FOR UPDATE; aqui só interessa o efeito final da gravação.
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -123,12 +201,13 @@ public class TransferenciaRepositoryTests
             .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
-        return new AppDbContext(options, new FixedTenantContext(TenantId));
+        return new AppDbContext(options, new FixedTenantContext(TenantId, escolaIds));
     }
 
-    private sealed class FixedTenantContext(int? tenantId) : ITenantContext
+    private sealed class FixedTenantContext(int? tenantId, IReadOnlyList<int>? escolaIds) : ITenantContext
     {
         public int? TenantId { get; } = tenantId;
         public string? TenantSlug => TenantId?.ToString();
+        public IReadOnlyList<int>? EscolaIds { get; } = escolaIds;
     }
 }

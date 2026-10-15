@@ -10,8 +10,29 @@ import StatusPill, { type Status } from '../ui/StatusPill';
 import { podeAtivarAluno, rotuloStatusAluno, statusAlunoOpcoes } from './statusAluno';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { usePermissoes } from '../../hooks/usePermissoes';
+import HistoricoAluno from './HistoricoAluno';
 
-type View = 'list' | 'form';
+type View = 'list' | 'form' | 'historico';
+
+type AbaForm = 'aluno' | 'responsaveis' | 'documentacao' | 'historico';
+
+const ESCOLA_STORAGE_KEY = 'diariox.alunos.escola';
+
+function lerEscolaSalva(): string {
+    try {
+        return localStorage.getItem(ESCOLA_STORAGE_KEY) ?? '';
+    } catch {
+        return '';
+    }
+}
+
+function salvarEscola(escolaId: string) {
+    try {
+        localStorage.setItem(ESCOLA_STORAGE_KEY, escolaId);
+    } catch {
+        // Sem armazenamento local: a escola só não fica lembrada.
+    }
+}
 
 interface Aluno {
     id: number;
@@ -36,6 +57,9 @@ interface Aluno {
     status: string;
     createdAt: string;
     updatedAt: string | null;
+    /** Saiu da escola consultada por transferência para outra escola da rede (linha somente leitura). */
+    transferidoDaEscola: boolean;
+    escolaAtualNome: string | null;
 }
 
 type SortKey = 'nome' | 'matricula' | 'cpfAluno' | 'responsavelNome1' | 'responsavelTelefone1' | 'escolaNome' | 'status';
@@ -125,6 +149,16 @@ const emptyForm: AlunoFormState = {
     escolaId: '',
 };
 
+const abasCadastro: { id: Exclude<AbaForm, 'historico'>; label: string; campos: (keyof AlunoFieldErrors)[] }[] = [
+    { id: 'aluno', label: 'Dados do Aluno', campos: ['nome', 'dataNascimento', 'sexo'] },
+    { id: 'responsaveis', label: 'Responsáveis', campos: ['responsavelNome1', 'responsavelCpf1', 'responsavelTelefone1'] },
+    {
+        id: 'documentacao',
+        label: 'Documentação/Endereço',
+        campos: ['cpfAluno', 'certidaoNascimento', 'cep', 'enderecoCompleto', 'numero', 'bairro', 'escolaId'],
+    },
+];
+
 const emptyFieldErrors: AlunoFieldErrors = {
     nome: false,
     dataNascimento: false,
@@ -161,9 +195,24 @@ interface AlunosPageProps {
 
 function AlunosPage({ onEnturmar }: AlunosPageProps) {
     const { can } = usePermissoes();
-    const { items: alunos, isLoading, isSaving, error, load, save, remove } = useCrudData<Aluno>('/api/alunos');
+
+    const [filterNome, setFilterNome] = useState('');
+    const [filterCpf, setFilterCpf] = useState('');
+    const [filterMatricula, setFilterMatricula] = useState('');
+    const [filterEscola, setFilterEscola] = useState('');
+    const [filterEscolaErro, setFilterEscolaErro] = useState(false);
+    const [filterStatus, setFilterStatus] = useState('');
+    const [applied, setApplied] = useState({ nome: '', cpf: '', matricula: '', escola: '', status: '' });
+
+    // A lista é sempre de uma escola: o aluno transferido entre escolas da rede aparece nas duas, com a
+    // situação de cada uma.
+    const { items: alunos, isLoading, isSaving, error, load, save, remove } = useCrudData<Aluno>(
+        '/api/alunos',
+        applied.escola ? `/api/alunos?escolaId=${applied.escola}` : null);
 
     const [view, setView] = useState<View>('list');
+    const [aba, setAba] = useState<AbaForm>('aluno');
+    const [alunoHistorico, setAlunoHistorico] = useState<Aluno | null>(null);
     const [form, setForm] = useState<AlunoFormState>(emptyForm);
     const [fieldErrors, setFieldErrors] = useState<AlunoFieldErrors>(emptyFieldErrors);
     const [localError, setLocalError] = useState<string | null>(null);
@@ -178,13 +227,6 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
     const numeroInputRef = useRef<HTMLInputElement>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const [filterNome, setFilterNome] = useState('');
-    const [filterCpf, setFilterCpf] = useState('');
-    const [filterMatricula, setFilterMatricula] = useState('');
-    const [filterEscola, setFilterEscola] = useState('');
-    const [filterStatus, setFilterStatus] = useState('');
-    const [applied, setApplied] = useState({ nome: '', cpf: '', matricula: '', escola: '', status: '' });
-
     const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' } | null>(null);
 
     const [escolas, setEscolas] = useState<EscolaOption[]>([]);
@@ -197,17 +239,30 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                 const response = await apiFetch('/api/escolas');
                 if (cancelled) return;
                 if (response.ok) {
-                    const data = (await response.json()) as EscolaOption[];
-                    setEscolas(data.filter(escola => escola.status === 'ATIVO'));
+                    const ativas = ((await response.json()) as EscolaOption[]).filter(escola => escola.status === 'ATIVO');
+                    setEscolas(ativas);
+
+                    // Com uma escola só, ou com a última consultada ainda disponível, a lista já abre nela.
+                    const salva = lerEscolaSalva();
+                    const inicial = ativas.length === 1
+                        ? String(ativas[0].id)
+                        : ativas.some(escola => String(escola.id) === salva) ? salva : '';
+                    if (inicial) {
+                        setFilterEscola(inicial);
+                        setApplied(atual => ({ ...atual, escola: inicial }));
+                    }
                 }
             } catch {
                 if (!cancelled) setLocalError('Falha ao carregar escolas do formulário.');
             }
         }
 
-        void load();
         void loadEscolas();
         return () => { cancelled = true; };
+    }, []);
+
+    useEffect(() => {
+        void load();
     }, [load]);
 
     // Cancela uma consulta de CEP pendente ao sair da tela
@@ -303,9 +358,10 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         };
 
         setFieldErrors(nextErrors);
-        const hasErrors = Object.values(nextErrors).some(Boolean);
+        const abaComErro = abasCadastro.find(item => item.campos.some(campo => nextErrors[campo]));
 
-        if (hasErrors) {
+        if (abaComErro) {
+            setAba(abaComErro.id);
             setLocalError('Por favor, preencha todos os campos obrigatórios para prosseguir.');
             return false;
         }
@@ -354,6 +410,8 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
             setEditingId(null);
             setFieldErrors(emptyFieldErrors);
             setTimeout(() => setSuccessMessage(null), 4000);
+            // O aluno pode ter sido salvo em outra escola que não a consultada.
+            void load();
         }
     };
 
@@ -387,9 +445,16 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
             bairro: aluno.bairro,
             escolaId: aluno.escolaId.toString(),
         });
+        setAba('aluno');
         setView('form');
         setLocalError(null);
         setFieldErrors(emptyFieldErrors);
+    };
+
+    const handleHistoricoClick = (aluno: Aluno) => {
+        setAlunoHistorico(aluno);
+        setLocalError(null);
+        setView('historico');
     };
 
     const handleConfirmDelete = async () => {
@@ -442,9 +507,11 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
     const handleNewAluno = () => {
         resetCepLookup();
         setEditingId(null);
-        setForm(emptyForm);
+        // A escola consultada já vem sugerida no cadastro.
+        setForm({ ...emptyForm, escolaId: applied.escola });
         setFieldErrors(emptyFieldErrors);
         setLocalError(null);
+        setAba('aluno');
         setView('form');
     };
 
@@ -454,36 +521,54 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
         setView('list');
         setForm(emptyForm);
         setEditingId(null);
+        setAlunoHistorico(null);
         setLocalError(null);
         setFieldErrors(emptyFieldErrors);
     };
 
     const handleConsultar = (event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
+        if (!filterEscola) {
+            setFilterEscolaErro(true);
+            setLocalError('Selecione a escola para consultar os alunos.');
+            return;
+        }
+
+        setFilterEscolaErro(false);
+        setLocalError(null);
+        salvarEscola(filterEscola);
+        // Mesma escola: a lista é recarregada; outra escola: o novo endereço da lista dispara a carga.
+        if (filterEscola === applied.escola) void load();
         setApplied({
             nome: filterNome.trim().toLowerCase(),
             cpf: filterCpf.replace(/\D/g, ''),
             matricula: filterMatricula.trim().toLowerCase(),
-            escola: filterEscola.trim().toLowerCase(),
+            escola: filterEscola,
             status: filterStatus,
         });
     };
 
+    // A escola é obrigatória e continua selecionada; limpa os demais filtros.
     const handleLimparFiltros = () => {
         setFilterNome('');
         setFilterCpf('');
         setFilterMatricula('');
-        setFilterEscola('');
         setFilterStatus('');
-        setApplied({ nome: '', cpf: '', matricula: '', escola: '', status: '' });
+        setApplied(atual => ({ nome: '', cpf: '', matricula: '', escola: atual.escola, status: '' }));
     };
 
     const filteredAlunos = alunos.filter(aluno =>
         aluno.nome.toLowerCase().includes(applied.nome)
         && (aluno.cpfAluno ?? '').replace(/\D/g, '').includes(applied.cpf)
         && aluno.matricula.toLowerCase().includes(applied.matricula)
-        && aluno.escolaNome.toLowerCase().includes(applied.escola)
         && (applied.status === '' || aluno.status === applied.status));
+
+    const alunoEmEdicao = editingId !== null ? alunos.find(aluno => aluno.id === editingId) : undefined;
+    // Aluno enturmado muda de escola pela transferência entre escolas da rede, que mantém o histórico.
+    const escolaBloqueada = alunoEmEdicao?.status === 'ATIVO';
+    const abasForm = editingId !== null
+        ? [...abasCadastro, { id: 'historico' as const, label: 'Histórico', campos: [] as (keyof AlunoFieldErrors)[] }]
+        : abasCadastro;
 
     const sortedAlunos = useMemo(() => {
         if (!sort) return filteredAlunos;
@@ -514,6 +599,25 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                 <div className="list-view">
                     <form className="filter-bar" onSubmit={handleConsultar}>
                         <div className="filter-field">
+                            <label htmlFor="filtro-escola">
+                                Escola <span className="required">*</span>
+                            </label>
+                            <select
+                                id="filtro-escola"
+                                className={`filter-input${filterEscolaErro ? ' input-error' : ''}`}
+                                value={filterEscola}
+                                aria-required="true"
+                                aria-invalid={filterEscolaErro}
+                                onChange={e => {
+                                    setFilterEscola(e.target.value);
+                                    setFilterEscolaErro(false);
+                                }}
+                            >
+                                <option value="">Selecione a escola</option>
+                                {escolas.map(escola => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
+                            </select>
+                        </div>
+                        <div className="filter-field">
                             <label htmlFor="filtro-nome">Nome</label>
                             <input id="filtro-nome" type="text" className="filter-input" value={filterNome} onChange={e => setFilterNome(e.target.value)} />
                         </div>
@@ -533,10 +637,6 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                             <input id="filtro-matricula" type="text" className="filter-input" value={filterMatricula} onChange={e => setFilterMatricula(e.target.value)} />
                         </div>
                         <div className="filter-field">
-                            <label htmlFor="filtro-escola">Escola</label>
-                            <input id="filtro-escola" type="text" className="filter-input" value={filterEscola} onChange={e => setFilterEscola(e.target.value)} />
-                        </div>
-                        <div className="filter-field">
                             <label htmlFor="filtro-status">Status</label>
                             <select id="filtro-status" className="filter-input" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                                 <option value="">Todos</option>
@@ -547,11 +647,13 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                         <button type="button" className="filter-button filter-button-static" onClick={handleLimparFiltros}>Limpar</button>
                     </form>
 
-                    {isLoading ? (
+                    {!applied.escola ? (
+                        <EmptyState emptyMessage="Selecione a escola e clique em Consultar para listar os alunos." />
+                    ) : isLoading ? (
                         <div className="loading">Carregando alunos...</div>
                     ) : filteredAlunos.length === 0 ? (
                         <EmptyState emptyMessage={alunos.length === 0
-                            ? "Nenhum aluno cadastrado. Clique em 'Novo Aluno' para começar."
+                            ? "Nenhum aluno nesta escola. Clique em 'Novo Aluno' para começar."
                             : 'Nenhum aluno encontrado. Tente ajustar os filtros.'} />
                     ) : (
                         <div className="table-container">
@@ -583,11 +685,24 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                             <td className="nowrap-cell">{aluno.cpfAluno ? formatCpf(aluno.cpfAluno) : '—'}</td>
                                             <td className="nowrap-cell">{aluno.responsavelNome1}</td>
                                             <td className="nowrap-cell">{formatTelefone(aluno.responsavelTelefone1)}</td>
-                                            <td className="nowrap-cell">{aluno.escolaNome}</td>
+                                            <td className="nowrap-cell">
+                                                {aluno.escolaNome}
+                                                {aluno.transferidoDaEscola && aluno.escolaAtualNome && (
+                                                    <span className="aluno-escola-atual">Hoje em: {aluno.escolaAtualNome}</span>
+                                                )}
+                                            </td>
                                             <td>
                                                 <StatusPill status={aluno.status as Status} label={rotuloStatusAluno(aluno.status)} />
                                             </td>
                                             <td>
+                                                {aluno.transferidoDaEscola ? (
+                                                    // O cadastro agora pertence à escola de destino; aqui só se consulta o histórico.
+                                                    <div className="action-group vertical">
+                                                        <button type="button" className="table-action-button" onClick={() => handleHistoricoClick(aluno)}>
+                                                            Histórico
+                                                        </button>
+                                                    </div>
+                                                ) : (
                                                 <div className="action-group vertical">
                                                     {can('alunos.editar') && <button type="button" className="table-action-button" onClick={() => handleEditClick(aluno)}>Editar</button>}
                                                     {/* Óbito encerra a matrícula definitivamente: não há como ativar nem inativar. */}
@@ -603,6 +718,7 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                                     )}
                                                     {can('alunos.excluir') && <button type="button" className="table-action-button danger" onClick={() => setAlunoToDelete(aluno)}>Excluir</button>}
                                                 </div>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
@@ -610,6 +726,22 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                             </table>
                         </div>
                     )}
+                </div>
+            ) : view === 'historico' && alunoHistorico ? (
+                <div className="form-view">
+                    <div className="form-header">
+                        <div>
+                            <h2>Histórico de {alunoHistorico.nome}</h2>
+                            <p className="field-hint">
+                                Matrícula {alunoHistorico.matricula}
+                                {alunoHistorico.escolaAtualNome && <> · hoje na escola {alunoHistorico.escolaAtualNome}</>}
+                            </p>
+                        </div>
+                        <button className="btn btn-secondary" onClick={handleCancelar}>
+                            ← Voltar
+                        </button>
+                    </div>
+                    <HistoricoAluno key={alunoHistorico.id} alunoId={alunoHistorico.id} />
                 </div>
             ) : (
                 <div className="form-view">
@@ -621,7 +753,33 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                     </div>
 
                     <form onSubmit={handleFormSubmit} className="form-grid">
-                        <fieldset className="form-section">
+                        <div className="form-tabs" role="tablist" aria-label="Cadastro do aluno">
+                            {abasForm.map(item => {
+                                const temErro = item.campos.some(campo => fieldErrors[campo]);
+                                return (
+                                    <button
+                                        key={item.id}
+                                        type="button"
+                                        role="tab"
+                                        id={`aluno-tab-${item.id}`}
+                                        aria-selected={aba === item.id}
+                                        aria-controls={`aluno-panel-${item.id}`}
+                                        className={`form-tab${aba === item.id ? ' active' : ''}${temErro ? ' has-error' : ''}`}
+                                        onClick={() => setAba(item.id)}
+                                    >
+                                        {item.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <fieldset
+                            className="form-section"
+                            role="tabpanel"
+                            id="aluno-panel-aluno"
+                            aria-labelledby="aluno-tab-aluno"
+                            hidden={aba !== 'aluno'}
+                        >
                             <legend>📋 Dados do Aluno</legend>
 
                             <div className="form-group">
@@ -712,7 +870,13 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                             </div>
                         </fieldset>
 
-                        <fieldset className="form-section">
+                        <fieldset
+                            className="form-section"
+                            role="tabpanel"
+                            id="aluno-panel-responsaveis"
+                            aria-labelledby="aluno-tab-responsaveis"
+                            hidden={aba !== 'responsaveis'}
+                        >
                             <legend>👪 Dados dos Responsáveis</legend>
 
                             <div className="form-group">
@@ -784,7 +948,13 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                             </div>
                         </fieldset>
 
-                        <fieldset className="form-section">
+                        <fieldset
+                            className="form-section"
+                            role="tabpanel"
+                            id="aluno-panel-documentacao"
+                            aria-labelledby="aluno-tab-documentacao"
+                            hidden={aba !== 'documentacao'}
+                        >
                             <legend>📄 Documentação/Endereço</legend>
 
                             <div className="form-group">
@@ -918,7 +1088,8 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                     value={form.escolaId}
                                     onChange={handleFieldChange}
                                     className={fieldErrors.escolaId ? 'input-error' : ''}
-                                    disabled={isSaving}
+                                    disabled={isSaving || escolaBloqueada}
+                                    aria-describedby={escolaBloqueada ? 'escola-bloqueada' : undefined}
                                 >
                                     <option value="">Selecione...</option>
                                     {escolas.map(escola => (
@@ -928,10 +1099,21 @@ function AlunosPage({ onEnturmar }: AlunosPageProps) {
                                     ))}
                                 </select>
                                 {fieldErrors.escolaId && <span className="field-error">Escola é obrigatória</span>}
+                                {escolaBloqueada && (
+                                    <span id="escola-bloqueada" className="field-hint">
+                                        Escola atual do aluno. Para mudar de escola, use a Transferência Entre Escolas da Rede.
+                                    </span>
+                                )}
                             </div>
                         </fieldset>
 
-                        <div className="form-actions">
+                        {editingId !== null && aba === 'historico' && (
+                            <div className="form-tab-panel" role="tabpanel" id="aluno-panel-historico" aria-labelledby="aluno-tab-historico">
+                                <HistoricoAluno key={editingId} alunoId={editingId} />
+                            </div>
+                        )}
+
+                        <div className="form-actions" hidden={aba === 'historico'}>
                             <button type="submit" className="btn btn-primary" disabled={isSaving}>
                                 {isSaving ? 'Salvando...' : 'Salvar'}
                             </button>

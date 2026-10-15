@@ -2227,6 +2227,10 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("escola_destino");
 
+                    b.Property<int?>("EscolaDestinoId")
+                        .HasColumnType("integer")
+                        .HasColumnName("escola_destino_id");
+
                     b.Property<int>("EscolaOrigemId")
                         .HasColumnType("integer")
                         .HasColumnName("escola_origem_id");
@@ -2257,6 +2261,8 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AnoLetivoId");
+
+                    b.HasIndex("EscolaDestinoId");
 
                     b.HasIndex("EscolaOrigemId");
 
@@ -3149,6 +3155,11 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("DiarioX.Server.Domain.Entities.Escola", "EscolaDestinoRede")
+                        .WithMany()
+                        .HasForeignKey("EscolaDestinoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("DiarioX.Server.Domain.Entities.Escola", "EscolaOrigem")
                         .WithMany()
                         .HasForeignKey("EscolaOrigemId")
@@ -3169,6 +3180,8 @@ namespace DiarioX.Server.Infrastructure.Data.Migrations
                     b.Navigation("Aluno");
 
                     b.Navigation("AnoLetivo");
+
+                    b.Navigation("EscolaDestinoRede");
 
                     b.Navigation("EscolaOrigem");
 

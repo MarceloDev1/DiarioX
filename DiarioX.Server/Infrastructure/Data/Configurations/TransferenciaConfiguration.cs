@@ -21,15 +21,16 @@ public class TransferenciaConfiguration : IEntityTypeConfiguration<Transferencia
         builder.Property(x => x.DataTransferencia).HasColumnName("data_transferencia").HasColumnType("date").IsRequired();
         builder.Property(x => x.Tipo).HasColumnName("tipo").HasMaxLength(40).IsRequired();
         builder.Property(x => x.EscolaDestino).HasColumnName("escola_destino").HasMaxLength(Transferencia.MaxEscolaDestino).IsRequired();
+        builder.Property(x => x.EscolaDestinoId).HasColumnName("escola_destino_id");
         builder.Property(x => x.Motivo).HasColumnName("motivo").HasMaxLength(Transferencia.MaxMotivo);
         builder.Property(x => x.RegistradoPorUsuarioId).HasColumnName("registrado_por_usuario_id").IsRequired();
         builder.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
 
         builder.HasOne(x => x.Aluno).WithMany().HasForeignKey(x => x.AlunoId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.EscolaOrigem).WithMany().HasForeignKey(x => x.EscolaOrigemId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.EscolaDestinoRede).WithMany().HasForeignKey(x => x.EscolaDestinoId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.Turma).WithMany().HasForeignKey(x => x.TurmaId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.AnoLetivo).WithMany().HasForeignKey(x => x.AnoLetivoId).OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(x => new { x.AlunoId, x.DataTransferencia }).HasDatabaseName("IX_transferencias_aluno_data");
-    }
+        builder.HasIndex(x => new { x.AlunoId, x.DataTransferencia }).HasDatabaseName("IX_transferencias_aluno_data");    }
 }

@@ -71,7 +71,17 @@ public class TransferenciaRepository : ITransferenciaRepository
             vinculo.MotivoDesenturmacao = AlunoTurma.MotivoTransferencia;
         }
 
-        aluno.Status = Aluno.StatusTransferido;
+        // Entre escolas da rede o aluno continua na instituição: passa a pertencer à escola de destino,
+        // aguardando enturmação. Na escola de origem ele aparece como transferido pela própria transferência.
+        if (transferencia.EscolaDestinoId is int escolaDestinoId)
+        {
+            aluno.EscolaId = escolaDestinoId;
+            aluno.Status = Aluno.StatusAtivoAguardandoEnturmacao;
+        }
+        else
+        {
+            aluno.Status = Aluno.StatusTransferido;
+        }
         aluno.UpdatedAt = DateTime.UtcNow;
         _context.Transferencias.Add(transferencia);
 

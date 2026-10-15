@@ -1,8 +1,8 @@
 namespace DiarioX.Server.Domain.Entities;
 
 /// <summary>
-/// Saída definitiva do aluno para outra instituição (RF014). Guarda os dados da Declaração de
-/// Transferência, que pode ser emitida de novo a qualquer momento.
+/// Saída do aluno da escola (RF014): para outra instituição ou, entre escolas da rede, para outra escola
+/// da mesma instituição. Guarda os dados da Declaração de Transferência, que pode ser emitida de novo.
 /// </summary>
 public class Transferencia : ITenantEntity
 {
@@ -41,6 +41,14 @@ public class Transferencia : ITenantEntity
     public DateOnly DataTransferencia { get; set; }
     public string Tipo { get; set; } = string.Empty;
     public string EscolaDestino { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Escola da rede que recebe o aluno (só na transferência entre escolas da rede). O aluno passa a
+    /// pertencer a ela aguardando enturmação; na escola de origem ele continua listado como transferido.
+    /// </summary>
+    public int? EscolaDestinoId { get; set; }
+    public Escola? EscolaDestinoRede { get; set; }
+
     public string? Motivo { get; set; }
 
     // Sem navegação, como em Chamada: o Administrador global não pertence à instituição.

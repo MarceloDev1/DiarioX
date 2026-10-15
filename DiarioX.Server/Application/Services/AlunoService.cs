@@ -39,6 +39,29 @@ public class AlunoService : IAlunoService
         return alunos.Select(MapToResponse);
     }
 
+    public async Task<IReadOnlyList<AlunoResponse>?> GetByEscolaAsync(int escolaId)
+    {
+        // A escola precisa estar no escopo do usuário: a consulta dos transferidos ignora o escopo.
+        var escola = escolaId > 0 ? await _escolaRepository.GetByIdAsync(escolaId) : null;
+        if (escola is null)
+            return null;
+
+        var atuais = (await _alunoRepository.GetByEscolaAsync(escolaId)).Select(MapToResponse);
+        var transferidos = (await _alunoRepository.GetTransferidosDaEscolaAsync(escolaId))
+            .Select(aluno => MapToResponse(aluno) with
+            {
+                EscolaId = escola.Id,
+                EscolaNome = escola.Nome,
+                Status = Aluno.StatusTransferido,
+                TransferidoDaEscola = true,
+                EscolaAtualNome = aluno.Escola.Nome,
+            });
+
+        return atuais.Concat(transferidos)
+            .OrderBy(a => a.Nome, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+    }
+
     public async Task<AlunoCommandResult> CreateAsync(AlunoRequest request)
     {
         var normalized = NormalizeRequest(request);
@@ -86,6 +109,11 @@ public class AlunoService : IAlunoService
         var validation = await ValidateRequestAsync(normalized, id);
         if (!validation.Success)
             return validation;
+
+        // Aluno enturmado muda de escola pela transferência entre escolas da rede, que encerra a
+        // enturmação e registra a movimentação no histórico.
+        if (normalized.EscolaId != aluno.EscolaId && await _alunoTurmaRepository.GetAtivaByAlunoIdAsync(id) is not null)
+            return Invalid("O aluno está enturmado. Para mudar de escola, utilize a Transferência Entre Escolas da Rede.");
 
         aluno.Nome = normalized.Nome;
         aluno.DataNascimento = normalized.DataNascimento;

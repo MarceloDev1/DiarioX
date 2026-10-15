@@ -36,6 +36,15 @@ public class EscolaRepository : BaseRepository<Escola>, IEscolaRepository
             (!excludeId.HasValue || e.Id != excludeId.Value));
     }
 
+    public async Task<IReadOnlyList<Escola>> GetAtivasDaInstituicaoAsync()
+    {
+        return await _dbSet.IgnoreQueryFilters([AppDbContext.FiltroEscola])
+            .AsNoTracking()
+            .Where(e => e.Status == Escola.StatusAtivo)
+            .OrderBy(e => e.Nome)
+            .ToListAsync();
+    }
+
     public async Task DeleteAsync(int id)
     {
         var escola = await _dbSet.FindAsync(id);

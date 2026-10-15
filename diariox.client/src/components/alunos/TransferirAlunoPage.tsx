@@ -18,7 +18,6 @@ interface Aluno {
 interface Escola {
     id: number;
     nome: string;
-    status: string;
 }
 
 interface EnturmacaoAtiva {
@@ -33,9 +32,11 @@ interface Transferencia {
     dataTransferencia: string;
     tipoDescricao: string;
     escolaDestino: string;
+    escolaDestinoId: number | null;
     escolaOrigemNome: string;
 }
 
+/** escolaDestino: nome digitado (fora da rede) ou id da escola escolhida (entre escolas da rede). */
 interface Formulario {
     dataTransferencia: string;
     tipo: string;
@@ -72,7 +73,10 @@ interface TransferirAlunoPageProps {
     onVoltar: () => void;
 }
 
-/** RF014: transferência externa (saída definitiva) do aluno, com a emissão da Declaração de Transferência. */
+/**
+ * RF014: transferência do aluno, com a emissão da Declaração de Transferência. Para fora da rede é uma saída
+ * definitiva; entre escolas da rede o aluno passa para a escola de destino aguardando enturmação.
+ */
 function TransferirAlunoPage({ onVoltar }: TransferirAlunoPageProps) {
     const [alunos, setAlunos] = useState<Aluno[]>([]);
     const [escolas, setEscolas] = useState<Escola[]>([]);
@@ -89,12 +93,13 @@ function TransferirAlunoPage({ onVoltar }: TransferirAlunoPageProps) {
     const [success, setSuccess] = useState<string | null>(null);
 
     useEffect(() => {
-        void Promise.all([apiFetch('/api/alunos'), apiFetch('/api/escolas')])
+        // Destinos: escolas ativas da rede inteira, inclusive fora do escopo de quem transfere.
+        void Promise.all([apiFetch('/api/alunos'), apiFetch('/api/transferencias/escolas-destino')])
             .then(async ([alunosResponse, escolasResponse]) => {
                 if (!alunosResponse.ok) throw new Error(await readApiError(alunosResponse));
                 if (!escolasResponse.ok) throw new Error(await readApiError(escolasResponse));
                 setAlunos((await alunosResponse.json()) as Aluno[]);
-                setEscolas(((await escolasResponse.json()) as Escola[]).filter(escola => escola.status === 'ATIVO'));
+                setEscolas((await escolasResponse.json()) as Escola[]);
             })
             .catch(reason => setError(reason instanceof Error ? reason.message : 'Falha ao carregar os alunos.'))
             .finally(() => setLoading(false));
@@ -179,7 +184,8 @@ function TransferirAlunoPage({ onVoltar }: TransferirAlunoPageProps) {
                 body: JSON.stringify({
                     dataTransferencia: form.dataTransferencia,
                     tipo: form.tipo,
-                    escolaDestino: form.escolaDestino.trim(),
+                    escolaDestino: entreEscolasDaRede ? null : form.escolaDestino.trim(),
+                    escolaDestinoId: entreEscolasDaRede ? Number(form.escolaDestino) : null,
                     motivo: form.motivo.trim() || null,
                 }),
             });
@@ -188,8 +194,15 @@ function TransferirAlunoPage({ onVoltar }: TransferirAlunoPageProps) {
             const result = (await response.json()) as { message: string; transferencia: Transferencia };
             setSuccess(result.message);
             setConcluida(result.transferencia);
-            setAluno(atual => atual && { ...atual, status: 'TRANSFERIDO' });
-            setAlunos(atual => atual.map(item => (item.id === aluno.id ? { ...item, status: 'TRANSFERIDO' } : item)));
+
+            // Entre escolas da rede o aluno segue ativo na escola de destino, aguardando enturmação.
+            const destinoId = result.transferencia.escolaDestinoId;
+            const atualizado = (item: Aluno): Aluno => destinoId
+                ? { ...item, status: 'ATIVO_AGUARDANDO_ENTURMACAO', escolaId: destinoId, escolaNome: result.transferencia.escolaDestino }
+                : { ...item, status: 'TRANSFERIDO' };
+            setAluno(atual => atual && atualizado(atual));
+            setAlunos(atual => atual.map(item => (item.id === aluno.id ? atualizado(item) : item)));
+            setEnturmacao(null);
         } catch (reason) {
             setError(reason instanceof Error ? reason.message : 'Falha ao registrar a transferência.');
         } finally {
@@ -208,7 +221,9 @@ function TransferirAlunoPage({ onVoltar }: TransferirAlunoPageProps) {
 
     const ultimaTransferencia = concluida ?? transferencias[0] ?? null;
     const jaTransferido = aluno?.status === 'TRANSFERIDO';
-    const podeTransferir = aluno !== null && STATUS_PERMITIDOS.includes(aluno.status);
+    // Logo após a transferência a tela mostra a declaração, inclusive na transferência entre escolas da rede.
+    const mostrarDeclaracao = jaTransferido || concluida !== null;
+    const podeTransferir = aluno !== null && concluida === null && STATUS_PERMITIDOS.includes(aluno.status);
 
     return (
         <div className="school-page">
@@ -216,7 +231,7 @@ function TransferirAlunoPage({ onVoltar }: TransferirAlunoPageProps) {
                 <div className="section-header">
                     <div>
                         <h2>Transferência Externa</h2>
-                        <p>Registre a saída definitiva do aluno para outra instituição e emita a Declaração de Transferência.</p>
+                        <p>Registre a saída do aluno para outra instituição ou para outra escola da rede e emita a Declaração de Transferência.</p>
                     </div>
                     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                         {aluno && (
@@ -329,7 +344,7 @@ function TransferirAlunoPage({ onVoltar }: TransferirAlunoPageProps) {
                 </section>
             )}
 
-            {aluno && !carregandoAluno && jaTransferido && (
+            {aluno && !carregandoAluno && mostrarDeclaracao && (
                 <section className="content-card">
                     {/* EX02, ou a confirmação logo após a transferência. */}
                     {!concluida && <FeedbackMessage message="Este aluno já possui o status de Transferido no sistema." type="error" />}
@@ -354,7 +369,7 @@ function TransferirAlunoPage({ onVoltar }: TransferirAlunoPageProps) {
                 </section>
             )}
 
-            {aluno && !carregandoAluno && !jaTransferido && !podeTransferir && (
+            {aluno && !carregandoAluno && !mostrarDeclaracao && !podeTransferir && (
                 <FeedbackMessage message="Somente alunos matriculados ou aguardando enturmação podem ser transferidos." type="error" />
             )}
 
@@ -368,6 +383,7 @@ function TransferirAlunoPage({ onVoltar }: TransferirAlunoPageProps) {
                                     ? 'A enturmação é encerrada na data do desligamento e a vaga na turma é liberada.'
                                     : 'O aluno não está em nenhuma turma.'}{' '}
                                 Frequências e notas registradas até essa data ficam congeladas.
+                                {entreEscolasDaRede && ' O aluno passa para a escola de destino aguardando enturmação e continua listado como transferido nesta escola.'}
                             </p>
                         </div>
                     </div>
@@ -415,7 +431,7 @@ function TransferirAlunoPage({ onVoltar }: TransferirAlunoPageProps) {
                                         onChange={event => alterar('escolaDestino', event.target.value)}
                                     >
                                         <option value="">Selecione a escola de destino</option>
-                                        {escolasDestino.map(escola => <option key={escola.id} value={escola.nome}>{escola.nome}</option>)}
+                                        {escolasDestino.map(escola => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
                                     </select>
                                 ) : (
                                     <input

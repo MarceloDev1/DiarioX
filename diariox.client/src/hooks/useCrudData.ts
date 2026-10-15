@@ -1,17 +1,23 @@
 import { useCallback, useState } from 'react';
 import { apiFetch, readApiError } from '../utils/api';
 
-export function useCrudData<T extends { id: number }>(endpoint: string) {
+/** listEndpoint: de onde vem a lista (ex.: com filtro na query); nulo = lista vazia, sem consultar. */
+export function useCrudData<T extends { id: number }>(endpoint: string, listEndpoint: string | null = endpoint) {
     const [items, setItems] = useState<T[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const load = useCallback(async () => {
+        if (listEndpoint === null) {
+            setItems([]);
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
         try {
-            const response = await apiFetch(endpoint);
+            const response = await apiFetch(listEndpoint);
             if (!response.ok) throw new Error(await readApiError(response));
             const data = (await response.json()) as T[];
             setItems(data);
@@ -20,7 +26,7 @@ export function useCrudData<T extends { id: number }>(endpoint: string) {
         } finally {
             setIsLoading(false);
         }
-    }, [endpoint]);
+    }, [listEndpoint]);
 
     const save = async (editingId: number | null, body: unknown): Promise<T | null> => {
         setIsSaving(true);
