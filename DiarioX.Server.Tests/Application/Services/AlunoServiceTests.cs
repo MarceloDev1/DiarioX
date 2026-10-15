@@ -222,8 +222,12 @@ public class AlunoServiceTests
         var request = BuildValidRequest();
         request.Nome = "Nome Atualizado";
 
+        // O serviço desanexa a navegação Escola antes de salvar; a recarga devolve o aluno com a escola carregada.
         var existing = BuildAluno(4, "20260099");
-        fixture.AlunoRepository.Setup(r => r.GetByIdAsync(4)).ReturnsAsync(existing);
+        var recarregado = BuildAluno(4, "20260099");
+        fixture.AlunoRepository.SetupSequence(r => r.GetByIdAsync(4))
+            .ReturnsAsync(existing)
+            .ReturnsAsync(recarregado);
         fixture.EscolaRepository.Setup(r => r.GetByIdAsync(request.EscolaId)).ReturnsAsync(BuildEscola(1));
 
         var result = await fixture.Service.UpdateAsync(4, request);

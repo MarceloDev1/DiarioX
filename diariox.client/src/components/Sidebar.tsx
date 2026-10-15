@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './Sidebar.css';
 import type { IconType } from 'react-icons';
-import { FiHome, FiUsers, FiBriefcase, FiBook, FiLayers, FiAward, FiUserCheck, FiUserMinus, FiLogOut, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare, FiDollarSign, FiCreditCard, FiBarChart2, FiCalendar, FiEdit3, FiTarget, FiSliders, FiClipboard, FiClock } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBriefcase, FiBook, FiBookOpen,FiLayers, FiAward, FiUserCheck, FiUserMinus, FiLogOut, FiRotateCcw, FiUser, FiChevronsLeft, FiChevronsRight, FiGlobe, FiSettings, FiShield, FiCheckSquare, FiDollarSign, FiCreditCard, FiBarChart2, FiCalendar, FiEdit3, FiTarget, FiSliders, FiClipboard, FiClock } from 'react-icons/fi';
 import { MdSchool, MdPeople, MdManageAccounts } from 'react-icons/md';
 import { usePermissoes } from '../hooks/usePermissoes';
 import { permissaoDaPagina } from '../utils/permissoes';
@@ -63,9 +63,11 @@ const menuItems: MenuItem[] = [
         { id: 'desenturmar-aluno', label: 'Desenturmar Aluno', icon: FiUserMinus },
         { id: 'transferir-aluno', label: 'Transferência Externa', icon: FiLogOut },
     ] },
-    { id: 'chamada', label: 'Chamada', icon: FiCheckSquare },
-    { id: 'conteudo-ministrado', label: 'Conteúdo Ministrado', icon: FiEdit3 },
-    { id: 'notas', label: 'Notas', icon: FiClipboard },
+    { id: 'diario', label: 'Diário', icon: FiBookOpen, submenu: [
+        { id: 'chamada', label: 'Chamada', icon: FiCheckSquare },
+        { id: 'conteudo-ministrado', label: 'Conteúdo Ministrado', icon: FiEdit3 },
+        { id: 'notas', label: 'Notas', icon: FiClipboard },
+    ] },
     { id: 'relatorios', label: 'Relatórios', icon: FiBarChart2 },
     { id: 'configuracoes', label: 'Configurações', icon: FiSettings, submenu: [
         { id: 'usuarios', label: 'Usuários', icon: FiUser },
